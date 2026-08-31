@@ -43,6 +43,11 @@
   var GLAZE_TYPES = ['High glaze', 'Matte glaze', 'Characterized/stained'];
   var SURFACE_TEXTURES = ['Natural texture', 'Smooth polish', 'Youthful (high texture)'];
   var SHADES = ['A1', 'A2', 'A3', 'A3.5', 'B1', 'B2', 'C2', 'D3'];
+  var TOOTH_PATH = 'M12 21c-1.6-3-2-6.4-2-9.2C10 8.5 8.7 6 6.5 6 4 6 3 8.3 3 10.5c0 5 2.6 9 4.6 10.3.7.5 1.6-.1 1.8-1l.6-3c.2-1 1.8-1 2 0l.6 3c.2.9 1.1 1.5 1.8 1 2-1.3 4.6-5.3 4.6-10.3C21 8.3 20 6 17.5 6 15.3 6 14 8.5 14 11.8c0 2.8-.4 6.2-2 9.2Z';
+  var ADMIN_TABS = [
+    ['overview', 'Overview'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
+    ['orders', 'Shop Orders'], ['team', 'Team'], ['applications', 'Careers'], ['messages', 'Messages'], ['settings', 'Settings']
+  ];
 
   /* ============================== helpers =============================== */
   function money(n) { return 'BD ' + Number(n || 0).toFixed(3); }
@@ -60,12 +65,13 @@
   }
 
   /* ================================ state ================================ */
-  var DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], summary: {} };
+  var DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], team: [], appointments: [], settings: {}, summary: {} };
   var UI = {
     cart: JSON.parse(localStorage.getItem('ceram_cart') || '[]'),
     wizard: null,
     drawer: null,
     adminTab: 'overview',
+    shopTab: 'patients',
     cartOpen: false
   };
   function saveCart() { localStorage.setItem('ceram_cart', JSON.stringify(UI.cart)); updateCartBadge(); }
@@ -133,15 +139,16 @@
 
   /* =============================== shared chrome =========================== */
   function footer() {
+    var s = DATA.settings || {};
     return (
       '<footer class="site-footer"><div class="u"><div class="footer-grid">' +
-        '<div><div class="footer-brand"><span class="brand-mark"><img src="/images/icon.png" alt=""></span>Ceram Dental</div>' +
-          '<p class="about-copy">A digital ceramics lab built around one shared case record — from a clinic\'s scan to a restoration ready for pickup.</p>' +
+        '<div><div class="footer-brand"><span class="brand-mark"><img src="/images/icon.png" alt=""></span>' + esc(s.clinicName || 'Ceram Dental') + '</div>' +
+          '<p class="about-copy">A dental clinic with its own in-house ceramics lab — from your consultation to a restoration made and checked under one roof.</p>' +
           '<div class="social-row" style="margin-top:16px;">' + socialIcons() + '</div></div>' +
         '<div><h4>Explore</h4><a href="#/about">About</a><a href="#/services">Services</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
-        '<div><h4>Dashboards</h4><a href="#/new-case">Start a Case</a><a href="#/portal">Dentist Portal</a><a href="#/studio">Lab Studio</a><a href="#/admin">Accounts &amp; Admin</a></div>' +
-        '<div><h4>Visit</h4><a href="tel:+97317131123">+973 1713 1123</a><a href="mailto:hello@ceram-dental.com">hello@ceram-dental.com</a><a href="#/contact">Highway 35, New Zinj, Manama</a></div>' +
-      '</div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' Ceram Dental. Click-through demo.</span><span>Built on Ceram Dental\'s own brand &amp; photography.</span></div></div></footer>'
+        '<div><h4>For Dentists</h4><a href="#/new-case">Refer a Case</a><a href="#/portal">Dentist Portal</a><a href="#/studio">Lab Studio</a><a href="#/admin">Accounts &amp; Admin</a></div>' +
+        '<div><h4>Visit</h4><a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><a href="#/contact">' + esc(s.address) + '</a></div>' +
+      '</div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '. Click-through demo.</span><span>Built on Ceram Dental\'s own brand &amp; photography.</span></div></div></footer>'
     );
   }
 
@@ -159,49 +166,65 @@
 
   /* ================================== HOME ================================ */
   function renderHome() {
-    var active = DATA.cases.filter(function (c) { return c.stage !== 'ready'; }).length;
-    var ready = DATA.cases.filter(function (c) { return c.stage === 'ready'; }).length;
+    var doctors = DATA.team.slice(0, 3);
     return (
       '<div class="page"><div class="u">' +
-      '<div class="hero-site reveal"><div class="photo"></div><div class="scrim"></div>' +
+      '<div class="hero-site reveal">' +
+        '<div class="hero-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="' + TOOTH_PATH + '"/></svg></div>' +
         '<div class="content">' +
-          '<span class="eyebrow-accent">Ceram Dental — digital ceramics lab</span>' +
-          '<h1>Precision restorations,<br>ordered in minutes.</h1>' +
-          '<p class="lede">Send a case straight to our CAD-CAM studio with your scan, shade and design notes — and track it through every stage until it\'s on your desk.</p>' +
-          '<div class="cta-row"><a class="btn btn-primary" href="#/new-case">Start a new case</a><a class="btn btn-onphoto" href="#/portal">Track my cases</a></div>' +
-        '</div></div>' +
-
-      '<div class="stat-strip reveal">' +
-        '<div class="chipstat"><b>' + active + '</b><span>Active cases</span></div>' +
-        '<div class="chipstat"><b>' + ready + '</b><span>Ready this week</span></div>' +
-        '<div class="chipstat"><b>' + SERVICES.length + '</b><span>Services offered</span></div>' +
-      '</div>' +
-
-      '<div class="section">' +
-        '<span class="eyebrow">Step inside</span><h2 style="font-size:21px; margin-top:4px;">The studio behind the work</h2>' +
-        '<div class="space-grid">' +
-          '<div class="space-card reveal" style="background-image:url(/images/reception.jpg)"><span class="tag">Reception, New Zinj</span></div>' +
-          '<div class="space-card reveal" style="background-image:url(/images/lounge.jpg)"><span class="tag">Patient lounge</span></div>' +
+          '<span class="eyebrow-accent">Ceram Dental — New Zinj, Manama</span>' +
+          '<h1>Precision dentistry,<br>crafted with care.</h1>' +
+          '<p class="lede">From a first check-up to a full smile makeover, our doctors and our own in-house ceramics lab work together so your treatment is planned right and made right, the first time.</p>' +
+          '<div class="cta-row"><a class="btn btn-primary" href="#/contact">Book a consultation</a><a class="btn btn-onphoto" href="#/services">Explore services</a></div>' +
         '</div>' +
       '</div>' +
 
+      '<div class="stat-strip reveal">' +
+        '<div class="chipstat"><b>In-house</b><span>CAD-CAM lab</span></div>' +
+        '<div class="chipstat"><b>' + SERVICES.length + '</b><span>Specialties</span></div>' +
+        '<div class="chipstat"><b>5-point</b><span>Quality protocol</span></div>' +
+      '</div>' +
+
       '<div class="section">' +
-        '<div class="section-head"><div><span class="eyebrow">Services</span><h2 style="font-size:21px; margin-top:4px;">Six ways to start a case</h2></div>' +
+        '<div class="section-head"><div><span class="eyebrow">Treatments</span><h2 style="font-size:21px; margin-top:4px;">Services we\'re known for</h2></div>' +
           '<a class="btn btn-ghost btn-sm" href="#/services">All services →</a></div>' +
         '<div class="services-grid">' + SERVICES.map(function (s, i) {
-          return '<a href="#/new-case" class="svc-card reveal" style="--i:' + i + '">' +
+          return '<a href="#/services" class="svc-card reveal" style="--i:' + i + '">' +
             '<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="' + s.icon + '"/></svg></div>' +
             '<h3>' + s.label + '</h3><p>' + s.desc + '</p></a>';
         }).join('') + '</div>' +
       '</div>' +
 
+      '<div class="section">' +
+        '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2 style="font-size:21px; margin-top:4px;">Meet the clinicians</h2></div>' +
+          '<a class="btn btn-ghost btn-sm" href="#/about">Meet the team →</a></div>' +
+        '<div class="dept-grid">' + doctors.map(function (d, i) {
+          return '<div class="dept-card reveal" style="--i:' + i + '"><div class="dept-avatar">' + d.initials + '</div><h3>' + d.name + '</h3><p>' + d.role + '</p></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+
+      '<div class="section">' +
+        '<span class="eyebrow">Step inside</span><h2 style="font-size:21px; margin-top:4px;">Visit the clinic</h2>' +
+        '<div class="visit-grid">' +
+          '<div class="space-card reveal" style="background-image:url(/images/hero-night.jpg)"><span class="tag">Ceram Dental, New Zinj</span></div>' +
+          '<div class="space-card reveal" style="background-image:url(/images/reception.jpg)"><span class="tag">Reception</span></div>' +
+          '<div class="space-card reveal" style="background-image:url(/images/lounge.jpg)"><span class="tag">Patient lounge</span></div>' +
+        '</div>' +
+      '</div>' +
+
       '<div class="section grid-2">' +
-        '<div class="vm-card vision reveal"><span class="eyebrow">Why clinics choose us</span>' +
-          '<h2 style="color:#fff; font-size:22px; margin-top:10px;">One protocol, every case, no surprises.</h2>' +
-          '<p>Every case is checked against the same five-point protocol before it reaches a technician — so what you send is what gets built.</p></div>' +
-        '<div class="card reveal"><span class="eyebrow">Shop</span><h3 style="margin-top:8px;">Chairside kits &amp; patient retail</h3>' +
-          '<p>Shade guides, retraction cord and take-home whitening — the essentials, ordered alongside your cases.</p>' +
+        '<div class="vm-card vision reveal"><span class="eyebrow">Why patients choose us</span>' +
+          '<h2 style="color:#fff; font-size:22px; margin-top:10px;">Designed and made under one roof.</h2>' +
+          '<p>Most clinics send your case to an outside lab you\'ll never meet. Ours is upstairs — every crown, veneer and guide is checked against the same five-point protocol before it reaches your dentist.</p></div>' +
+        '<div class="card reveal"><span class="eyebrow">Shop</span><h3 style="margin-top:8px;">Take-home care &amp; retail</h3>' +
+          '<p>Whitening kits, retainer cases and the essentials your dentist recommends — ready to pick up at your next visit.</p>' +
           '<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="#/shop">Visit the shop →</a></div>' +
+      '</div>' +
+
+      '<div class="section cta-banner reveal">' +
+        '<h2>Ready for your best smile?</h2>' +
+        '<p>Book a consultation and our team will help you find the right treatment — no pressure, just a plan.</p>' +
+        '<div class="cta-row"><a class="btn btn-onphoto" href="#/contact">Book a consultation</a><a class="btn btn-onphoto" href="tel:+97317131123">Call ' + esc(DATA.settings.phone || '+973 1713 1123') + '</a></div>' +
       '</div>' +
 
       '</div></div>' + footer()
@@ -211,34 +234,41 @@
   /* =================================== ABOUT =============================== */
   function renderAbout() {
     var depts = [
-      { n: 'RC', t: 'Reception', d: 'First read on every incoming case' },
-      { n: 'QC', t: 'Quality Control', d: 'Protocol checks, in and out' },
-      { n: 'DS', t: 'Design Studio', d: 'Digital design & mockups' },
-      { n: 'CC', t: 'CAD-CAM & Milling', d: 'Zirconia, wax and print' }
+      { n: 'RC', t: 'Reception', d: 'The first friendly face when you arrive' },
+      { n: 'QC', t: 'Quality Control', d: 'Checks every restoration before it reaches you' },
+      { n: 'DS', t: 'Design Studio', d: 'Plans your smile digitally before any work begins' },
+      { n: 'CC', t: 'CAD-CAM & Milling', d: 'Mills and finishes your ceramics on site' }
     ];
     return (
       '<div class="page"><div class="u">' +
       '<div class="page-head reveal"><span class="eyebrow-accent">About Ceram Dental</span>' +
-        '<h1>A ceramics lab built around one case record.</h1>' +
-        '<p class="lede">We started as a chairside ceramics studio and grew into a full digital lab — CAD-CAM, an in-house design team, and a QC desk that checks every case the same way, twice.</p></div>' +
+        '<h1>Your dental clinic, with its own ceramics lab.</h1>' +
+        '<p class="lede">We started as a chairside ceramics studio and grew into a full dental clinic — our own doctors, an in-house CAD-CAM lab, and a QC desk that checks every restoration the same way, twice, before it reaches you.</p></div>' +
+
+      '<div class="section">' +
+        '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2 style="font-size:21px; margin-top:4px;">Meet the team</h2></div></div>' +
+        '<div class="dept-grid">' + DATA.team.map(function (d, i) {
+          return '<div class="dept-card reveal" style="--i:' + i + '"><div class="dept-avatar">' + d.initials + '</div><h3>' + d.name + '</h3><p>' + d.role + '</p></div>';
+        }).join('') + '</div>' +
+      '</div>' +
 
       '<div class="section vm-grid">' +
         '<div class="vm-card vision reveal"><span class="eyebrow">Vision</span>' +
-          '<p style="font-size:16px; line-height:1.6; margin-top:14px;">To be the lab clinics trust with their most demanding smile cases — where precision is checked, not assumed.</p></div>' +
+          '<p style="font-size:16px; line-height:1.6; margin-top:14px;">To be the clinic patients trust with their most demanding smile cases — where precision is checked, not assumed.</p></div>' +
         '<div class="vm-card mission reveal"><span class="eyebrow">Mission</span>' +
-          '<p style="font-size:16px; line-height:1.6; margin-top:14px; color:var(--ink);">Give every clinic a clear protocol, a live view of their case, and a lab team that treats a revision as a fix — not a fight.</p></div>' +
+          '<p style="font-size:16px; line-height:1.6; margin-top:14px; color:var(--ink);">Give every patient a clear treatment plan, a comfortable visit, and ceramics made in-house by a team that treats a revision as a fix — not a fight.</p></div>' +
       '</div>' +
 
       '<div class="section">' +
         '<span class="eyebrow">By the numbers</span>' +
         '<div class="value-row" style="margin-top:14px;">' +
-          statTile('6', 'Restoration types') + statTile('5', 'Protocol checks per case') +
-          statTile('8', 'Pipeline stages') + statTile('1', 'Shared case record') +
+          statTile(String(SERVICES.length), 'Treatments offered') + statTile(String(DATA.team.length), 'Doctors on our team') +
+          statTile('5', 'Quality checks per case') + statTile('1', 'In-house ceramics lab') +
         '</div>' +
       '</div>' +
 
       '<div class="section">' +
-        '<span class="eyebrow">Inside the lab</span><h2 style="font-size:21px; margin-top:4px;">Departments a case passes through</h2>' +
+        '<span class="eyebrow">Behind the scenes</span><h2 style="font-size:21px; margin-top:4px;">Where your restoration is made</h2>' +
         '<div class="dept-grid" style="margin-top:18px;">' + depts.map(function (d, i) {
           return '<div class="dept-card reveal" style="--i:' + i + '"><div class="dept-avatar">' + d.n + '</div><h3>' + d.t + '</h3><p>' + d.d + '</p></div>';
         }).join('') + '</div>' +
@@ -258,8 +288,8 @@
     return (
       '<div class="page"><div class="u">' +
       '<div class="page-head reveal"><span class="eyebrow-accent">Services</span>' +
-        '<h1>Six restorations, one protocol.</h1>' +
-        '<p class="lede">Every case — whatever it is — is checked against the same acceptance protocol before it reaches a technician.</p></div>' +
+        '<h1>Six treatments, one careful process.</h1>' +
+        '<p class="lede">Whatever brings you in, your doctor follows the same thorough process — a clear plan, an accurate scan, and a restoration checked before it ever reaches your mouth.</p></div>' +
 
       '<div class="section">' + SERVICES.map(function (s, i) {
         var extra = s.key === 'veneers'
@@ -272,15 +302,17 @@
         '</div>';
       }).join('') + '</div>' +
 
-      '<div class="section">' +
-        '<span class="eyebrow">New to working with us?</span><h2 style="font-size:21px; margin-top:4px;">Start-here guides</h2>' +
-        '<div class="grid-3" style="margin-top:16px;">' + GUIDES.map(function (g, i) {
+      '<div class="section" style="text-align:center;"><a class="btn btn-primary" href="#/contact">Book a consultation →</a></div>' +
+
+      '<div class="section" style="border-top:1px solid var(--line); padding-top:44px;">' +
+        '<span class="eyebrow">For dentists &amp; referring clinics</span><h2 style="font-size:21px; margin-top:4px;">Sending us a case?</h2>' +
+        '<p class="lede" style="margin-top:8px; margin-bottom:20px;">These guides cover exactly what our lab needs to accept a case on the first pass.</p>' +
+        '<div class="grid-3">' + GUIDES.map(function (g, i) {
           return '<div class="card reveal" style="--i:' + i + '"><h3>' + g.t + '</h3><p>' + g.d + '</p>' +
             '<button class="btn btn-ghost btn-sm" data-guide="' + esc(g.t) + '" style="margin-top:12px;">View guide</button></div>';
         }).join('') + '</div>' +
+        '<div style="margin-top:24px;"><a class="btn btn-ghost" href="#/new-case">Refer a case →</a></div>' +
       '</div>' +
-
-      '<div class="section" style="text-align:center;"><a class="btn btn-primary" href="#/new-case">Start a new case →</a></div>' +
       '</div></div>' + footer()
     );
   }
@@ -290,9 +322,15 @@
     return (
       '<div class="page"><div class="u">' +
       '<div class="page-head reveal"><span class="eyebrow-accent">Shop</span>' +
-        '<h1>Chairside kits &amp; patient retail.</h1>' +
-        '<p class="lede">Order the essentials alongside your cases — shipped with your next pickup.</p></div>' +
-      '<div class="product-grid">' + DATA.products.map(function (p, i) {
+        '<h1>Care that continues at home.</h1>' +
+        '<p class="lede">Patient retail for after your visit, and chairside essentials for the practices we work with.</p></div>' +
+      '<div class="dash-tabs">' +
+        '<button class="dash-tab' + (UI.shopTab === 'patients' ? ' active' : '') + '" data-shop-tab="patients">For Patients</button>' +
+        '<button class="dash-tab' + (UI.shopTab === 'practices' ? ' active' : '') + '" data-shop-tab="practices">For Practices</button>' +
+      '</div>' +
+      '<div class="product-grid">' + DATA.products.filter(function (p) {
+        return UI.shopTab === 'patients' ? p.category === 'Patient retail' : p.category === 'Chairside kit';
+      }).map(function (p, i) {
         return '<div class="product-card reveal" style="--i:' + i + '"><span class="cat">' + p.category + '</span><h3>' + p.name + '</h3><p>' + p.desc + '</p>' +
           '<div class="row"><span class="price">' + money(p.price) + '</span><button class="btn btn-primary btn-sm" data-add-product="' + p.id + '">Add to cart</button></div></div>';
       }).join('') + '</div>' +
@@ -302,24 +340,29 @@
 
   /* ================================= CONTACT ================================= */
   function renderContact() {
+    var s = DATA.settings || {};
     return (
       '<div class="page"><div class="u">' +
-      '<div class="page-head reveal"><span class="eyebrow-accent">Contact</span><h1>Talk to the lab.</h1>' +
-        '<p class="lede">Questions about a case, a pickup, or getting your clinic set up — reach us any of these ways.</p></div>' +
+      '<div class="page-head reveal"><span class="eyebrow-accent">Contact</span><h1>Book a consultation.</h1>' +
+        '<p class="lede">Tell us what you need and a preferred day — we\'ll call to confirm a time. For anything urgent, phone or WhatsApp us directly.</p></div>' +
       '<div class="section grid-2">' +
         '<div class="card reveal info-card">' +
-          infoRow('M2.5 6.5A2 2 0 0 1 4.5 4.5h1.7a1 1 0 0 1 .95.69l1 3a1 1 0 0 1-.27 1.04L6.6 10.5a11 11 0 0 0 5 5l1.27-1.28a1 1 0 0 1 1.04-.27l3 1a1 1 0 0 1 .69.95v1.7a2 2 0 0 1-2 2A15.5 15.5 0 0 1 2.5 6.5Z', 'Phone &amp; WhatsApp', '<a href="tel:+97317131123">+973 1713 1123</a>') +
-          infoRow('M3 6h18v12H3Zm0 0 9 7 9-7', 'Email', '<a href="mailto:hello@ceram-dental.com">hello@ceram-dental.com</a>') +
-          infoRow('M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Zm0-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'Address', 'Highway 35, New Zinj, Manama, Bahrain') +
+          infoRow('M2.5 6.5A2 2 0 0 1 4.5 4.5h1.7a1 1 0 0 1 .95.69l1 3a1 1 0 0 1-.27 1.04L6.6 10.5a11 11 0 0 0 5 5l1.27-1.28a1 1 0 0 1 1.04-.27l3 1a1 1 0 0 1 .69.95v1.7a2 2 0 0 1-2 2A15.5 15.5 0 0 1 2.5 6.5Z', 'Phone &amp; WhatsApp', '<a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a>') +
+          infoRow('M3 6h18v12H3Zm0 0 9 7 9-7', 'Email', '<a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a>') +
+          infoRow('M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Zm0-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'Address', esc(s.address)) +
+          infoRow('M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z', 'Hours', esc(s.hours)) +
           '<div><span class="eyebrow" style="margin-bottom:10px;">Follow along</span><div class="social-row">' + socialIcons() + '</div></div>' +
         '</div>' +
         '<div class="card reveal">' +
-          '<span class="eyebrow" style="margin-bottom:14px;">Send a message</span>' +
-          '<form id="contactForm" class="form-grid">' +
-            field('full', 'text', 'cf-name', 'Name', true) +
-            field('full', 'email', 'cf-email', 'Email', true) +
-            '<div class="field full"><label>Message</label><textarea id="cf-message" required placeholder="How can we help?"></textarea></div>' +
-            '<div class="field full"><button class="btn btn-primary btn-block" type="submit">Send message</button></div>' +
+          '<span class="eyebrow" style="margin-bottom:14px;">Book a consultation</span>' +
+          '<form id="bookingForm" class="form-grid">' +
+            field('full', 'text', 'bk-name', 'Name', true) +
+            field('', 'tel', 'bk-phone', 'Phone', true) +
+            '<div class="field"><label>Email (optional)</label><input type="email" id="bk-email"></div>' +
+            '<div class="field"><label>Interested in</label><select id="bk-service">' + SERVICES.map(function (sv) { return '<option value="' + sv.key + '">' + sv.label + '</option>'; }).join('') + '<option value="">Not sure yet</option></select></div>' +
+            '<div class="field"><label>Preferred date</label><input type="date" id="bk-date"></div>' +
+            '<div class="field full"><label>Anything we should know?</label><textarea id="bk-note" placeholder="Optional"></textarea></div>' +
+            '<div class="field full"><button class="btn btn-primary btn-block" type="submit">Request appointment</button></div>' +
           '</form>' +
         '</div>' +
       '</div>' +
@@ -511,18 +554,43 @@
   /* ================================== ADMIN ===================================== */
   function renderAdmin() {
     var tab = UI.adminTab;
-    var tabs = [['overview', 'Overview'], ['invoices', 'Invoices'], ['expenses', 'Expenses'], ['orders', 'Shop Orders'], ['applications', 'Careers'], ['messages', 'Messages']];
+    var badges = { appointments: DATA.summary.newAppointments, applications: DATA.applications.length, messages: DATA.messages.length };
     var body =
+      tab === 'appointments' ? adminAppointments() :
       tab === 'invoices' ? adminInvoices() :
       tab === 'expenses' ? adminExpenses() :
       tab === 'orders' ? adminOrders() :
+      tab === 'team' ? adminTeam() :
       tab === 'applications' ? adminApplications() :
-      tab === 'messages' ? adminMessages() : adminOverview();
+      tab === 'messages' ? adminMessages() :
+      tab === 'settings' ? adminSettings() : adminOverview();
     return '<div class="page"><div class="u">' +
       '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1 style="font-size:1.9rem;">Run the business, not just the pipeline.</h1></div>' +
-      '<div class="dash-tabs">' + tabs.map(function (t) { return '<button class="dash-tab' + (tab === t[0] ? ' active' : '') + '" data-admin-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
-      body +
+      '<div class="admin-shell">' +
+        '<nav class="admin-sidebar">' + ADMIN_TABS.map(function (t) {
+          var count = badges[t[0]];
+          return '<button class="admin-nav-item' + (tab === t[0] ? ' active' : '') + '" data-admin-tab="' + t[0] + '">' + t[1] +
+            (count ? '<span class="badge">' + count + '</span>' : '') + '</button>';
+        }).join('') + '</nav>' +
+        '<div class="admin-main">' + body + '</div>' +
+      '</div>' +
     '</div></div>';
+  }
+
+  function sparkline(trend) {
+    var w = 280, h = 64, pad = 6;
+    var max = Math.max.apply(null, trend.map(function (t) { return t.total; }).concat([1]));
+    var stepX = trend.length > 1 ? (w - pad * 2) / (trend.length - 1) : 0;
+    var pts = trend.map(function (t, i) { return [pad + i * stepX, h - pad - (t.total / max) * (h - pad * 2)]; });
+    var lineD = pts.map(function (p, i) { return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    var areaD = lineD + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + (h - pad) + ' L' + pts[0][0].toFixed(1) + ' ' + (h - pad) + ' Z';
+    var last = pts[pts.length - 1];
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%; height:64px; display:block;">' +
+        '<path d="' + areaD + '" fill="var(--violet-soft)" stroke="none"></path>' +
+        '<path d="' + lineD + '" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>' +
+        '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3.5" fill="var(--violet)"></circle>' +
+      '</svg>' +
+      '<div style="display:flex; justify-content:space-between; margin-top:6px;">' + trend.map(function (t) { return '<span class="mono" style="font-size:10px; color:var(--ink-soft);">' + t.label + '</span>'; }).join('') + '</div>';
   }
 
   function adminOverview() {
@@ -532,15 +600,31 @@
       ['Expenses (this week)', money(s.totalExpenses), ''], ['Net', money(s.net), s.net >= 0 ? 'pos' : 'neg'],
       ['Active cases', s.activeCases, '']
     ];
-    var maxBar = Math.max(s.revenue, s.totalExpenses, 1);
     return '<div class="stat-grid reveal">' + tiles.map(function (t) { return '<div class="stat-tile ' + t[2] + '"><div class="lbl">' + t[0] + '</div><div class="val">' + t[1] + '</div></div>'; }).join('') + '</div>' +
-      '<div class="card reveal" style="margin-bottom:24px;"><span class="eyebrow">Revenue vs expenses</span>' +
-        '<div class="bars"><div class="bar-col"><div class="bar" style="height:' + Math.round(s.revenue / maxBar * 120) + 'px"></div><span class="lbl">Revenue</span></div>' +
-        '<div class="bar-col"><div class="bar exp" style="height:' + Math.round(s.totalExpenses / maxBar * 120) + 'px"></div><span class="lbl">Expenses</span></div></div></div>' +
+      '<div class="card reveal trend-card" style="margin-bottom:24px;">' +
+        '<div class="trend-chart"><span class="eyebrow">Revenue, last 7 days</span><div style="margin-top:10px;">' + sparkline(s.trend) + '</div></div>' +
+      '</div>' +
       '<div class="grid-2">' +
+        '<div class="card reveal"><span class="eyebrow">Appointments</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.newAppointments + ' new request' + (s.newAppointments === 1 ? '' : 's') + '</div><p style="margin-top:6px;">' + s.totalAppointments + ' total booking requests on file.</p></div>' +
         '<div class="card reveal"><span class="eyebrow">Shop</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + money(s.shopRevenue) + ' in orders</div><p style="margin-top:6px;">' + DATA.orders.length + ' orders placed via the shop.</p></div>' +
-        '<div class="card reveal"><span class="eyebrow">Pipeline in / pending</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.readyCases + ' ready for pickup</div><p style="margin-top:6px;">' + s.openApplications + ' open applications · ' + s.newMessages + ' contact messages.</p></div>' +
+        '<div class="card reveal"><span class="eyebrow">Pipeline</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.readyCases + ' ready for pickup</div><p style="margin-top:6px;">' + s.activeCases + ' cases still in production.</p></div>' +
+        '<div class="card reveal"><span class="eyebrow">Inbox</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.openApplications + ' applications</div><p style="margin-top:6px;">' + s.newMessages + ' contact messages waiting.</p></div>' +
       '</div>';
+  }
+
+  function adminAppointments() {
+    if (!DATA.appointments.length) return '<div class="empty-note">No appointment requests yet.</div>';
+    var rows = DATA.appointments.map(function (a) {
+      var actions = a.status === 'new'
+        ? '<button class="btn btn-primary btn-sm" data-appt-status="confirmed" data-appt-id="' + a.id + '">Confirm</button> <button class="btn btn-ghost btn-sm" data-appt-status="contacted" data-appt-id="' + a.id + '">Mark contacted</button>'
+        : '<span style="color:var(--ink-soft); font-size:12.5px;">Updated</span>';
+      return '<tr><td class="cid-cell">' + a.id + '</td><td>' + esc(a.name) + '<br><span style="color:var(--ink-soft); font-size:12px;">' + esc(a.phone) + '</span></td>' +
+        '<td>' + (a.service ? svcLabel(a.service) : '—') + '</td>' +
+        '<td>' + (a.preferredDate ? fmtDate(a.preferredDate) : '—') + '</td>' +
+        '<td><span class="pill st-' + a.status + '"><span class="dot"></span>' + a.status + '</span></td>' +
+        '<td>' + actions + '</td></tr>';
+    }).join('');
+    return '<div class="table-wrap reveal"><table class="cases-table"><thead><tr><th>Request</th><th>Contact</th><th>Interested in</th><th>Preferred date</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function adminInvoices() {
@@ -575,6 +659,19 @@
     return '<div class="card reveal"><div class="list-plain">' + rows + '</div></div>';
   }
 
+  function adminTeam() {
+    var rows = DATA.team.map(function (m) {
+      return '<div class="team-mini"><div class="av">' + m.initials + '</div><div><div class="t" style="font-weight:600;">' + esc(m.name) + '</div><div class="s" style="color:var(--ink-soft); font-size:12.5px;">' + esc(m.role) + '</div></div></div>';
+    }).join('');
+    return '<div class="card reveal" style="margin-bottom:20px;"><span class="eyebrow" style="margin-bottom:12px;">Add a team member</span>' +
+      '<form id="teamForm" class="team-form">' +
+        '<input id="tm-name" placeholder="Full name" required>' +
+        '<input id="tm-role" placeholder="Role / specialty" required>' +
+        '<button class="btn btn-primary" type="submit">Add</button>' +
+      '</form></div>' +
+      '<div class="card reveal"><span class="eyebrow" style="margin-bottom:6px;">Doctors &amp; staff</span>' + rows + '</div>';
+  }
+
   function adminApplications() {
     if (!DATA.applications.length) return '<div class="empty-note">No applications yet.</div>';
     var rows = DATA.applications.map(function (a) {
@@ -589,6 +686,19 @@
       return '<div class="list-row"><div><div class="t">' + esc(m.name) + '</div><div class="s">' + esc(m.email) + ' — ' + esc(m.message) + '</div></div><div class="s">' + fmtDate(m.createdAt) + '</div></div>';
     }).join('');
     return '<div class="card reveal"><div class="list-plain">' + rows + '</div></div>';
+  }
+
+  function adminSettings() {
+    var s = DATA.settings || {};
+    return '<div class="card reveal"><span class="eyebrow" style="margin-bottom:16px;">Business information</span>' +
+      '<form id="settingsForm" class="form-grid">' +
+        '<div class="field full"><label>Clinic name</label><input id="st-name" value="' + esc(s.clinicName) + '"></div>' +
+        '<div class="field"><label>Phone &amp; WhatsApp</label><input id="st-phone" value="' + esc(s.phone) + '"></div>' +
+        '<div class="field"><label>Email</label><input id="st-email" value="' + esc(s.email) + '"></div>' +
+        '<div class="field full"><label>Address</label><input id="st-address" value="' + esc(s.address) + '"></div>' +
+        '<div class="field full"><label>Hours</label><input id="st-hours" value="' + esc(s.hours) + '"></div>' +
+        '<div class="field full"><button class="btn btn-primary" type="submit">Save changes</button></div>' +
+      '</form></div>';
   }
 
   /* =============================== case detail drawer =========================== */
@@ -737,6 +847,7 @@
 
     if (route === 'shop') {
       document.querySelectorAll('[data-add-product]').forEach(function (b) { b.addEventListener('click', function () { addToCart(b.dataset.addProduct); }); });
+      document.querySelectorAll('[data-shop-tab]').forEach(function (b) { b.addEventListener('click', function () { UI.shopTab = b.dataset.shopTab; renderCurrent(); }); });
     }
 
     if (route === 'services') {
@@ -744,13 +855,20 @@
     }
 
     if (route === 'contact') {
-      var cf = document.getElementById('contactForm');
-      if (cf) cf.addEventListener('submit', async function (e) {
+      var bf = document.getElementById('bookingForm');
+      if (bf) bf.addEventListener('submit', async function (e) {
         e.preventDefault();
         try {
-          await api('/api/contact', { method: 'POST', body: JSON.stringify({ name: document.getElementById('cf-name').value, email: document.getElementById('cf-email').value, message: document.getElementById('cf-message').value }) });
-          toast('Message sent — we\'ll be in touch.');
-          cf.reset();
+          await api('/api/appointments', { method: 'POST', body: JSON.stringify({
+            name: document.getElementById('bk-name').value,
+            phone: document.getElementById('bk-phone').value,
+            email: document.getElementById('bk-email').value,
+            service: document.getElementById('bk-service').value,
+            preferredDate: document.getElementById('bk-date').value,
+            note: document.getElementById('bk-note').value
+          }) });
+          toast('Request sent — we\'ll call to confirm.');
+          bf.reset();
         } catch (err) { toast(err.message); }
       });
     }
@@ -766,12 +884,35 @@
     if (route === 'admin') {
       document.querySelectorAll('[data-admin-tab]').forEach(function (b) { b.addEventListener('click', function () { UI.adminTab = b.dataset.adminTab; renderCurrent(); }); });
       document.querySelectorAll('[data-pay-invoice]').forEach(function (b) { b.addEventListener('click', async function () { try { await api('/api/invoices/' + b.dataset.payInvoice + '/pay', { method: 'POST' }); await loadState(); renderCurrent(); toast('Invoice marked paid'); } catch (e) { toast(e.message); } }); });
+      document.querySelectorAll('[data-appt-status]').forEach(function (b) { b.addEventListener('click', async function () { try { await api('/api/appointments/' + b.dataset.apptId + '/status', { method: 'POST', body: JSON.stringify({ status: b.dataset.apptStatus }) }); await loadState(); renderCurrent(); toast('Appointment updated'); } catch (e) { toast(e.message); } }); });
       var ef = document.getElementById('expenseForm');
       if (ef) ef.addEventListener('submit', async function (e) {
         e.preventDefault();
         try {
           await api('/api/expenses', { method: 'POST', body: JSON.stringify({ category: document.getElementById('ex-category').value, description: document.getElementById('ex-desc').value, amount: document.getElementById('ex-amount').value }) });
           await loadState(); renderCurrent(); toast('Expense logged');
+        } catch (err) { toast(err.message); }
+      });
+      var tf = document.getElementById('teamForm');
+      if (tf) tf.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        try {
+          await api('/api/team', { method: 'POST', body: JSON.stringify({ name: document.getElementById('tm-name').value, role: document.getElementById('tm-role').value }) });
+          await loadState(); renderCurrent(); toast('Team member added');
+        } catch (err) { toast(err.message); }
+      });
+      var sf = document.getElementById('settingsForm');
+      if (sf) sf.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        try {
+          await api('/api/settings', { method: 'POST', body: JSON.stringify({
+            clinicName: document.getElementById('st-name').value,
+            phone: document.getElementById('st-phone').value,
+            email: document.getElementById('st-email').value,
+            address: document.getElementById('st-address').value,
+            hours: document.getElementById('st-hours').value
+          }) });
+          await loadState(); renderCurrent(); toast('Settings saved');
         } catch (err) { toast(err.message); }
       });
     }

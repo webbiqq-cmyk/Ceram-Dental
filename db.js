@@ -13,7 +13,7 @@ const SERVICE_FEES = {
   dsd: 60
 };
 
-let seq = { case: 105, invoice: 105, order: 41, application: 12, message: 30, expense: 9 };
+let seq = { case: 105, invoice: 105, order: 41, application: 12, message: 30, expense: 9, appointment: 21, team: 5 };
 function nextId(kind, prefix) { return prefix + (seq[kind]++); }
 
 function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return d; }
@@ -61,7 +61,7 @@ const invoices = cases.map((c, i) => {
     amount,
     status: paid ? 'paid' : (i === 1 ? 'overdue' : 'unpaid'),
     issuedAt: c.createdAt,
-    paidAt: paid ? daysAgo(0.5) : null
+    paidAt: paid ? daysAgo(i % 6) : null
   };
 });
 
@@ -78,8 +78,10 @@ const products = [
   { id: 'retraction-kit', name: 'Retraction Cord Kit', category: 'Chairside kit', price: 19, desc: 'Assorted-gauge cord for the margin photos our protocol asks for.' },
   { id: 'impression-trays', name: 'Digital Impression Tray Set', category: 'Chairside kit', price: 34, desc: 'Sized trays to steady a scan on difficult arches.' },
   { id: 'temp-kit', name: 'Temporary Crown & Bridge Kit', category: 'Chairside kit', price: 42, desc: 'Interim coverage while a case is in production.' },
-  { id: 'whitening-kit', name: 'Take-Home Whitening Kit', category: 'Patient retail', price: 25, desc: 'Branded kit to send home with patients after seating.' },
-  { id: 'retainer-case', name: 'Ceram Care Retainer Case', category: 'Patient retail', price: 6, desc: 'Branded case for retainers and night guards.' }
+  { id: 'whitening-kit', name: 'Take-Home Whitening Kit', category: 'Patient retail', price: 25, desc: 'Dentist-recommended kit to finish whitening comfortably at home.' },
+  { id: 'retainer-case', name: 'Ceram Care Retainer Case', category: 'Patient retail', price: 6, desc: 'A proper home for retainers and night guards between visits.' },
+  { id: 'sonic-toothbrush', name: 'Ceram Care Sonic Toothbrush', category: 'Patient retail', price: 32, desc: 'Gentle on veneers and crowns — the brush we recommend after treatment.' },
+  { id: 'bite-paste', name: 'Bite Registration Paste', category: 'Chairside kit', price: 22, desc: 'Fast-set paste for an accurate bite record with every impression.' }
 ];
 
 const jobs = [
@@ -93,6 +95,27 @@ const jobs = [
 const applications = [];
 const messages = [];
 const orders = [];
+
+const team = [
+  { id: 'doc-1', name: 'Dr. Sara Al-Khalifa', role: 'Cosmetic & Restorative Dentistry', initials: 'SK' },
+  { id: 'doc-2', name: 'Dr. Mohammed Al-Ansari', role: 'Prosthodontics & Implants', initials: 'MA' },
+  { id: 'doc-3', name: 'Dr. Rania Haddad', role: 'Orthodontics', initials: 'RH' },
+  { id: 'doc-4', name: 'Dr. Omar Khalil', role: 'Oral & Maxillofacial Surgery', initials: 'OK' }
+];
+
+const appointments = [
+  { id: nextId('appointment', 'APT-'), name: 'Fatima Al-Sayed', phone: '+973 3900 1122', service: 'veneers', preferredDate: daysAgo(-3), status: 'new', note: 'Interested in a full smile makeover.', createdAt: daysAgo(1) },
+  { id: nextId('appointment', 'APT-'), name: 'Yousif Marzooq', phone: '+973 3611 4477', service: 'implants', preferredDate: daysAgo(-5), status: 'confirmed', note: '', createdAt: daysAgo(2) },
+  { id: nextId('appointment', 'APT-'), name: 'Noor Abdulla', phone: '+973 3344 9021', service: 'dsd', preferredDate: daysAgo(-1), status: 'new', note: 'Saw the Instagram page, wants a preview first.', createdAt: daysAgo(0.4) }
+];
+
+let settings = {
+  clinicName: 'Ceram Dental',
+  phone: '+973 1713 1123',
+  email: 'hello@ceram-dental.com',
+  address: 'Highway 35, New Zinj, Manama, Bahrain',
+  hours: 'Sat–Thu, 9:00 AM – 7:00 PM'
+};
 
 function createCase({ clinic, patient, service, shade, instructions, protocol }) {
   const id = nextId('case', 'CD-');
@@ -176,6 +199,50 @@ function addMessage({ name, email, message }) {
   return msg;
 }
 
+function addAppointment({ name, phone, service, preferredDate, note }) {
+  const apt = {
+    id: nextId('appointment', 'APT-'), name, phone: phone || '', service: service || '',
+    preferredDate: preferredDate ? new Date(preferredDate) : null, note: note || '',
+    status: 'new', createdAt: new Date()
+  };
+  appointments.unshift(apt);
+  return apt;
+}
+
+function setAppointmentStatus(id, status) {
+  const apt = appointments.find(a => a.id === id);
+  if (!apt) return null;
+  apt.status = status;
+  return apt;
+}
+
+function addTeamMember({ name, role }) {
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '—';
+  const member = { id: nextId('team', 'STF-'), name, role: role || '', initials };
+  team.push(member);
+  return member;
+}
+
+function updateSettings(patch) {
+  settings = Object.assign({}, settings, patch);
+  return settings;
+}
+
+function revenueTrend(days) {
+  days = days || 7;
+  const buckets = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = daysAgo(i);
+    buckets.push({ key: d.toDateString(), label: d.toLocaleDateString(undefined, { weekday: 'short' }), total: 0 });
+  }
+  invoices.filter(inv => inv.status === 'paid' && inv.paidAt).forEach(inv => {
+    const key = new Date(inv.paidAt).toDateString();
+    const b = buckets.find(x => x.key === key);
+    if (b) b.total += inv.amount;
+  });
+  return buckets.map(b => ({ label: b.label, total: b.total }));
+}
+
 function summary() {
   const revenue = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
   const outstanding = invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + i.amount, 0);
@@ -184,16 +251,21 @@ function summary() {
   const activeCases = cases.filter(c => c.stage !== 'ready').length;
   const readyCases = cases.filter(c => c.stage === 'ready').length;
   const shopRevenue = orders.reduce((s, o) => s + o.total, 0);
+  const newAppointments = appointments.filter(a => a.status === 'new').length;
   return {
     revenue, outstanding, overdue, totalExpenses,
     net: Math.round((revenue + shopRevenue - totalExpenses) * 100) / 100,
     activeCases, readyCases, shopRevenue,
-    openApplications: applications.length, newMessages: messages.length
+    openApplications: applications.length, newMessages: messages.length,
+    newAppointments, totalAppointments: appointments.length,
+    trend: revenueTrend(7)
   };
 }
 
 module.exports = {
   STAGES, SERVICE_FEES,
-  cases, invoices, expenses, products, jobs, applications, messages, orders,
-  createCase, actOnCase, payInvoice, addExpense, checkout, addApplication, addMessage, summary
+  cases, invoices, expenses, products, jobs, applications, messages, orders, team, appointments,
+  get settings() { return settings; },
+  createCase, actOnCase, payInvoice, addExpense, checkout, addApplication, addMessage, summary,
+  addAppointment, setAppointmentStatus, addTeamMember, updateSettings
 };

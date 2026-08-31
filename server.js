@@ -33,6 +33,9 @@ app.get('/api/state', (req, res) => {
     applications: db.applications,
     messages: db.messages,
     orders: db.orders,
+    team: db.team,
+    appointments: db.appointments,
+    settings: db.settings,
     summary: db.summary()
   });
 });
@@ -90,6 +93,35 @@ app.post('/api/contact', (req, res) => {
   if (!name || !email || !message) return bad(res, 'Name, email and message are required.');
   const msg = db.addMessage({ name, email, message });
   ok(res, { message: msg });
+});
+
+/* ----------------------------- Appointments ------------------------------ */
+app.post('/api/appointments', (req, res) => {
+  const { name, phone, service, preferredDate, note } = req.body || {};
+  if (!name || !phone) return bad(res, 'Name and phone are required.');
+  const apt = db.addAppointment({ name, phone, service, preferredDate, note });
+  ok(res, { appointment: apt });
+});
+
+app.post('/api/appointments/:id/status', (req, res) => {
+  const { status } = req.body || {};
+  const apt = db.setAppointmentStatus(req.params.id, status);
+  if (!apt) return bad(res, 'Unknown appointment.');
+  ok(res, { appointment: apt });
+});
+
+/* --------------------------------- Team ----------------------------------- */
+app.post('/api/team', (req, res) => {
+  const { name, role } = req.body || {};
+  if (!name) return bad(res, 'Name is required.');
+  const member = db.addTeamMember({ name, role });
+  ok(res, { member });
+});
+
+/* ------------------------------- Settings --------------------------------- */
+app.post('/api/settings', (req, res) => {
+  const settings = db.updateSettings(req.body || {});
+  ok(res, { settings });
 });
 
 // Vercel imports this file as a serverless function (module.exports = app)
