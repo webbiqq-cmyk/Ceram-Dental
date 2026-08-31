@@ -43,6 +43,16 @@
   var GLAZE_TYPES = ['High glaze', 'Matte glaze', 'Characterized/stained'];
   var SURFACE_TEXTURES = ['Natural texture', 'Smooth polish', 'Youthful (high texture)'];
   var SHADES = ['A1', 'A2', 'A3', 'A3.5', 'B1', 'B2', 'C2', 'D3'];
+  var RESTORATION_TYPES = ['Layered E.max', 'Monolithic E.max', 'Pressed E.max', 'Layered zirconia', 'Monolithic zirconia', 'PFM', 'Full-cast gold'];
+  var FABRICATION = ['Milled', 'Pressed'];
+  var INCISAL_DESIGNS = ['Natural cutback', 'Full contour', 'Micro-layered incisal', 'Mamelon detail', 'Incisal halo'];
+  var RESTORATION_SERVICES = { veneers: 1, crowns: 1, bridges: 1, implants: 1 };
+  function isRestoration(key) { return !!RESTORATION_SERVICES[key]; }
+  function shadeCombo(sh) {
+    if (!sh) return '—';
+    var parts = [sh.cervical, sh.body, sh.incisal].filter(function (x) { return x && x !== '—'; });
+    return parts.length ? parts.join(' / ') : (sh.body || '—');
+  }
   var TOOTH_PATH = 'M12 21c-1.6-3-2-6.4-2-9.2C10 8.5 8.7 6 6.5 6 4 6 3 8.3 3 10.5c0 5 2.6 9 4.6 10.3.7.5 1.6-.1 1.8-1l.6-3c.2-1 1.8-1 2 0l.6 3c.2.9 1.1 1.5 1.8 1 2-1.3 4.6-5.3 4.6-10.3C21 8.3 20 6 17.5 6 15.3 6 14 8.5 14 11.8c0 2.8-.4 6.2-2 9.2Z';
   var ADMIN_TABS = [
     ['overview', 'Overview'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
@@ -471,7 +481,14 @@
 
   /* ================================ NEW CASE (wizard) ========================= */
   function freshWizard(preService) {
-    return { step: 0, service: preService || null, clinic: 'Dr. R. Haddad — Bright Smile Clinic', patient: '', shade: 'A2', layering: LAYERING_STYLES[0], glaze: GLAZE_TYPES[0], surface: SURFACE_TEXTURES[0], instructions: '', protocol: { photos: false, scan: false, retraction: false, margins: false, contacts: false } };
+    return {
+      step: 0, service: preService || null,
+      clinic: 'Dr. R. Haddad — Bright Smile Clinic', patient: '',
+      material: RESTORATION_TYPES[0], fabrication: FABRICATION[0], incisal: INCISAL_DESIGNS[0],
+      layering: LAYERING_STYLES[0], glaze: GLAZE_TYPES[0], surface: SURFACE_TEXTURES[0],
+      shadeCervical: '—', shadeBody: 'A2', shadeIncisal: '—',
+      instructions: '', protocol: { photos: false, scan: false, retraction: false, margins: false, contacts: false }
+    };
   }
 
   function renderNewCase() {
@@ -490,16 +507,24 @@
       }).join('') + '</div>';
       foot = '<span></span><button class="btn btn-primary" id="wiz-next" ' + (w.service ? '' : 'disabled') + '>Continue →</button>';
     } else if (w.step === 1) {
-      var extraFields = w.service === 'veneers' ? (
+      var shadeOpt = ['—'].concat(SHADES);
+      var designFields = isRestoration(w.service) ? (
+        '<div class="wiz-group-label">Restoration design</div>' +
+        selectField('w-material', 'Restoration type', RESTORATION_TYPES, w.material) +
+        selectField('w-fabrication', 'Fabrication', FABRICATION, w.fabrication) +
+        selectField('w-incisal', 'Incisal design', INCISAL_DESIGNS, w.incisal) +
         selectField('w-layering', 'Layering style', LAYERING_STYLES, w.layering) +
         selectField('w-glaze', 'Glaze type', GLAZE_TYPES, w.glaze) +
-        selectField('w-surface', 'Surface structure', SURFACE_TEXTURES, w.surface)
+        selectField('w-surface', 'Surface structure', SURFACE_TEXTURES, w.surface) +
+        '<div class="wiz-group-label">Shade combination</div>' +
+        selectField('w-shade-cervical', 'Cervical ⅓', shadeOpt, w.shadeCervical) +
+        selectField('w-shade-body', 'Body ⅓', SHADES, w.shadeBody) +
+        selectField('w-shade-incisal', 'Incisal ⅓', shadeOpt, w.shadeIncisal)
       ) : '';
       body = '<div class="field-grid">' +
         '<div class="field full"><label>Clinic / Doctor</label><input id="f-clinic" value="' + esc(w.clinic) + '"></div>' +
-        '<div class="field"><label>Patient reference</label><input id="f-patient" placeholder="e.g. Patient #4521" value="' + esc(w.patient) + '"></div>' +
-        selectField('f-shade', 'Shade', SHADES, w.shade) +
-        extraFields +
+        '<div class="field full"><label>Patient reference</label><input id="f-patient" placeholder="e.g. Patient #4521" value="' + esc(w.patient) + '"></div>' +
+        designFields +
         '<div class="field full"><label>Design notes / special instructions</label><textarea id="f-instr" placeholder="Anything else the design team should know…">' + esc(w.instructions) + '</textarea></div>' +
       '</div>';
       foot = '<button class="btn btn-ghost" id="wiz-back">← Back</button><button class="btn btn-primary" id="wiz-next">Continue →</button>';
@@ -512,9 +537,15 @@
       foot = '<button class="btn btn-ghost" id="wiz-back">← Back</button><button class="btn btn-primary" id="wiz-next">Review →</button>';
     } else if (w.step === 3) {
       var protoDone = PROTOCOL.filter(function (p) { return w.protocol[p.key]; }).length;
+      var designRows = isRestoration(w.service) ? (
+        row('Restoration type', w.material + ' · ' + w.fabrication) +
+        row('Incisal design', w.incisal) +
+        row('Layering / Glaze / Surface', w.layering + ' · ' + w.glaze + ' · ' + w.surface) +
+        row('Shade combination', shadeCombo({ cervical: w.shadeCervical, body: w.shadeBody, incisal: w.shadeIncisal }))
+      ) : '';
       body = '<div class="review-block">' +
         row('Service', svcLabel(w.service)) + row('Clinic', w.clinic) + row('Patient', w.patient || '—') +
-        row('Shade', w.shade) + (w.service === 'veneers' ? row('Layering / Glaze / Surface', w.layering + ' · ' + w.glaze + ' · ' + w.surface) : '') +
+        designRows +
         row('Protocol items', protoDone + ' of ' + PROTOCOL.length + ' attached') +
         row('Estimated case fee', money(SVC[w.service] ? SVC[w.service].fee : 0)) +
         row('Notes', w.instructions || '—') +
@@ -539,8 +570,13 @@
 
   async function submitWizard() {
     var w = UI.wizard;
+    var design = isRestoration(w.service) ? {
+      material: w.material, fabrication: w.fabrication, incisal: w.incisal,
+      layering: w.layering, glaze: w.glaze, surface: w.surface,
+      shade: { cervical: w.shadeCervical, body: w.shadeBody, incisal: w.shadeIncisal }
+    } : null;
     try {
-      var res = await api('/api/cases', { method: 'POST', body: JSON.stringify({ clinic: w.clinic, patient: w.patient, service: w.service, shade: w.shade, instructions: w.instructions, protocol: w.protocol }) });
+      var res = await api('/api/cases', { method: 'POST', body: JSON.stringify({ clinic: w.clinic, patient: w.patient, service: w.service, shade: shadeCombo(design && design.shade) || w.shadeBody, instructions: w.instructions, protocol: w.protocol, design: design }) });
       w.newId = res.case.id;
       w.step = 4;
       await loadState();
@@ -609,8 +645,9 @@
     var waiting = c.stage === 'doctor_approval';
     return '<button class="kcard" data-open="' + c.id + '" data-from="lab"><div class="top"><span class="cid">' + c.id + '</span><span class="svc">' + svcLabel(c.service) + '</span></div>' +
       '<div class="clinic">' + esc(c.clinic) + '</div><div class="patient">' + esc(c.patient) + '</div>' +
+      (c.design ? '<div class="kdesign">' + esc(c.design.material) + (c.design.fabrication ? ' · ' + esc(c.design.fabrication) : '') + '</div>' : '') +
       (waiting ? '<div class="waiting">Awaiting doctor</div>' : '') + (c.revisions > 0 ? '<div class="rev">Rev ' + (c.revisions + 1) + '</div>' : '') +
-      '<div class="meta"><span class="tech">● ' + c.tech + '</span><span class="shade">' + c.shade + '</span></div></button>';
+      '<div class="meta"><span class="tech">● ' + c.tech + '</span><span class="shade">' + esc(c.shade) + '</span></div></button>';
   }
 
   /* ================================== ADMIN ===================================== */
@@ -837,11 +874,24 @@
     }).join('');
     var inv = DATA.invoices.find(function (i) { return i.caseId === c.id; });
 
+    var d = c.design;
+    var designHtml = d ? (
+      '<div class="drawer-sec"><h4>Restoration design</h4>' +
+        kv('Restoration type', d.material + (d.fabrication ? ' · ' + d.fabrication : '')) +
+        kv('Incisal design', d.incisal || '—') +
+        kv('Layering style', d.layering || '—') +
+        kv('Glaze', d.glaze || '—') +
+        kv('Surface structure', d.surface || '—') +
+        kv('Shade combination', shadeCombo(d.shade)) +
+      '</div>'
+    ) : '';
+
     document.getElementById('dw-body').innerHTML =
       '<div class="drawer-sec"><h4>Case</h4>' +
         kv('Service', svcLabel(c.service)) + kv('Patient', c.patient) + kv('Shade', c.shade) + kv('Assigned tech', c.tech) + kv('Current stage', labelFor(c.stage)) +
         (inv ? kv('Invoice', inv.id + ' · ' + money(inv.amount) + ' · ' + inv.status) : '') +
       '</div>' +
+      designHtml +
       '<div class="drawer-sec"><h4>Protocol of acceptance</h4><div class="proto-mini">' + protoHtml + '</div></div>' +
       '<div class="drawer-sec"><h4>Timeline</h4><div class="timeline">' + histHtml + '</div></div>';
     document.getElementById('dw-actions').innerHTML = actionsFor(c, from);
@@ -952,11 +1002,14 @@
       if (nextBtn) nextBtn.addEventListener('click', function () {
         var w = UI.wizard;
         if (w.step === 1) {
-          w.clinic = document.getElementById('f-clinic').value;
-          w.patient = document.getElementById('f-patient').value;
-          w.shade = document.getElementById('f-shade').value;
-          if (document.getElementById('w-layering')) { w.layering = document.getElementById('w-layering').value; w.glaze = document.getElementById('w-glaze').value; w.surface = document.getElementById('w-surface').value; }
-          w.instructions = document.getElementById('f-instr').value;
+          w.clinic = val('f-clinic');
+          w.patient = val('f-patient');
+          w.instructions = val('f-instr');
+          if (isRestoration(w.service)) {
+            w.material = val('w-material'); w.fabrication = val('w-fabrication'); w.incisal = val('w-incisal');
+            w.layering = val('w-layering'); w.glaze = val('w-glaze'); w.surface = val('w-surface');
+            w.shadeCervical = val('w-shade-cervical'); w.shadeBody = val('w-shade-body'); w.shadeIncisal = val('w-shade-incisal');
+          }
         }
         w.step++; renderCurrent();
       });

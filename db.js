@@ -18,12 +18,29 @@ function nextId(kind, prefix) { return prefix + (seq[kind]++); }
 
 function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return d; }
 
+const RESTORATION_SERVICES = ['veneers', 'crowns', 'bridges', 'implants'];
+
+function seedDesign(service, shade) {
+  if (!RESTORATION_SERVICES.includes(service)) return null;
+  const zirconia = service === 'crowns' || service === 'bridges';
+  return {
+    material: zirconia ? 'Layered zirconia' : 'Layered E.max',
+    fabrication: zirconia ? 'Milled' : 'Pressed',
+    incisal: service === 'veneers' ? 'Micro-layered incisal' : 'Natural cutback',
+    layering: service === 'veneers' ? 'Micro-layered incisal' : 'Natural cutback',
+    glaze: 'High glaze',
+    surface: 'Natural texture',
+    shade: { cervical: '', body: shade && shade !== '—' ? shade : 'A2', incisal: '' }
+  };
+}
+
 function mkCase(id, clinic, patient, service, stage, tech, shade, ageDays) {
   const idx = STAGES.indexOf(stage);
   const history = [];
   for (let i = 0; i <= idx; i++) history.push({ stage: STAGES[i], at: daysAgo(Math.max(ageDays - i * 1.3, 0)) });
   return {
     id, clinic, patient, service, stage, tech, shade,
+    design: seedDesign(service, shade),
     createdAt: daysAgo(ageDays),
     protocol: { photos: true, scan: true, retraction: true, margins: true, contacts: true },
     history, revisions: 0, pickedUp: stage === 'ready' ? false : false
@@ -133,11 +150,23 @@ let settings = {
   hours: 'Sat–Thu, 9:00 AM – 7:00 PM'
 };
 
-function createCase({ clinic, patient, service, shade, instructions, protocol }) {
+function s(v, max) { return String(v == null ? '' : v).slice(0, max || 60); }
+function normDesign(d) {
+  if (!d || typeof d !== 'object') return null;
+  const sh = d.shade || {};
+  return {
+    material: s(d.material, 60), fabrication: s(d.fabrication, 40), incisal: s(d.incisal, 60),
+    layering: s(d.layering, 60), glaze: s(d.glaze, 60), surface: s(d.surface, 60),
+    shade: { cervical: s(sh.cervical, 12), body: s(sh.body, 12), incisal: s(sh.incisal, 12) }
+  };
+}
+
+function createCase({ clinic, patient, service, shade, instructions, protocol, design }) {
   const id = nextId('case', 'CD-');
   const c = {
     id, clinic: clinic || 'Walk-in submission', patient: patient || 'Unassigned',
     service, tech: '—', shade: shade || '—', stage: 'reception',
+    design: normDesign(design),
     createdAt: new Date(), protocol: Object.assign({ photos: false, scan: false, retraction: false, margins: false, contacts: false }, protocol),
     instructions: instructions || '', revisions: 0, pickedUp: false,
     history: [{ stage: 'reception', at: new Date(), note: 'Submitted via website' }]

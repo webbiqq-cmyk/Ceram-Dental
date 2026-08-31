@@ -42,9 +42,9 @@ app.get('/api/state', (req, res) => {
 
 /* ------------------------------- Cases --------------------------------- */
 app.post('/api/cases', (req, res) => {
-  const { clinic, patient, service, shade, instructions, protocol } = req.body || {};
+  const { clinic, patient, service, shade, instructions, protocol, design } = req.body || {};
   if (!service) return bad(res, 'Service is required.');
-  const created = db.createCase({ clinic, patient, service, shade, instructions, protocol });
+  const created = db.createCase({ clinic, patient, service, shade, instructions, protocol, design });
   ok(res, { case: created });
 });
 

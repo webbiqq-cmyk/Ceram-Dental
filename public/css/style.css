@@ -304,6 +304,10 @@ img{max-width:100%; display:block;}
 .wiz-step.active{color:var(--violet); border-color:var(--violet); font-weight:500;}
 .wiz-step.done{color:var(--ready);}
 .wiz-body{padding:32px 30px;}
+.field-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.field-grid .full{grid-column:1/-1;}
+.wiz-group-label{grid-column:1/-1; margin-top:8px; padding-top:16px; border-top:1px solid var(--line); font-family:var(--font-mono); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--violet);}
+.field-grid .wiz-group-label:first-child{margin-top:0; padding-top:0; border-top:none;}
 .wiz-foot{display:flex; justify-content:space-between; padding:20px 30px; border-top:1px solid var(--line); background:var(--surface-sunken);}
 .svc-pick-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
 .svc-pick{border:1.5px solid var(--line); border-radius:12px; padding:16px; text-align:left; background:var(--porcelain);}
@@ -372,6 +376,7 @@ img{max-width:100%; display:block;}
 .kcard .svc{font-size:10.5px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);}
 .kcard .clinic{font-size:13px; font-weight:600; line-height:1.3;}
 .kcard .patient{font-size:11.5px; color:var(--ink-soft);}
+.kcard .kdesign{font-size:10.5px; font-family:var(--font-mono); color:var(--violet); background:var(--violet-soft); border-radius:6px; padding:3px 7px; align-self:flex-start;}
 .kcard .meta{display:flex; justify-content:space-between; align-items:center; margin-top:2px;}
 .kcard .tech{font-size:11px; color:var(--ink-soft); display:flex; align-items:center; gap:5px;}
 .kcard .shade{font-family:var(--font-mono); font-size:10.5px; background:var(--surface-sunken); padding:2px 7px; border-radius:100px;}
