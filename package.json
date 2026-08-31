@@ -1,0 +1,17 @@
+{
+  "name": "ceram-dental-platform",
+  "version": "0.1.0",
+  "description": "Ceram Dental — public website, e-commerce, dentist portal, Lab Studio and accounts dashboard, running on one small Express server.",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
