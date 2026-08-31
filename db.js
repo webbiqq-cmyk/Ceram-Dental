@@ -297,7 +297,12 @@ function normPrice(v) {
   return isFinite(n) && n >= 0 ? Math.round(n * 1000) / 1000 : null;
 }
 
-function addProduct({ name, category, price, desc, sku, stock, specs, active }) {
+function normImage(v) {
+  const s = String(v || '').trim();
+  return /^(https?:\/\/|\/|data:image\/)/.test(s) ? s.slice(0, 600) : '';
+}
+
+function addProduct({ name, category, price, desc, sku, stock, specs, active, image }) {
   name = String(name || '').trim();
   const priceNum = normPrice(price);
   if (!name || priceNum == null) return null;
@@ -308,7 +313,7 @@ function addProduct({ name, category, price, desc, sku, stock, specs, active }) 
     id, name, category: normCategory(category), price: priceNum,
     desc: String(desc || '').trim(), sku: String(sku || '').trim(),
     stock: normStock(stock), active: active === false ? false : true,
-    specs: cleanSpecs(specs)
+    image: normImage(image), specs: cleanSpecs(specs)
   };
   products.unshift(p);
   return p;
@@ -324,6 +329,7 @@ function updateProduct(id, patch) {
   if (patch.sku != null) p.sku = String(patch.sku).trim();
   if (patch.stock !== undefined) p.stock = normStock(patch.stock);
   if (patch.active !== undefined) p.active = !!patch.active;
+  if (patch.image !== undefined) p.image = normImage(patch.image);
   if (patch.specs !== undefined) p.specs = cleanSpecs(patch.specs);
   return p;
 }

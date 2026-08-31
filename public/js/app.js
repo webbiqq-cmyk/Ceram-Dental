@@ -134,6 +134,31 @@
       return label ? { label: label, value: line.slice(i + 1).trim() } : null;
     }).filter(Boolean);
   }
+
+  /* Product imagery — a real photo when set, otherwise a tidy category-tinted glyph tile. */
+  var PRODUCT_GLYPHS = [
+    [/whiten|bleach/, 'M9 3h6l-1 4h-4L9 3Zm0 5h6l-.7 12a1.3 1.3 0 0 1-1.3 1.2h-1a1.3 1.3 0 0 1-1.3-1.2L9 8Zm1.5 3.5h3'],
+    [/retainer|case|guard/, 'M4 9h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Zm2-4h12l2 4H4l2-4ZM9 13h6'],
+    [/brush/, 'M3 16l8-8 3 3-8 8-3 1v-4Zm9-9 3-3a2 2 0 0 1 3 3l-3 3M5.5 13.5l5 5'],
+    [/shade/, 'M4 20 12 4l8 16M7.5 14h9M10 20l2-4 2 4'],
+    [/cord|retraction/, 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z'],
+    [/tray|impression/, 'M4 10a8 6 0 0 1 16 0v5a3 3 0 0 1-3 3h-2v-6h-6v6H7a3 3 0 0 1-3-3v-5Z'],
+    [/temp|crown|bridge/, 'M4 11a8 7 0 0 1 16 0v3a8 6 0 0 1-16 0v-3ZM8 9v8M12 8v9M16 9v8'],
+    [/bite|paste|registration|silicone/, 'M8 4h8v3l-1 12a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1L8 7V4Zm0 4h8M11 2h2']
+  ];
+  var TOOTH_GLYPH = 'M12 20c-1.4-2.7-1.8-5.8-1.8-8.4C10.2 8.7 9 6.4 7 6.4c-2.2 0-3.2 2-3.2 4 0 4.5 2.4 8.1 4.2 9.3.6.4 1.4-.1 1.6-.9l.5-2.7c.2-.9 1.6-.9 1.8 0l.5 2.7c.2.8 1 1.3 1.6.9 1.8-1.2 4.2-4.8 4.2-9.3 0-2-1-4-3.2-4-2 0-3.2 2.3-3.2 5.2 0 2.6-.4 5.7-1.8 8.4Z';
+  function productGlyph(p) {
+    var n = (p.name || '').toLowerCase();
+    for (var i = 0; i < PRODUCT_GLYPHS.length; i++) if (PRODUCT_GLYPHS[i][0].test(n)) return PRODUCT_GLYPHS[i][1];
+    return TOOTH_GLYPH;
+  }
+  function productMediaHtml(p, cls) {
+    cls = cls || 'product-media';
+    if (p.image) return '<div class="' + cls + '"><img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" loading="lazy"></div>';
+    var retail = p.category === 'Patient retail';
+    return '<div class="' + cls + ' is-placeholder' + (retail ? ' ph-retail' : '') + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="' + productGlyph(p) + '"/></svg></div>';
+  }
   function labelFor(stageKey) { return STAGES[STAGE_INDEX[stageKey]].label; }
   function svcLabel(key) { return SVC[key] ? SVC[key].label : key; }
 
@@ -466,7 +491,8 @@
         var specs = (p.specs && p.specs.length)
           ? '<ul class="spec-list">' + p.specs.slice(0, 4).map(function (sp) { return '<li><b>' + esc(sp.label) + '</b>' + (sp.value ? ' · ' + esc(sp.value) : '') + '</li>'; }).join('') + '</ul>'
           : '';
-        return '<div class="product-card reveal" style="--i:' + i + '"><span class="cat">' + esc(p.category) + '</span><h3>' + esc(p.name) + '</h3><p>' + esc(p.desc) + '</p>' + specs +
+        return '<div class="product-card reveal" style="--i:' + i + '">' + productMediaHtml(p) +
+          '<span class="cat">' + esc(p.category) + '</span><h3>' + esc(p.name) + '</h3><p>' + esc(p.desc) + '</p>' + specs +
           '<div class="row"><span class="price">' + money(p.price) + '</span><button class="btn btn-primary btn-sm" data-add-product="' + esc(p.id) + '">Add to cart</button></div></div>';
       }).join('') + '</div>' +
       '</div></div>' + footer()
@@ -934,7 +960,7 @@
         '<div class="field"><label>Price (BD)</label><input id="np-price" type="number" min="0" step="0.001" required></div>' +
         '<div class="field"><label>SKU</label><input id="np-sku" placeholder="Optional"></div>' +
         '<div class="field"><label>Stock on hand</label><input id="np-stock" type="number" min="0" step="1" placeholder="Optional"></div>' +
-        '<div class="field"><label>&nbsp;</label><span style="font-size:12px; color:var(--ink-soft); padding-top:9px;">New products are listed in the shop by default.</span></div>' +
+        '<div class="field full"><label>Image URL</label><input id="np-image" placeholder="https://… (leave blank for a placeholder tile)"></div>' +
         '<div class="field full"><label>Description</label><textarea id="np-desc" placeholder="Shown on the shop card"></textarea></div>' +
         '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
           '<textarea id="np-specs" placeholder="Material: A-silicone&#10;Set time: 45 s&#10;Shelf life: 24 months"></textarea></div>' +
@@ -947,7 +973,8 @@
       return '<div class="card reveal prod-card">' +
         '<form class="form-grid product-edit-form" data-product-id="' + esc(p.id) + '">' +
           '<div class="field full prod-card-head">' +
-            '<div><span class="eyebrow">' + esc(p.category) + (p.active === false ? ' · hidden' : '') + '</span>' +
+            productMediaHtml(p, 'prod-thumb') +
+            '<div style="flex:1; min-width:0;"><span class="eyebrow">' + esc(p.category) + (p.active === false ? ' · hidden' : '') + '</span>' +
               '<h3 style="font-size:16px; margin-top:4px;">' + esc(p.name) + '</h3></div>' +
             '<span class="mono" style="font-size:11px; color:var(--ink-soft);">' + esc(p.id) + '</span>' +
           '</div>' +
@@ -959,6 +986,7 @@
           '<div class="field"><label>Shop visibility</label><select name="active">' +
             '<option value="true"' + (p.active === false ? '' : ' selected') + '>Listed in shop</option>' +
             '<option value="false"' + (p.active === false ? ' selected' : '') + '>Hidden</option></select></div>' +
+          '<div class="field full"><label>Image URL</label><input name="image" value="' + esc(p.image || '') + '" placeholder="https://… (blank = placeholder tile)"></div>' +
           '<div class="field full"><label>Description</label><textarea name="desc">' + esc(p.desc || '') + '</textarea></div>' +
           '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
             '<textarea name="specs" rows="4">' + esc(specsToText(p.specs)) + '</textarea></div>' +
@@ -1253,7 +1281,7 @@
         try {
           await api('/api/products', { method: 'POST', body: JSON.stringify({
             name: val('np-name'), category: val('np-category'), price: val('np-price'),
-            sku: val('np-sku'), stock: val('np-stock'), desc: val('np-desc'),
+            sku: val('np-sku'), stock: val('np-stock'), image: val('np-image'), desc: val('np-desc'),
             specs: specsFromText(val('np-specs'))
           }) });
           await loadState(); renderCurrent(); toast('Product added');
@@ -1266,7 +1294,7 @@
             await api('/api/products/' + encodeURIComponent(f.dataset.productId), { method: 'POST', body: JSON.stringify({
               name: fval(f, 'name'), category: fval(f, 'category'), price: fval(f, 'price'),
               sku: fval(f, 'sku'), stock: fval(f, 'stock'), active: fval(f, 'active') === 'true',
-              desc: fval(f, 'desc'), specs: specsFromText(fval(f, 'specs'))
+              image: fval(f, 'image'), desc: fval(f, 'desc'), specs: specsFromText(fval(f, 'specs'))
             }) });
             await loadState(); renderCurrent(); toast('Product updated');
           } catch (err) { toast(err.message); }
