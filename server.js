@@ -92,6 +92,12 @@ app.post('/api/contact', (req, res) => {
   ok(res, { message: msg });
 });
 
-app.listen(PORT, () => {
-  console.log(`Ceram Dental demo running → http://localhost:${PORT}`);
-});
+// Vercel imports this file as a serverless function (module.exports = app)
+// instead of running it directly, so only listen when run with `node server.js`.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Ceram Dental demo running → http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
