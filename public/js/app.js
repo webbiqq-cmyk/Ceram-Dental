@@ -202,13 +202,20 @@
   }
 
   /* =============================== reveal-on-scroll ======================= */
-  var revealObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); } });
-  }, { threshold: 0.1 }) : null;
+  var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var revealObserver = (!prefersReduced && 'IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var el = e.target;
+      revealObserver.unobserve(el);
+      // paint the hidden state, then flip on the next frame so the transition always runs
+      requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('visible'); }); });
+    });
+  }, { threshold: 0, rootMargin: '0px 0px 10% 0px' }) : null;
   function initReveal() {
     var els = document.querySelectorAll('#app .reveal');
     els.forEach(function (el, i) {
-      el.style.setProperty('--i', i % 8);
+      if (!el.style.getPropertyValue('--i')) el.style.setProperty('--i', i % 6);
       if (revealObserver) revealObserver.observe(el); else el.classList.add('visible');
     });
   }
@@ -301,7 +308,7 @@
           '<div class="hero-trust"><span>In-house ceramics lab</span><span>' + SERVICES.length + ' dental specialties</span><span>Open Sat–Thu</span></div>' +
         '</div>' +
         '<div class="hero-photo reveal">' +
-          '<img src="/images/reception.jpg" alt="Inside the Ceram Dental clinic, New Zinj">' +
+          '<img src="/images/reception.jpg" alt="Inside the Ceram Dental clinic, New Zinj" fetchpriority="high" decoding="async">' +
           '<span class="hero-photo-cap">Our clinic, New Zinj</span>' +
         '</div>' +
       '</section>' +
@@ -328,7 +335,7 @@
           '<a class="btn btn-primary" href="#/about">Learn more about us →</a>' +
         '</div>' +
         '<div class="split-media">' +
-          '<img src="/images/lab.jpg" alt="A ceramist layering a crown in the Ceram Dental lab">' +
+          '<img src="/images/lab.jpg" alt="A ceramist layering a crown in the Ceram Dental lab" loading="lazy" decoding="async">' +
           '<div class="split-badge"><b>5-point QC</b><span>on every case, before pickup</span></div>' +
         '</div>' +
       '</div>' +
