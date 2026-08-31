@@ -170,7 +170,7 @@
         '<div><h4>Explore</h4><a href="#/about">About</a><a href="#/services">Services</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
         '<div><h4>For Dentists</h4><a href="#/new-case">Refer a Case</a><a href="#/portal">Dentist Portal</a><a href="#/studio">Lab Studio</a><a href="#/admin">Accounts &amp; Admin</a></div>' +
         '<div><h4>Visit</h4><a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><a href="#/contact">' + esc(s.address) + '</a></div>' +
-      '</div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '. Click-through demo.</span><span>Built on Ceram Dental\'s own brand &amp; photography.</span></div></div></footer>'
+      '</div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '. Click-through demo.</span><span>Imagery generated for this demo.</span></div></div></footer>'
     );
   }
 
@@ -240,7 +240,7 @@
           '<a class="btn btn-primary" href="#/about">Learn more about us →</a>' +
         '</div>' +
         '<div class="split-media">' +
-          '<img src="/images/reception.jpg" alt="Ceram Dental reception, New Zinj">' +
+          '<img src="/images/lab.jpg" alt="A ceramist layering a crown in the Ceram Dental lab">' +
           '<div class="split-badge"><b>5-point QC</b><span>on every case, before pickup</span></div>' +
         '</div>' +
       '</div>' +
