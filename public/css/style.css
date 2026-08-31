@@ -309,6 +309,15 @@ img{max-width:100%; display:block;}
 .wiz-group-label{grid-column:1/-1; margin-top:8px; padding-top:16px; border-top:1px solid var(--line); font-family:var(--font-mono); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--violet);}
 .field-grid .wiz-group-label:first-child{margin-top:0; padding-top:0; border-top:none;}
 .wiz-foot{display:flex; justify-content:space-between; padding:20px 30px; border-top:1px solid var(--line); background:var(--surface-sunken);}
+
+/* ---- new case: live tooth diagram ---- */
+.tooth-viz{grid-column:1/-1; display:flex; gap:22px; align-items:center; padding:18px 20px; border:1px solid var(--line); border-radius:14px; background:var(--surface-sunken);}
+.tooth-viz svg{flex-shrink:0; filter:drop-shadow(0 5px 12px rgba(58,38,64,.14));}
+.tooth-legend{font-size:12.5px; color:var(--ink-soft); display:flex; flex-direction:column; gap:7px; min-width:0;}
+.tooth-legend b{color:var(--ink); font-weight:600;}
+.tooth-legend .sw{display:inline-block; width:12px; height:12px; border-radius:3px; border:1px solid var(--line); margin-right:8px; vertical-align:-2px;}
+.tooth-cover{margin-top:5px; padding-top:9px; border-top:1px solid var(--line); color:var(--violet-deep); font-weight:600; line-height:1.45;}
+@media (max-width:620px){ .tooth-viz{flex-direction:column; align-items:flex-start;} }
 .svc-pick-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
 .svc-pick{border:1.5px solid var(--line); border-radius:12px; padding:16px; text-align:left; background:var(--porcelain);}
 .svc-pick.selected{border-color:var(--violet); background:var(--violet-soft);}
@@ -359,10 +368,35 @@ img{max-width:100%; display:block;}
 .dash-tab{background:none; border:none; padding:12px 4px; margin-right:22px; font-weight:600; color:var(--ink-soft); border-bottom:2px solid transparent; font-size:14.5px;}
 .dash-tab.active{color:var(--ink); border-color:var(--violet);}
 
-/* ---- Lab Studio kanban ---- */
+/* ---- shared dashboard toolbar ---- */
+.dash-toolbar, .lab-toolbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:18px;}
+.dash-toolbar input, .lab-toolbar input{font-family:inherit; font-size:13px; padding:9px 13px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--ink); min-width:220px; flex:0 1 300px;}
+.dash-toolbar input:focus, .lab-toolbar input:focus{border-color:var(--violet); box-shadow:0 0 0 3px var(--violet-soft); outline:none;}
+.lab-chips{display:flex; gap:7px; flex-wrap:wrap;}
+.lab-chip{font-size:12px; font-weight:600; padding:6px 12px; border-radius:100px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); transition:border-color .15s, color .15s, background .15s;}
+.lab-chip:hover{border-color:var(--violet); color:var(--violet);}
+.lab-chip.active{background:var(--violet); border-color:var(--violet); color:#fff;}
+
+/* ---- dentist portal: action panel ---- */
+.review-panel{border:1px solid color-mix(in srgb, var(--amber) 40%, var(--line)); border-radius:14px; background:var(--amber-soft); padding:18px 20px; margin-bottom:22px;}
+.review-panel-head{margin-bottom:12px;}
+.review-item{display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:12px 0; border-top:1px solid color-mix(in srgb, var(--amber) 25%, transparent);}
+.review-item-actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+/* ---- Lab Studio: vertical pipeline ---- */
 .lab-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin:0 0 26px;}
 .lab-legend span{display:flex; align-items:center; gap:6px;}
 .lab-legend i{width:9px; height:9px; border-radius:50%; display:inline-block;}
+.lab-pipeline{display:flex; flex-direction:column; gap:14px;}
+.lane{border:1px solid var(--line); border-radius:14px; background:var(--surface); box-shadow:var(--shadow); overflow:hidden;}
+.lane.is-empty{opacity:.72;}
+.lane-head{display:flex; align-items:center; gap:10px; padding:13px 16px; border-bottom:1px solid var(--line); background:var(--surface-sunken);}
+.lane-head .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+.lane-head h3{font-size:12.5px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.04em; font-weight:600;}
+.lane-head .cnt{margin-left:auto; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); background:var(--surface); border:1px solid var(--line); border-radius:100px; padding:1px 9px;}
+.lane-cards{display:flex; flex-wrap:wrap; gap:10px; padding:14px 16px;}
+.lane-cards.lane-empty{color:var(--ink-soft); font-size:12.5px; padding:12px 16px;}
+.lane-cards .kcard{width:232px; flex:0 0 232px;}
 .board{display:grid; grid-auto-flow:column; grid-auto-columns:238px; gap:14px; overflow-x:auto; padding-bottom:18px;}
 .col{background:var(--surface-sunken); border-radius:14px; padding:12px; display:flex; flex-direction:column; min-height:200px;}
 .col-head{display:flex; justify-content:space-between; align-items:baseline; padding:4px 6px 12px;}
@@ -458,7 +492,9 @@ img{max-width:100%; display:block;}
 .footer-brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:600; font-size:18px; color:#fff; margin-bottom:12px;}
 .footer-brand .brand-mark{background:rgba(255,255,255,.12);}
 .site-footer .about-copy{font-size:13px; color:rgba(255,255,255,.65); max-width:34ch; line-height:1.7;}
-.site-footer .social-row a{width:40px; height:40px; border-radius:12px; margin-bottom:0; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:#fff;}
+.site-footer .social-row{gap:8px; margin-top:18px;}
+.site-footer .social-row a{width:34px; height:34px; border-radius:9px; margin-bottom:0; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:rgba(255,255,255,.92);}
+.site-footer .social-row a svg{width:15px; height:15px;}
 .site-footer .social-row a:hover{background:#fff; border-color:#fff; color:var(--plum-surface); transform:translateY(-2px);}
 .footer-bottom{border-top:1px solid rgba(255,255,255,.14); padding:18px 0; font-size:12px; color:rgba(255,255,255,.55); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
 

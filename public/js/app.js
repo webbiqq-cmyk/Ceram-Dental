@@ -53,6 +53,64 @@
     var parts = [sh.cervical, sh.body, sh.incisal].filter(function (x) { return x && x !== '—'; });
     return parts.length ? parts.join(' / ') : (sh.body || '—');
   }
+
+  /* Approximate facial enamel tones for each VITA shade — used by the tooth diagram. */
+  var SHADE_HEX = {
+    'A1': '#EEE4CF', 'A2': '#E8D9BC', 'A3': '#E0CBA4', 'A3.5': '#D7BE8E',
+    'B1': '#F0E7D2', 'B2': '#E6D7B5', 'C2': '#D3C7AD', 'D3': '#D1C4AE'
+  };
+  function shadeHex(s, fallback) { return SHADE_HEX[s] || fallback || '#E8D9BC'; }
+
+  var COVERAGE_TEXT = {
+    veneers: 'Facial veneer — covers only the visible front surface; the back of the tooth stays natural.',
+    crowns: 'Full crown — caps the whole tooth, 360°, down to the prepared margin.',
+    bridges: 'Fixed bridge — crowns cap the two anchor teeth and a joined pontic fills the gap.',
+    implants: 'Implant crown — full coverage seated on the implant abutment.'
+  };
+
+  // Live diagram: a facial-view tooth split into cervical / body / incisal thirds,
+  // each tinted with its chosen shade, with an overlay showing what the restoration covers.
+  function toothVizHtml(w) {
+    var body = shadeHex(w.shadeBody, '#E8D9BC');
+    var cerv = (!w.shadeCervical || w.shadeCervical === '—') ? body : shadeHex(w.shadeCervical, body);
+    var inci = (!w.shadeIncisal || w.shadeIncisal === '—') ? body : shadeHex(w.shadeIncisal, body);
+    var isVeneer = w.service === 'veneers';
+    var toothPath = 'M22 30 C22 15 40 9 60 9 C80 9 98 15 98 30 L94 106 C92 130 78 143 60 143 C42 143 28 130 26 106 Z';
+    var incMark = '';
+    if (/halo/i.test(w.incisal || '')) incMark = '<rect x="0" y="126" width="120" height="17" fill="rgba(255,255,255,.5)"/>';
+    else if (/cutback|mamelon/i.test(w.incisal || '')) incMark = '<path d="M40 116 v22 M60 114 v24 M80 116 v22" stroke="rgba(120,86,104,.32)" stroke-width="4" stroke-linecap="round"/>';
+    var svg = '<svg viewBox="0 0 120 152" width="118" height="150" role="img" aria-label="Tooth shade and coverage diagram">' +
+      '<defs><clipPath id="tvClip"><path d="' + toothPath + '"/></clipPath></defs>' +
+      '<path d="M6 22 C30 8 90 8 114 22 L114 33 C90 19 30 19 6 33 Z" fill="var(--violet-soft)"/>' +
+      '<g clip-path="url(#tvClip)">' +
+        '<rect x="0" y="0" width="120" height="53" fill="' + cerv + '"/>' +
+        '<rect x="0" y="53" width="120" height="45" fill="' + body + '"/>' +
+        '<rect x="0" y="98" width="120" height="54" fill="' + inci + '"/>' +
+        incMark +
+      '</g>' +
+      '<path d="' + toothPath + '" fill="none" stroke="' + (isVeneer ? 'var(--line)' : 'var(--violet)') + '" stroke-width="' + (isVeneer ? 2 : 3.5) + '"/>' +
+      (isVeneer ? '<path d="M27 33 C27 20 42 15 60 15 C78 15 93 20 93 33 L90 101" fill="none" stroke="var(--violet)" stroke-width="3.5" stroke-dasharray="5 4" stroke-linecap="round"/>' : '') +
+      '<line x1="102" y1="30" x2="118" y2="30" stroke="var(--ink-soft)" stroke-width="1"/><text x="100" y="27" text-anchor="end" font-size="8" fill="var(--ink-soft)">cervical</text>' +
+      '<line x1="102" y1="76" x2="118" y2="76" stroke="var(--ink-soft)" stroke-width="1"/><text x="100" y="73" text-anchor="end" font-size="8" fill="var(--ink-soft)">body</text>' +
+      '<line x1="102" y1="120" x2="118" y2="120" stroke="var(--ink-soft)" stroke-width="1"/><text x="100" y="117" text-anchor="end" font-size="8" fill="var(--ink-soft)">incisal</text>' +
+      '</svg>';
+    function sw(hex, label, shade) { return '<div><span class="sw" style="background:' + hex + '"></span>' + label + ' <b>' + esc(shade) + '</b></div>'; }
+    var legend = '<div class="tooth-legend">' +
+      sw(cerv, 'Cervical ⅓', (w.shadeCervical && w.shadeCervical !== '—') ? w.shadeCervical : w.shadeBody + ' (blend)') +
+      sw(body, 'Body ⅓', w.shadeBody) +
+      sw(inci, 'Incisal ⅓', ((w.shadeIncisal && w.shadeIncisal !== '—') ? w.shadeIncisal : w.shadeBody + ' (blend)') + ' · ' + (w.incisal || '')) +
+      '<div class="tooth-cover">' + esc(COVERAGE_TEXT[w.service] || '') + '</div>' +
+    '</div>';
+    return '<div class="tooth-viz">' + svg + legend + '</div>';
+  }
+
+  function syncWizardDesign() {
+    var w = UI.wizard;
+    if (!w || !isRestoration(w.service) || !document.getElementById('w-material')) return;
+    w.material = val('w-material'); w.fabrication = val('w-fabrication'); w.incisal = val('w-incisal');
+    w.layering = val('w-layering'); w.glaze = val('w-glaze'); w.surface = val('w-surface');
+    w.shadeCervical = val('w-shade-cervical'); w.shadeBody = val('w-shade-body'); w.shadeIncisal = val('w-shade-incisal');
+  }
   var TOOTH_PATH = 'M12 21c-1.6-3-2-6.4-2-9.2C10 8.5 8.7 6 6.5 6 4 6 3 8.3 3 10.5c0 5 2.6 9 4.6 10.3.7.5 1.6-.1 1.8-1l.6-3c.2-1 1.8-1 2 0l.6 3c.2.9 1.1 1.5 1.8 1 2-1.3 4.6-5.3 4.6-10.3C21 8.3 20 6 17.5 6 15.3 6 14 8.5 14 11.8c0 2.8-.4 6.2-2 9.2Z';
   var ADMIN_TABS = [
     ['overview', 'Overview'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
@@ -94,6 +152,7 @@
     drawer: null,
     adminTab: 'overview',
     shopTab: 'patients',
+    labStage: 'all',
     cartOpen: false
   };
   function saveCart() { localStorage.setItem('ceram_cart', JSON.stringify(UI.cart)); updateCartBadge(); }
@@ -183,7 +242,7 @@
       { label: 'TikTok', url: 'https://tiktok.com/@ceramdental',
         path: 'M16.5 3c.3 2.02 1.43 3.23 3.39 3.36v2.27c-1.14.11-2.13-.26-3.29-.96v5.94c0 3.02-1.65 5.19-4.36 5.6-3.19.48-5.99-1.66-6.19-4.58-.2-2.98 2.09-5.28 4.94-5.28.32 0 .63.03 1.01.1v2.44c-.34-.11-.65-.16-.94-.15-1.38.05-2.42 1.05-2.4 2.44.02 1.4 1.13 2.43 2.53 2.4 1.35-.03 2.32-1.03 2.32-2.6V3h2.99Z' },
       { label: 'Snapchat', url: 'https://snapchat.com/add/ceramdental',
-        path: 'M12 2c3 0 4.9 2.3 5 5.4 0 .5 0 1 .05 1.4.3.2.7.2 1.1 0 .3-.1.6-.2.9-.2.5 0 1 .3 1.05.8.05.5-.4.9-1.2 1.2-.4.15-1 .35-1.15.75-.1.35.05.75.35 1.2 0 0 1.4 2.7 4.2 3.15.25 0 .45.25.45.5 0 .1 0 .15-.05.25-.25.55-1.3.95-3.2 1.2-.05.1-.15.4-.2.6-.05.2-.1.4-.2.6-.1.25-.3.4-.6.4-.5 0-1-.3-1.9-.3-1.05 0-1.5.75-3 .75s-1.95-.75-3-.75c-.9 0-1.4.3-1.9.3-.3 0-.5-.15-.6-.4-.1-.2-.15-.4-.2-.6-.05-.2-.15-.5-.2-.6-1.9-.25-2.95-.65-3.2-1.2-.05-.1-.05-.15-.05-.25 0-.25.2-.5.45-.5C7.35 15.65 8.75 13 8.75 13c.3-.45.45-.85.35-1.2-.15-.4-.75-.6-1.15-.75-.8-.3-1.25-.7-1.2-1.2.05-.5.55-.8 1.05-.8.3 0 .6.1.9.2.4.2.8.2 1.1 0 .05-.4.05-.9.05-1.4C7.1 4.3 9 2 12 2Z' },
+        path: 'M12 3c-2.55 0-4.45 1.95-4.53 4.63-.02.52 0 1.03.02 1.42-.22.12-.53.16-.85.05-.3-.1-.58-.3-.9-.3-.6 0-1.12.4-1.12.94 0 .4.3.72.9.97.42.17.92.3 1.03.72.05.2.01.46-.2.82-.03.03-1.2 2.72-3.9 3.16-.3.05-.5.3-.44.6.14.62 1.36 1.05 3 1.28.1.15.19.55.28.9.06.22.22.36.5.36.4 0 .9-.28 1.74-.28.5 0 1 .08 1.45.4.85.6 1.55 1.06 2.72 1.06h.03c1.17 0 1.87-.46 2.72-1.06.45-.32.95-.4 1.45-.4.84 0 1.34.28 1.74.28.28 0 .44-.14.5-.36.09-.35.18-.75.28-.9 1.64-.23 2.86-.66 3-1.28.06-.3-.14-.55-.44-.6-2.7-.44-3.87-3.13-3.9-3.16-.21-.36-.25-.62-.2-.82.11-.42.61-.55 1.03-.72.6-.25.9-.57.9-.97 0-.54-.52-.94-1.12-.94-.32 0-.6.2-.9.3-.32.11-.63.07-.85-.05.02-.39.04-.9.02-1.42C16.45 4.95 14.55 3 12 3Z' },
       { label: 'YouTube', url: 'https://youtube.com/@ceramdental',
         path: 'M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.81 3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.81ZM9.55 15.57V8.43L15.82 12l-6.27 3.57Z' },
       { label: 'WhatsApp', url: 'https://wa.me/97317131123',
@@ -510,6 +569,7 @@
       var shadeOpt = ['—'].concat(SHADES);
       var designFields = isRestoration(w.service) ? (
         '<div class="wiz-group-label">Restoration design</div>' +
+        '<div class="field full" id="toothVizWrap">' + toothVizHtml(w) + '</div>' +
         selectField('w-material', 'Restoration type', RESTORATION_TYPES, w.material) +
         selectField('w-fabrication', 'Fabrication', FABRICATION, w.fabrication) +
         selectField('w-incisal', 'Incisal design', INCISAL_DESIGNS, w.incisal) +
@@ -601,17 +661,48 @@
 
   function portalCases() {
     if (!DATA.cases.length) return '<div class="empty-note">No cases yet — start one from the website.</div>';
+
+    var active = DATA.cases.filter(function (c) { return c.stage !== 'ready'; }).length;
+    var review = DATA.cases.filter(function (c) { return c.stage === 'doctor_approval'; });
+    var ready = DATA.cases.filter(function (c) { return c.stage === 'ready' && !c.pickedUp; });
+    var outstanding = DATA.invoices.filter(function (i) { return i.status !== 'paid'; }).reduce(function (s, i) { return s + i.amount; }, 0);
+
+    var strip = '<div class="stat-strip reveal" style="margin:0 0 22px;">' +
+      '<div class="chipstat"><b>' + active + '</b><span>Active cases</span></div>' +
+      '<div class="chipstat"><b>' + review.length + '</b><span>Awaiting your review</span></div>' +
+      '<div class="chipstat"><b>' + ready.length + '</b><span>Ready for pickup</span></div>' +
+      '<div class="chipstat"><b>' + money(outstanding) + '</b><span>Outstanding balance</span></div>' +
+    '</div>';
+
+    var reviewBlock = review.length ? (
+      '<div class="review-panel reveal"><div class="review-panel-head"><span class="eyebrow" style="color:var(--amber);">Action needed</span>' +
+        '<h3 style="font-size:16px; margin-top:4px;">' + review.length + ' mockup' + (review.length === 1 ? '' : 's') + ' waiting on your approval</h3></div>' +
+      review.map(function (c) {
+        return '<div class="review-item"><div><div class="cid-cell" style="font-size:13px;">' + c.id + ' · ' + esc(svcLabel(c.service)) + '</div>' +
+          '<div style="font-size:12.5px; color:var(--ink-soft);">' + esc(c.patient) + ' · shade ' + esc(c.shade) + (c.design ? ' · ' + esc(c.design.material) : '') + '</div></div>' +
+          '<div class="review-item-actions"><button class="btn btn-primary btn-sm" data-act="approve" data-id="' + c.id + '">Approve</button>' +
+          '<button class="btn btn-danger-ghost btn-sm" data-act="reject" data-id="' + c.id + '">Request change</button>' +
+          '<button class="btn btn-ghost btn-sm" data-open="' + c.id + '" data-from="mycases">Open</button></div></div>';
+      }).join('') + '</div>'
+    ) : '';
+
     var rows = DATA.cases.map(function (c) {
       var idx = STAGE_INDEX[c.stage];
       var dots = STAGES.map(function (s, i) { return '<i class="' + (i < idx ? 'done' : (i === idx ? 'now' : '')) + '"></i>'; }).join('');
       var last = c.history[c.history.length - 1];
-      return '<tr class="clickable" data-open="' + c.id + '" data-from="mycases">' +
+      var hay = (c.id + ' ' + svcLabel(c.service) + ' ' + c.patient + ' ' + labelFor(c.stage) + ' ' + (c.design ? c.design.material : '')).toLowerCase();
+      return '<tr class="clickable" data-open="' + c.id + '" data-from="mycases" data-hay="' + esc(hay) + '">' +
         '<td class="cid-cell">' + c.id + '</td><td>' + svcLabel(c.service) + '</td><td>' + esc(c.patient) + '</td>' +
-        '<td>' + pillHtml(c) + (c.stage === 'doctor_approval' ? '<span class="action-flag">Needs your review</span>' : '') + '<div class="progress-mini">' + dots + '</div></td>' +
+        '<td>' + (c.design ? esc(c.design.material) + '<br><span style="color:var(--ink-soft); font-size:11.5px;">' + esc(shadeCombo(c.design.shade)) + '</span>' : '<span style="color:var(--ink-soft);">—</span>') + '</td>' +
+        '<td>' + pillHtml(c) + (c.stage === 'doctor_approval' ? '<span class="action-flag">Review</span>' : '') + '<div class="progress-mini">' + dots + '</div></td>' +
         '<td>' + fmtDate(last ? last.at : c.createdAt) + '</td>' +
         '<td><button class="btn btn-ghost btn-sm" data-open="' + c.id + '" data-from="mycases">Open</button></td></tr>';
     }).join('');
-    return '<div class="table-wrap reveal"><table class="cases-table"><thead><tr><th>Case</th><th>Service</th><th>Patient</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+    return strip + reviewBlock +
+      '<div class="dash-toolbar reveal"><input type="search" id="portalSearch" placeholder="Search case, patient, shade…" autocomplete="off"></div>' +
+      '<div class="table-wrap reveal"><table class="cases-table" id="portalTable"><thead><tr><th>Case</th><th>Service</th><th>Patient</th><th>Restoration</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="empty-note" id="portalNoMatch" hidden>No cases match that search.</div></div>';
   }
 
   function portalBilling() {
@@ -630,24 +721,56 @@
   function pillHtml(c) { return '<span class="pill st-' + c.stage + '"><span class="dot"></span>' + labelFor(c.stage) + '</span>'; }
 
   /* ================================= STUDIO (lab) =============================== */
+  function stageTone(key) {
+    if (key === 'ready') return 'var(--ready)';
+    if (key === 'reception' || key === 'qc') return 'var(--violet)';
+    return 'var(--amber)';
+  }
   function renderStudio() {
-    var cols = STAGES.map(function (s) {
+    var stageFilter = UI.labStage || 'all';
+    var lanes = STAGES.filter(function (s) { return stageFilter === 'all' || stageFilter === s.key; }).map(function (s) {
       var cards = DATA.cases.filter(function (c) { return c.stage === s.key; });
-      return '<div class="col"><div class="col-head"><h3>' + s.label + '</h3><span class="cnt">' + cards.length + '</span></div><div class="col-cards">' + cards.map(kcardHtml).join('') + '</div></div>';
+      var inner = cards.length
+        ? '<div class="lane-cards">' + cards.map(kcardHtml).join('') + '</div>'
+        : '<div class="lane-cards lane-empty">No cases at this stage.</div>';
+      return '<section class="lane' + (cards.length ? '' : ' is-empty') + '">' +
+        '<div class="lane-head"><span class="dot" style="background:' + stageTone(s.key) + '"></span><h3>' + s.label + '</h3>' +
+        '<span class="cnt">' + cards.length + '</span></div>' + inner + '</section>';
     }).join('');
+
+    var awaitingDoc = DATA.cases.filter(function (c) { return c.stage === 'doctor_approval'; }).length;
+    var inLab = DATA.cases.filter(function (c) { return c.stage !== 'ready' && c.stage !== 'doctor_approval'; }).length;
+    var readyN = DATA.cases.filter(function (c) { return c.stage === 'ready'; }).length;
+    var revs = DATA.cases.filter(function (c) { return c.revisions > 0 && c.stage !== 'ready'; }).length;
+
+    var chips = '<button class="lab-chip' + (stageFilter === 'all' ? ' active' : '') + '" data-lab-stage="all">All stages</button>' +
+      STAGES.map(function (s) {
+        var n = DATA.cases.filter(function (c) { return c.stage === s.key; }).length;
+        return '<button class="lab-chip' + (stageFilter === s.key ? ' active' : '') + '" data-lab-stage="' + s.key + '">' + s.label + ' ' + n + '</button>';
+      }).join('');
+
     return '<div class="page"><div class="u">' +
-      '<div class="page-head reveal" style="margin-bottom:14px;"><span class="eyebrow-accent">Internal · Lab Studio</span><h1 style="font-size:1.9rem;">Case pipeline</h1></div>' +
-      '<div class="lab-legend"><span><i style="background:var(--violet)"></i>In lab hands</span><span><i style="background:var(--amber)"></i>Awaiting doctor / in production</span><span><i style="background:var(--ready)"></i>Ready for pickup</span></div>' +
-      '<div class="board reveal">' + cols + '</div>' +
+      '<div class="page-head reveal" style="margin-bottom:16px;"><span class="eyebrow-accent">Internal · Lab Studio</span><h1 style="font-size:1.9rem;">Case pipeline</h1></div>' +
+      '<div class="stat-strip reveal" style="margin:0 0 20px;">' +
+        '<div class="chipstat"><b>' + inLab + '</b><span>In lab hands</span></div>' +
+        '<div class="chipstat"><b>' + awaitingDoc + '</b><span>Awaiting doctor</span></div>' +
+        '<div class="chipstat"><b>' + readyN + '</b><span>Ready for pickup</span></div>' +
+        '<div class="chipstat"><b>' + revs + '</b><span>In revision</span></div>' +
+      '</div>' +
+      '<div class="lab-toolbar reveal"><input type="search" id="labSearch" placeholder="Search case, clinic, patient…" autocomplete="off">' +
+        '<div class="lab-chips">' + chips + '</div></div>' +
+      '<div class="lab-pipeline reveal" id="labPipeline">' + lanes + '</div>' +
+      '<div class="empty-note" id="labNoMatch" hidden>No cases match that search.</div>' +
     '</div></div>';
   }
   function kcardHtml(c) {
     var waiting = c.stage === 'doctor_approval';
-    return '<button class="kcard" data-open="' + c.id + '" data-from="lab"><div class="top"><span class="cid">' + c.id + '</span><span class="svc">' + svcLabel(c.service) + '</span></div>' +
+    var hay = (c.id + ' ' + svcLabel(c.service) + ' ' + c.clinic + ' ' + c.patient + ' ' + c.tech + ' ' + (c.design ? c.design.material : '')).toLowerCase();
+    return '<button class="kcard" data-open="' + c.id + '" data-from="lab" data-hay="' + esc(hay) + '"><div class="top"><span class="cid">' + c.id + '</span><span class="svc">' + svcLabel(c.service) + '</span></div>' +
       '<div class="clinic">' + esc(c.clinic) + '</div><div class="patient">' + esc(c.patient) + '</div>' +
       (c.design ? '<div class="kdesign">' + esc(c.design.material) + (c.design.fabrication ? ' · ' + esc(c.design.fabrication) : '') + '</div>' : '') +
       (waiting ? '<div class="waiting">Awaiting doctor</div>' : '') + (c.revisions > 0 ? '<div class="rev">Rev ' + (c.revisions + 1) + '</div>' : '') +
-      '<div class="meta"><span class="tech">● ' + c.tech + '</span><span class="shade">' + esc(c.shade) + '</span></div></button>';
+      '<div class="meta"><span class="tech">● ' + esc(c.tech) + '</span><span class="shade">' + esc(c.shade) + '</span></div></button>';
   }
 
   /* ================================== ADMIN ===================================== */
@@ -1005,13 +1128,16 @@
           w.clinic = val('f-clinic');
           w.patient = val('f-patient');
           w.instructions = val('f-instr');
-          if (isRestoration(w.service)) {
-            w.material = val('w-material'); w.fabrication = val('w-fabrication'); w.incisal = val('w-incisal');
-            w.layering = val('w-layering'); w.glaze = val('w-glaze'); w.surface = val('w-surface');
-            w.shadeCervical = val('w-shade-cervical'); w.shadeBody = val('w-shade-body'); w.shadeIncisal = val('w-shade-incisal');
-          }
+          syncWizardDesign();
         }
         w.step++; renderCurrent();
+      });
+      var wizBody = document.querySelector('.wiz-body');
+      if (wizBody && UI.wizard.step === 1) wizBody.addEventListener('change', function (e) {
+        if (e.target.tagName !== 'SELECT') return;
+        syncWizardDesign();
+        var viz = document.getElementById('toothVizWrap');
+        if (viz) viz.innerHTML = toothVizHtml(UI.wizard);
       });
       var backBtn = document.getElementById('wiz-back'); if (backBtn) backBtn.addEventListener('click', function () { UI.wizard.step--; renderCurrent(); });
       var submitBtn = document.getElementById('wiz-submit'); if (submitBtn) submitBtn.addEventListener('click', submitWizard);
@@ -1052,6 +1178,34 @@
 
     if (route === 'portal') {
       document.querySelectorAll('[data-portal-tab]').forEach(function (b) { b.addEventListener('click', function () { UI.portalTab = b.dataset.portalTab; renderCurrent(); }); });
+      var ps = document.getElementById('portalSearch');
+      if (ps) ps.addEventListener('input', function () {
+        var q = ps.value.trim().toLowerCase();
+        var shown = 0;
+        document.querySelectorAll('#portalTable tbody tr').forEach(function (tr) {
+          var hit = !q || (tr.dataset.hay || '').indexOf(q) !== -1;
+          tr.hidden = !hit; if (hit) shown++;
+        });
+        var nm = document.getElementById('portalNoMatch'); if (nm) nm.hidden = shown !== 0;
+      });
+    }
+
+    if (route === 'studio') {
+      document.querySelectorAll('[data-lab-stage]').forEach(function (b) { b.addEventListener('click', function () { UI.labStage = b.dataset.labStage; renderCurrent(); }); });
+      var ls = document.getElementById('labSearch');
+      if (ls) ls.addEventListener('input', function () {
+        var q = ls.value.trim().toLowerCase();
+        var shown = 0;
+        document.querySelectorAll('#labPipeline .kcard').forEach(function (card) {
+          var hit = !q || (card.dataset.hay || '').indexOf(q) !== -1;
+          card.hidden = !hit; if (hit) shown++;
+        });
+        document.querySelectorAll('#labPipeline .lane').forEach(function (lane) {
+          var any = lane.querySelector('.kcard:not([hidden])');
+          lane.style.display = (q && !any) ? 'none' : '';
+        });
+        var nm = document.getElementById('labNoMatch'); if (nm) nm.hidden = shown !== 0;
+      });
     }
 
     if (route === 'admin') {
