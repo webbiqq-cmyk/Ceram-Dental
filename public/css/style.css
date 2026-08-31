@@ -1,53 +1,34 @@
 :root{
-  --porcelain:#FBF6FA;
+  /* White base, violet brand — one bright look for everyone. */
+  --porcelain:#FCFBFD;
   --surface:#FFFFFF;
-  --surface-sunken:#F3E9F2;
-  --ink:#211726;
-  --ink-soft:#7C6D82;
-  --line:#E8DCE7;
+  --surface-sunken:#F6F1F7;
+  --ink:#241A2B;
+  --ink-soft:#79697F;
+  --line:#EBE1EC;
   --violet:#7E1F93;
   --violet-deep:#59166F;
-  --violet-soft:#F2E3F4;
+  --violet-soft:#F5E8F7;
   --rose:#B23FA8;
   --lavender:#D9A6DE;
   --plum-surface:#3A2640;
   --champagne:#AD8140;
   --ready:#3F7F63;
-  --ready-soft:#E1F0E8;
+  --ready-soft:#E4F1EB;
   --amber:#966122;
-  --amber-soft:#F3E8D6;
+  --amber-soft:#F5EAD9;
   --critical:#A8433E;
-  --critical-soft:#F3E0DD;
-  --shadow: 0 1px 2px rgba(43,25,45,.07), 0 8px 26px -12px rgba(43,25,45,.22);
+  --critical-soft:#F5E2DF;
+  --shadow: 0 1px 2px rgba(58,38,64,.06), 0 10px 30px -14px rgba(58,38,64,.16);
 
   --font-display:'Outfit', ui-sans-serif, system-ui, sans-serif;
   --font-body:'Mulish', ui-sans-serif, system-ui, sans-serif;
   --font-accent:'Italiana', ui-serif, Georgia, serif;
   --font-mono:'IBM Plex Mono', ui-monospace, monospace;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --porcelain:#1C1420; --surface:#251B2A; --surface-sunken:#170F1B;
-    --ink:#F1E6EF; --ink-soft:#B79FBB; --line:#3C2E42;
-    --violet:#CD84DB; --violet-deep:#E3ABEC; --violet-soft:#31212F;
-    --rose:#DB84CD; --lavender:#E9C7ED; --plum-surface:#2A1B30; --champagne:#D8B679;
-    --ready:#82BCA0; --ready-soft:#20332A; --amber:#D6A25B; --amber-soft:#332818;
-    --critical:#DE8F8B; --critical-soft:#382220;
-    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 26px -12px rgba(0,0,0,.55);
-  }
-}
-:root[data-theme="dark"]{
-  --porcelain:#1C1420; --surface:#251B2A; --surface-sunken:#170F1B;
-  --ink:#F1E6EF; --ink-soft:#B79FBB; --line:#3C2E42;
-  --violet:#CD84DB; --violet-deep:#E3ABEC; --violet-soft:#31212F;
-  --rose:#DB84CD; --lavender:#E9C7ED; --plum-surface:#2A1B30; --champagne:#D8B679;
-  --ready:#82BCA0; --ready-soft:#20332A; --amber:#D6A25B; --amber-soft:#332818;
-  --critical:#DE8F8B; --critical-soft:#382220;
-  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 26px -12px rgba(0,0,0,.55);
-}
 
 *{box-sizing:border-box;}
-html{color-scheme:light dark; scroll-behavior:smooth;}
+html{color-scheme:light; scroll-behavior:smooth;}
 body{
   margin:0; background:var(--porcelain); color:var(--ink);
   font-family:var(--font-body); font-size:15px; line-height:1.55;
