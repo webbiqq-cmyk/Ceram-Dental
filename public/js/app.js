@@ -263,21 +263,25 @@
       return '<div class="step reveal"><span class="num">' + n + '</span><h3>' + t + '</h3><p>' + d + '</p></div>';
     }
     return (
-      '<div class="page"><div class="u">' +
-      '<div class="hero-site reveal">' +
-        '<div class="hero-mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="' + TOOTH_PATH + '"/></svg></div>' +
-        '<div class="content">' +
-          '<span class="eyebrow-accent">Ceram Dental — New Zinj, Manama</span>' +
-          '<h1>Precision dentistry,<br>crafted with care.</h1>' +
-          '<p class="lede">From a first check-up to a full smile makeover, our doctors and our own in-house ceramics lab work together so your treatment is planned right and made right — the first time.</p>' +
+      '<div class="page page-flush">' +
+      '<section class="home-hero">' +
+        '<div class="hero-copy reveal">' +
+          '<span class="kicker">Welcome to Ceram Dental · New Zinj, Manama</span>' +
+          '<h1>Your smile, in careful hands.</h1>' +
+          '<p class="welcome">Come in for a routine check-up or a full smile makeover — either way you&rsquo;re looked after by doctors who take the time to explain, and a ceramics lab one floor up that shapes your crowns and veneers by hand. No rush, no pressure. Just a clear plan, a comfortable visit, and a result that looks like it was always yours.</p>' +
           '<div class="cta-row">' +
-            '<a class="btn btn-primary" href="#/contact">Book a consultation</a>' +
-            '<a class="btn btn-onphoto" href="#/services">Explore services</a>' +
-            '<a class="hero-link" href="#/about">Learn more about us →</a>' +
+            '<a class="btn btn-primary btn-lg" href="#/contact">Book a consultation</a>' +
+            '<a class="btn btn-ghost btn-lg" href="#/about">Learn more about us</a>' +
           '</div>' +
-          '<div class="hero-meta"><span>In-house ceramics lab</span><span>' + SERVICES.length + ' dental specialties</span><span>Sat–Thu · New Zinj, Manama</span></div>' +
+          '<div class="hero-trust"><span>In-house ceramics lab</span><span>' + SERVICES.length + ' dental specialties</span><span>Open Sat–Thu</span></div>' +
         '</div>' +
-      '</div>' +
+        '<div class="hero-photo reveal">' +
+          '<img src="/images/reception.jpg" alt="Inside the Ceram Dental clinic, New Zinj">' +
+          '<span class="hero-photo-cap">Our clinic, New Zinj</span>' +
+        '</div>' +
+      '</section>' +
+
+      '<div class="u">' +
 
       '<div class="stat-strip reveal">' +
         '<div class="chipstat"><b>In-house</b><span>CAD-CAM ceramics lab</span></div>' +
