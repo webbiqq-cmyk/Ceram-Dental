@@ -213,10 +213,10 @@
       '</div>' +
 
       '<div class="section grid-2">' +
-        '<div class="vm-card vision reveal"><span class="eyebrow">Why patients choose us</span>' +
-          '<h2 style="color:#fff; font-size:22px; margin-top:10px;">Designed and made under one roof.</h2>' +
-          '<p>Most clinics send your case to an outside lab you\'ll never meet. Ours is upstairs — every crown, veneer and guide is checked against the same five-point protocol before it reaches your dentist.</p></div>' +
-        '<div class="card reveal"><span class="eyebrow">Shop</span><h3 style="margin-top:8px;">Take-home care &amp; retail</h3>' +
+        '<div class="card accent reveal"><span class="eyebrow">Why patients choose us</span>' +
+          '<h2 style="font-size:22px; margin-top:10px;">Designed and made under one roof.</h2>' +
+          '<p style="color:var(--ink-soft); margin-top:10px;">Most clinics send your case to an outside lab you\'ll never meet. Ours is upstairs — every crown, veneer and guide is checked against the same five-point protocol before it reaches your dentist.</p></div>' +
+        '<div class="card accent reveal"><span class="eyebrow">Shop</span><h3 style="margin-top:8px;">Take-home care &amp; retail</h3>' +
           '<p>Whitening kits, retainer cases and the essentials your dentist recommends — ready to pick up at your next visit.</p>' +
           '<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="#/shop">Visit the shop →</a></div>' +
       '</div>' +
@@ -224,7 +224,7 @@
       '<div class="section cta-banner reveal">' +
         '<h2>Ready for your best smile?</h2>' +
         '<p>Book a consultation and our team will help you find the right treatment — no pressure, just a plan.</p>' +
-        '<div class="cta-row"><a class="btn btn-onphoto" href="#/contact">Book a consultation</a><a class="btn btn-onphoto" href="tel:+97317131123">Call ' + esc(DATA.settings.phone || '+973 1713 1123') + '</a></div>' +
+        '<div class="cta-row"><a class="btn btn-white" href="#/contact">Book a consultation</a><a class="btn btn-onphoto" href="tel:+97317131123">Call ' + esc(DATA.settings.phone || '+973 1713 1123') + '</a></div>' +
       '</div>' +
 
       '</div></div>' + footer()

@@ -134,6 +134,7 @@ img{max-width:100%; display:block;}
   position:relative; border-radius:24px; overflow:hidden; margin-bottom:20px; min-height:440px;
   display:flex; align-items:center; box-shadow:var(--shadow);
   background:
+    radial-gradient(420px circle at 6% 8%, rgba(255,255,255,.16), transparent 60%),
     radial-gradient(900px circle at 88% -10%, color-mix(in srgb, var(--rose) 38%, transparent), transparent 55%),
     radial-gradient(700px circle at -5% 115%, color-mix(in srgb, var(--violet) 42%, transparent), transparent 55%),
     linear-gradient(160deg, #2a1633 0%, #1c1420 100%);
@@ -161,17 +162,31 @@ img{max-width:100%; display:block;}
 .svc-card:hover{border-color:var(--violet); transform:translateY(-2px);}
 
 .cta-banner{
-  border-radius:20px; padding:44px; text-align:center; color:#fff;
-  background:linear-gradient(135deg, var(--violet-deep), var(--violet) 60%, var(--rose));
+  position:relative; overflow:hidden; border-radius:20px; padding:44px; text-align:center; color:#fff;
+  background:
+    radial-gradient(480px circle at 12% 15%, rgba(255,255,255,.22), transparent 60%),
+    radial-gradient(420px circle at 92% 90%, rgba(255,255,255,.14), transparent 55%),
+    linear-gradient(135deg, var(--violet-deep), var(--violet) 60%, var(--rose));
 }
-.cta-banner h2{color:#fff; font-size:clamp(1.4rem,2.6vw,1.9rem);}
-.cta-banner p{color:rgba(255,255,255,.85); margin-top:10px; max-width:52ch; margin-left:auto; margin-right:auto;}
-.cta-banner .cta-row{margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+.cta-banner h2{color:#fff; font-size:clamp(1.4rem,2.6vw,1.9rem); position:relative;}
+.cta-banner p{color:rgba(255,255,255,.85); margin-top:10px; max-width:52ch; margin-left:auto; margin-right:auto; position:relative;}
+.cta-banner .cta-row{margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; position:relative;}
+.btn-white{background:#fff; color:var(--violet-deep); border-color:#fff;}
+.btn-white:hover{background:var(--lavender);}
+
+/* light accent card — pairs a violet accent with a white surface for contrast */
+.card.accent{border-top:3px solid var(--violet);}
+.card.accent .eyebrow{color:var(--violet);}
 
 /* ================= ABOUT ================= */
 .vm-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
 .vm-card{border-radius:16px; padding:28px; box-shadow:var(--shadow);}
-.vm-card.vision{background:var(--plum-surface); color:#fff;}
+.vm-card.vision{
+  color:#fff;
+  background:
+    radial-gradient(340px circle at 90% -10%, rgba(255,255,255,.14), transparent 60%),
+    var(--plum-surface);
+}
 .vm-card.vision .eyebrow{color:var(--lavender);}
 .vm-card.vision p{color:rgba(255,255,255,.82);}
 .vm-card.mission{background:var(--surface); border:1px solid var(--line);}
