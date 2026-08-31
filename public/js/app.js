@@ -46,14 +46,26 @@
   var TOOTH_PATH = 'M12 21c-1.6-3-2-6.4-2-9.2C10 8.5 8.7 6 6.5 6 4 6 3 8.3 3 10.5c0 5 2.6 9 4.6 10.3.7.5 1.6-.1 1.8-1l.6-3c.2-1 1.8-1 2 0l.6 3c.2.9 1.1 1.5 1.8 1 2-1.3 4.6-5.3 4.6-10.3C21 8.3 20 6 17.5 6 15.3 6 14 8.5 14 11.8c0 2.8-.4 6.2-2 9.2Z';
   var ADMIN_TABS = [
     ['overview', 'Overview'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
-    ['orders', 'Shop Orders'], ['team', 'Team'], ['applications', 'Careers'], ['messages', 'Messages'], ['settings', 'Settings']
+    ['products', 'Products'], ['orders', 'Shop Orders'], ['team', 'Team'], ['applications', 'Careers'], ['messages', 'Messages'], ['settings', 'Settings']
   ];
+  var PRODUCT_CATEGORIES = ['Chairside kit', 'Patient retail'];
 
   /* ============================== helpers =============================== */
   function money(n) { return 'BD ' + Number(n || 0).toFixed(3); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
   function fmtDate(d) { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
   function fmtDateTime(d) { return new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  function val(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+  function fval(form, name) { var el = form.querySelector('[name="' + name + '"]'); return el ? el.value : ''; }
+  function specsToText(specs) { return (specs || []).map(function (s) { return s.value ? s.label + ': ' + s.value : s.label; }).join('\n'); }
+  function specsFromText(text) {
+    return String(text || '').split('\n').map(function (line) {
+      var i = line.indexOf(':');
+      if (i === -1) { var only = line.trim(); return only ? { label: only, value: '' } : null; }
+      var label = line.slice(0, i).trim();
+      return label ? { label: label, value: line.slice(i + 1).trim() } : null;
+    }).filter(Boolean);
+  }
   function labelFor(stageKey) { return STAGES[STAGE_INDEX[stageKey]].label; }
   function svcLabel(key) { return SVC[key] ? SVC[key].label : key; }
 
@@ -366,10 +378,14 @@
         '<button class="dash-tab' + (UI.shopTab === 'practices' ? ' active' : '') + '" data-shop-tab="practices">For Practices</button>' +
       '</div>' +
       '<div class="product-grid">' + DATA.products.filter(function (p) {
+        if (p.active === false) return false;
         return UI.shopTab === 'patients' ? p.category === 'Patient retail' : p.category === 'Chairside kit';
       }).map(function (p, i) {
-        return '<div class="product-card reveal" style="--i:' + i + '"><span class="cat">' + p.category + '</span><h3>' + p.name + '</h3><p>' + p.desc + '</p>' +
-          '<div class="row"><span class="price">' + money(p.price) + '</span><button class="btn btn-primary btn-sm" data-add-product="' + p.id + '">Add to cart</button></div></div>';
+        var specs = (p.specs && p.specs.length)
+          ? '<ul class="spec-list">' + p.specs.slice(0, 4).map(function (sp) { return '<li><b>' + esc(sp.label) + '</b>' + (sp.value ? ' · ' + esc(sp.value) : '') + '</li>'; }).join('') + '</ul>'
+          : '';
+        return '<div class="product-card reveal" style="--i:' + i + '"><span class="cat">' + esc(p.category) + '</span><h3>' + esc(p.name) + '</h3><p>' + esc(p.desc) + '</p>' + specs +
+          '<div class="row"><span class="price">' + money(p.price) + '</span><button class="btn btn-primary btn-sm" data-add-product="' + esc(p.id) + '">Add to cart</button></div></div>';
       }).join('') + '</div>' +
       '</div></div>' + footer()
     );
@@ -596,6 +612,7 @@
       tab === 'appointments' ? adminAppointments() :
       tab === 'invoices' ? adminInvoices() :
       tab === 'expenses' ? adminExpenses() :
+      tab === 'products' ? adminProducts() :
       tab === 'orders' ? adminOrders() :
       tab === 'team' ? adminTeam() :
       tab === 'applications' ? adminApplications() :
@@ -723,6 +740,63 @@
       return '<div class="list-row"><div><div class="t">' + esc(m.name) + '</div><div class="s">' + esc(m.email) + ' — ' + esc(m.message) + '</div></div><div class="s">' + fmtDate(m.createdAt) + '</div></div>';
     }).join('');
     return '<div class="card reveal"><div class="list-plain">' + rows + '</div></div>';
+  }
+
+  function adminProducts() {
+    var catOptions = function (selected) {
+      return PRODUCT_CATEGORIES.map(function (c) { return '<option' + (c === selected ? ' selected' : '') + '>' + c + '</option>'; }).join('');
+    };
+
+    var listed = DATA.products.filter(function (p) { return p.active !== false; }).length;
+    var stats = '<div class="stat-strip reveal" style="margin:0 0 22px;">' +
+      '<div class="chipstat"><b>' + DATA.products.length + '</b><span>Products</span></div>' +
+      '<div class="chipstat"><b>' + listed + '</b><span>Listed in shop</span></div>' +
+      '<div class="chipstat"><b>' + (DATA.products.length - listed) + '</b><span>Hidden</span></div>' +
+    '</div>';
+
+    var addForm = '<div class="card reveal" style="margin-bottom:20px;"><span class="eyebrow" style="margin-bottom:14px;">Add a product</span>' +
+      '<form id="productAddForm" class="form-grid">' +
+        '<div class="field"><label>Name</label><input id="np-name" required></div>' +
+        '<div class="field"><label>Category</label><select id="np-category">' + catOptions('Chairside kit') + '</select></div>' +
+        '<div class="field"><label>Price (BD)</label><input id="np-price" type="number" min="0" step="0.001" required></div>' +
+        '<div class="field"><label>SKU</label><input id="np-sku" placeholder="Optional"></div>' +
+        '<div class="field"><label>Stock on hand</label><input id="np-stock" type="number" min="0" step="1" placeholder="Optional"></div>' +
+        '<div class="field"><label>&nbsp;</label><span style="font-size:12px; color:var(--ink-soft); padding-top:9px;">New products are listed in the shop by default.</span></div>' +
+        '<div class="field full"><label>Description</label><textarea id="np-desc" placeholder="Shown on the shop card"></textarea></div>' +
+        '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
+          '<textarea id="np-specs" placeholder="Material: A-silicone&#10;Set time: 45 s&#10;Shelf life: 24 months"></textarea></div>' +
+        '<div class="field full"><button class="btn btn-primary" type="submit">Add product</button></div>' +
+      '</form></div>';
+
+    if (!DATA.products.length) return stats + addForm + '<div class="empty-note">No products yet — add your first one above.</div>';
+
+    var cards = DATA.products.map(function (p) {
+      return '<div class="card reveal prod-card">' +
+        '<form class="form-grid product-edit-form" data-product-id="' + esc(p.id) + '">' +
+          '<div class="field full prod-card-head">' +
+            '<div><span class="eyebrow">' + esc(p.category) + (p.active === false ? ' · hidden' : '') + '</span>' +
+              '<h3 style="font-size:16px; margin-top:4px;">' + esc(p.name) + '</h3></div>' +
+            '<span class="mono" style="font-size:11px; color:var(--ink-soft);">' + esc(p.id) + '</span>' +
+          '</div>' +
+          '<div class="field"><label>Name</label><input name="name" value="' + esc(p.name) + '" required></div>' +
+          '<div class="field"><label>Category</label><select name="category">' + catOptions(p.category) + '</select></div>' +
+          '<div class="field"><label>Price (BD)</label><input name="price" type="number" min="0" step="0.001" value="' + esc(p.price) + '" required></div>' +
+          '<div class="field"><label>SKU</label><input name="sku" value="' + esc(p.sku || '') + '"></div>' +
+          '<div class="field"><label>Stock on hand</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock == null ? '' : p.stock) + '"></div>' +
+          '<div class="field"><label>Shop visibility</label><select name="active">' +
+            '<option value="true"' + (p.active === false ? '' : ' selected') + '>Listed in shop</option>' +
+            '<option value="false"' + (p.active === false ? ' selected' : '') + '>Hidden</option></select></div>' +
+          '<div class="field full"><label>Description</label><textarea name="desc">' + esc(p.desc || '') + '</textarea></div>' +
+          '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
+            '<textarea name="specs" rows="4">' + esc(specsToText(p.specs)) + '</textarea></div>' +
+          '<div class="field full prod-card-actions">' +
+            '<button class="btn btn-primary btn-sm" type="submit">Save changes</button>' +
+            '<button class="btn btn-danger-ghost btn-sm" type="button" data-del-product="' + esc(p.id) + '">Delete</button></div>' +
+        '</form>' +
+      '</div>';
+    }).join('');
+
+    return stats + addForm + '<div class="prod-admin-list">' + cards + '</div>';
   }
 
   function adminSettings() {
@@ -951,6 +1025,41 @@
           }) });
           await loadState(); renderCurrent(); toast('Settings saved');
         } catch (err) { toast(err.message); }
+      });
+
+      var paf = document.getElementById('productAddForm');
+      if (paf) paf.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        try {
+          await api('/api/products', { method: 'POST', body: JSON.stringify({
+            name: val('np-name'), category: val('np-category'), price: val('np-price'),
+            sku: val('np-sku'), stock: val('np-stock'), desc: val('np-desc'),
+            specs: specsFromText(val('np-specs'))
+          }) });
+          await loadState(); renderCurrent(); toast('Product added');
+        } catch (err) { toast(err.message); }
+      });
+      document.querySelectorAll('.product-edit-form').forEach(function (f) {
+        f.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          try {
+            await api('/api/products/' + encodeURIComponent(f.dataset.productId), { method: 'POST', body: JSON.stringify({
+              name: fval(f, 'name'), category: fval(f, 'category'), price: fval(f, 'price'),
+              sku: fval(f, 'sku'), stock: fval(f, 'stock'), active: fval(f, 'active') === 'true',
+              desc: fval(f, 'desc'), specs: specsFromText(fval(f, 'specs'))
+            }) });
+            await loadState(); renderCurrent(); toast('Product updated');
+          } catch (err) { toast(err.message); }
+        });
+      });
+      document.querySelectorAll('[data-del-product]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          if (!window.confirm('Delete this product? This can\'t be undone.')) return;
+          try {
+            await api('/api/products/' + encodeURIComponent(b.dataset.delProduct) + '/delete', { method: 'POST' });
+            await loadState(); renderCurrent(); toast('Product deleted');
+          } catch (err) { toast(err.message); }
+        });
       });
     }
 

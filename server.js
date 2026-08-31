@@ -79,6 +79,25 @@ app.post('/api/checkout', (req, res) => {
   ok(res, { order });
 });
 
+/* ------------------------------- Products ------------------------------- */
+app.post('/api/products', (req, res) => {
+  const product = db.addProduct(req.body || {});
+  if (!product) return bad(res, 'A name and a valid price are required.');
+  ok(res, { product });
+});
+
+app.post('/api/products/:id', (req, res) => {
+  const product = db.updateProduct(req.params.id, req.body || {});
+  if (!product) return bad(res, 'Unknown product.');
+  ok(res, { product });
+});
+
+app.post('/api/products/:id/delete', (req, res) => {
+  const done = db.deleteProduct(req.params.id);
+  if (!done) return bad(res, 'Unknown product.');
+  ok(res);
+});
+
 /* ------------------------------- Careers -------------------------------- */
 app.post('/api/careers/apply', (req, res) => {
   const { jobId, name, email, phone, note } = req.body || {};

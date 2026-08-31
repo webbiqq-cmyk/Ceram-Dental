@@ -247,6 +247,16 @@ img{max-width:100%; display:block;}
 .product-card p{color:var(--ink-soft); font-size:13px; flex:1;}
 .product-card .row{display:flex; justify-content:space-between; align-items:center; margin-top:6px;}
 .product-card .price{font-family:var(--font-display); font-size:18px; color:var(--violet);}
+.spec-list{list-style:none; padding:0; margin:2px 0 4px; display:flex; flex-direction:column; gap:5px;}
+.spec-list li{font-size:12px; color:var(--ink-soft); padding-left:14px; position:relative; line-height:1.45;}
+.spec-list li::before{content:""; position:absolute; left:2px; top:7px; width:4px; height:4px; border-radius:50%; background:var(--violet);}
+.spec-list li b{color:var(--ink); font-weight:600;}
+
+/* ---- admin: product management ---- */
+.prod-admin-list{display:flex; flex-direction:column; gap:16px;}
+.prod-card .prod-card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;}
+.prod-card-actions.field{flex-direction:row; align-items:center; gap:10px; margin-top:4px;}
+.prod-card-actions .btn{flex:0 0 auto;}
 
 .cart-backdrop{position:fixed; inset:0; background:rgba(26,15,30,.5); z-index:60; opacity:0; pointer-events:none; transition:opacity .18s;}
 .cart-backdrop.open{opacity:1; pointer-events:auto;}
