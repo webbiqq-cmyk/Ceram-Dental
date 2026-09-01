@@ -565,8 +565,15 @@ img{max-width:100%; display:block;}
 @keyframes toast-in{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
 
 /* ================= WHATSAPP FAB ================= */
-.whatsapp-fab{position:fixed; right:22px; bottom:22px; width:54px; height:54px; border-radius:50%; background:#25D366; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 22px -6px rgba(0,0,0,.4); z-index:45;}
-.whatsapp-fab:hover{transform:scale(1.06);}
+.whatsapp-fab{position:fixed; right:22px; bottom:22px; width:56px; height:56px; border-radius:50%; background:#25D366; color:#fff; display:flex; align-items:center; justify-content:center; z-index:45; transition:transform .18s ease, box-shadow .18s ease; box-shadow:0 8px 22px -6px rgba(0,0,0,.35), 0 0 0 0 rgba(37,211,102,.55); animation:wa-glow 2.4s ease-in-out infinite;}
+.whatsapp-fab svg{display:block; margin-left:1px;}
+.whatsapp-fab:hover{transform:scale(1.08); animation-play-state:paused; box-shadow:0 10px 26px -6px rgba(0,0,0,.4), 0 0 26px 6px rgba(37,211,102,.7);}
+@keyframes wa-glow{
+  0%   {box-shadow:0 8px 22px -6px rgba(0,0,0,.35), 0 0 0 0 rgba(37,211,102,.55);}
+  70%  {box-shadow:0 8px 22px -6px rgba(0,0,0,.35), 0 0 22px 14px rgba(37,211,102,0);}
+  100% {box-shadow:0 8px 22px -6px rgba(0,0,0,.35), 0 0 0 0 rgba(37,211,102,0);}
+}
+@media (prefers-reduced-motion: reduce){ .whatsapp-fab{animation:none; box-shadow:0 8px 22px -6px rgba(0,0,0,.35), 0 0 18px 3px rgba(37,211,102,.45);} }
 
 @media (max-width: 980px){
   .grid-3, .services-grid, .product-grid, .value-row, .dept-grid, .stat-grid{grid-template-columns:repeat(2,1fr);}
