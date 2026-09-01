@@ -255,7 +255,7 @@
     var s = DATA.settings || {};
     return (
       '<footer class="site-footer"><div class="u"><div class="footer-grid">' +
-        '<div><div class="footer-brand"><span class="brand-mark"><img src="/images/icon.png" alt=""></span>' + esc(s.clinicName || 'Ceram Dental') + '</div>' +
+        '<div><div class="footer-brand"><img class="brand-logo" src="/images/logo-white.png" alt="' + esc(s.clinicName || 'Ceram Dental') + '"></div>' +
           '<p class="about-copy">A dental clinic with its own in-house ceramics lab — from your consultation to a restoration made and checked under one roof.</p>' +
           '<div class="social-row" style="margin-top:16px;">' + socialIcons() + '</div></div>' +
         '<div><h4>Explore</h4><a href="#/about">About</a><a href="#/services">Services</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
@@ -305,7 +305,6 @@
             '<a class="btn btn-primary btn-lg" href="#/contact">Book a consultation</a>' +
             '<a class="btn btn-ghost btn-lg" href="#/about">Learn more about us</a>' +
           '</div>' +
-          '<div class="hero-trust"><span>In-house ceramics lab</span><span>' + SERVICES.length + ' dental specialties</span><span>Open Sat–Thu</span></div>' +
         '</div>' +
         '<div class="hero-photo reveal">' +
           '<img src="/images/reception.jpg" alt="Inside the Ceram Dental clinic, New Zinj" fetchpriority="high" decoding="async">' +
@@ -318,7 +317,7 @@
       '<div class="stat-strip reveal">' +
         '<div class="chipstat"><b>In-house</b><span>CAD-CAM ceramics lab</span></div>' +
         '<div class="chipstat"><b>' + SERVICES.length + '</b><span>Dental specialties</span></div>' +
-        '<div class="chipstat"><b>5-point</b><span>Quality check per case</span></div>' +
+        '<div class="chipstat"><b>Sat&ndash;Thu</b><span>9:00 AM &ndash; 7:00 PM</span></div>' +
         '<div class="chipstat"><b>' + DATA.team.length + '</b><span>Doctors on our team</span></div>' +
       '</div>' +
 
