@@ -10,10 +10,11 @@ const SERVICE_FEES = {
   bridges: 320,
   implants: 200,
   surgical_guide: 150,
-  dsd: 60
+  dsd: 60,
+  aligners: 220
 };
 
-let seq = { case: 105, invoice: 105, order: 41, application: 12, message: 30, expense: 9, appointment: 21, team: 5 };
+let seq = { case: 105, invoice: 105, order: 41, application: 12, message: 30, expense: 9, appointment: 21, team: 5, enquiry: 48 };
 function nextId(kind, prefix) { return prefix + (seq[kind]++); }
 
 function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return d; }
@@ -130,11 +131,112 @@ const messages = [];
 const orders = [];
 
 const team = [
-  { id: 'doc-1', name: 'Dr. Sara Al-Khalifa', role: 'Cosmetic & Restorative Dentistry', initials: 'SK' },
-  { id: 'doc-2', name: 'Dr. Mohammed Al-Ansari', role: 'Prosthodontics & Implants', initials: 'MA' },
-  { id: 'doc-3', name: 'Dr. Rania Haddad', role: 'Orthodontics', initials: 'RH' },
-  { id: 'doc-4', name: 'Dr. Omar Khalil', role: 'Oral & Maxillofacial Surgery', initials: 'OK' }
+  {
+    id: 'doc-ahmed-yousri', name: 'Dr. Ahmed Yousri', nameAr: 'د. احمد يسري',
+    role: 'Oral Surgery & Implantology', initials: 'AY', years: 22,
+    photo: '/images/team/ahmed-yousri.jpg',
+    credentials: [
+      'MD, Oral Surgery & Dental Implants (2011)',
+      'BSc, Oral & Dental Surgery (2004)',
+      'Member, International Congress of Oral Implantologists (ICOI)',
+      'Member, Egyptian Society of Dental Implants'
+    ]
+  },
+  {
+    id: 'doc-abdulaziz-adel', name: 'Dr. Abdulaziz Adel', nameAr: 'د. عبدالعزيز عادل',
+    role: 'Implant & Cosmetic Dentistry', initials: 'AA', years: 12,
+    photo: '/images/team/abdulaziz-adel.jpg',
+    credentials: [
+      'Fellowship, Royal College of Surgeons of Edinburgh (MGDS RCSEd)',
+      'Professional Diploma in Implant Dentistry — American Academy of Implant Dentistry',
+      'Professional Certificate in Implant Dentistry — Saint Joseph University, Beirut',
+      'Diploma in Cosmetic Dentistry — Oxford Academy',
+      'Dental Specialty Certificate — Ministry of Health (SDRP)',
+      'Advanced Laser Dentistry Certificate'
+    ]
+  },
+  {
+    id: 'doc-madhavi-alamanda', name: 'Dr. Madhavi Alamanda', nameAr: 'د. مادفي ألاماندا',
+    role: 'Specialist Periodontist', initials: 'MA', years: 18,
+    photo: '/images/team/madhavi-alamanda.jpg',
+    credentials: [
+      'BDS, MDS — Periodontology',
+      'Cosmetic gum treatment & gummy-smile correction',
+      'Surgical management of advanced gum disease'
+    ]
+  },
+  {
+    id: 'doc-hari-sankar', name: 'Dr. Hari Sankar', nameAr: 'د. هاري سنكر',
+    role: 'Specialist Endodontist', initials: 'HS', years: 15,
+    photo: '/images/team/hari-sankar.jpg',
+    credentials: [
+      'MDS — Dr. NTR University of Health Sciences',
+      'BDS — Tamil Nadu Dr. M.G.R. Medical University',
+      'Root canal treatment & microsurgical endodontics'
+    ]
+  },
+  {
+    id: 'doc-chandrime-sreekumar', name: 'Dr. Chandrime A. Sreekumar', nameAr: 'د. تشاندريم أ. سريكومار',
+    role: 'Specialist Orthodontist', initials: 'CS', years: 10,
+    photo: '/images/team/chandrime-sreekumar.jpg',
+    credentials: [
+      'Specialist in fixed braces, clear aligners & functional appliances',
+      'Interceptive and adult orthodontics'
+    ]
+  },
+  {
+    id: 'doc-zainab-almahdi', name: 'Dr. Zainab Al-Mahdi', nameAr: 'د. زينب المهدي',
+    role: 'Cosmetic, Endodontics & Prosthodontics', initials: 'ZM', years: 9,
+    photo: '/images/team/zainab-almahdi.jpg',
+    credentials: [
+      'Bachelor of Oral & Dental Medicine & Surgery — Egypt University of Science & Technology',
+      'Certified in International Dental Implantology — Saint Joseph University',
+      'Internationally accredited in laser dentistry',
+      'Cosmetic dentistry, root canal treatment & prosthodontics'
+    ]
+  },
+  {
+    id: 'doc-basma-radhi', name: 'Dr. Basma Radhi', nameAr: 'د. بسمة رضي',
+    role: 'Cosmetic & Pediatric Dentistry', initials: 'BR', years: 8,
+    photo: '/images/team/basma-radhi.jpg',
+    credentials: [
+      'Bachelor of Oral & Dental Surgery — Misr University of Science & Technology',
+      'Certifications in cosmetic dentistry, porcelain veneers & prosthetics',
+      'Internationally accredited in laser dentistry',
+      'Pediatric dentistry'
+    ]
+  },
+  {
+    id: 'doc-abdullah-qurban', name: 'Dr. Abdullah Qurban', nameAr: 'د. عبدالله قربان',
+    role: 'Cosmetic & Restorative Dentistry', initials: 'AQ', years: 7,
+    photo: '/images/team/abdullah-qurban.jpg',
+    credentials: [
+      'Bachelor of Medicine & Surgery in Oral & Dental Medicine — RAK University, UAE',
+      'Certifications in cosmetic dentistry & dental prosthetics',
+      'Internationally accredited in laser dentistry',
+      'Cosmetic & restorative fillings'
+    ]
+  }
 ];
+
+// New-patient enquiries — most arrive as Instagram DMs. Simple acceptance
+// pipeline: new → contacted → booked → closed.
+const ENQUIRY_STAGES = ['new', 'contacted', 'booked', 'closed'];
+const enquiries = [
+  { id: nextId('enquiry', 'ENQ-'), name: 'Layla Hasan', handle: '@layla.hsn', channel: 'Instagram DM', service: 'veneers', stage: 'new', message: 'Saw your veneer before/after reel — how much for 8 uppers and how long does it take?', createdAt: daysAgo(0.2) },
+  { id: nextId('enquiry', 'ENQ-'), name: 'Mohammed Ali', handle: '+973 3820 5567', channel: 'WhatsApp', service: 'implants', stage: 'new', message: 'Lost a molar, want to ask about an implant. Do you take BUPA?', createdAt: daysAgo(0.6) },
+  { id: nextId('enquiry', 'ENQ-'), name: 'Sara Kamal', handle: '@sara_k', channel: 'Instagram DM', service: 'dsd', stage: 'contacted', message: 'Interested in a smile design preview before deciding.', createdAt: daysAgo(1.4) },
+  { id: nextId('enquiry', 'ENQ-'), name: 'Fahad Noor', handle: '@fahad.noor', channel: 'Instagram DM', service: 'aligners', stage: 'contacted', message: 'Clear aligners — crowded lower teeth. Free consultation?', createdAt: daysAgo(2.1) },
+  { id: nextId('enquiry', 'ENQ-'), name: 'Huda Salman', handle: 'huda.salman@gmail.com', channel: 'Website form', service: 'crowns', stage: 'booked', message: 'Need two crowns replaced, booked for Sunday 5pm.', createdAt: daysAgo(3) },
+  { id: nextId('enquiry', 'ENQ-'), name: 'Ali Mansoor', handle: '@ali.mnsr', channel: 'Instagram DM', service: '', stage: 'closed', message: 'Just asking about whitening prices.', createdAt: daysAgo(5) }
+];
+
+function setEnquiryStage(id, stage) {
+  const e = enquiries.find(x => x.id === id);
+  if (!e || !ENQUIRY_STAGES.includes(stage)) return null;
+  e.stage = stage;
+  return e;
+}
 
 const appointments = [
   { id: nextId('appointment', 'APT-'), name: 'Fatima Al-Sayed', phone: '+973 3900 1122', service: 'veneers', preferredDate: daysAgo(-3), status: 'new', note: 'Interested in a full smile makeover.', createdAt: daysAgo(1) },
@@ -263,7 +365,7 @@ function setAppointmentStatus(id, status) {
 
 function addTeamMember({ name, role }) {
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '—';
-  const member = { id: nextId('team', 'STF-'), name, role: role || '', initials };
+  const member = { id: nextId('team', 'STF-'), name, role: role || '', initials, nameAr: '', years: 0, credentials: [], photo: '' };
   team.push(member);
   return member;
 }
@@ -365,21 +467,23 @@ function summary() {
   const readyCases = cases.filter(c => c.stage === 'ready').length;
   const shopRevenue = orders.reduce((s, o) => s + o.total, 0);
   const newAppointments = appointments.filter(a => a.status === 'new').length;
+  const newEnquiries = enquiries.filter(e => e.stage === 'new').length;
   return {
     revenue, outstanding, overdue, totalExpenses,
     net: Math.round((revenue + shopRevenue - totalExpenses) * 100) / 100,
     activeCases, readyCases, shopRevenue,
     openApplications: applications.length, newMessages: messages.length,
     newAppointments, totalAppointments: appointments.length,
+    newEnquiries, totalEnquiries: enquiries.length,
     trend: revenueTrend(7)
   };
 }
 
 module.exports = {
-  STAGES, SERVICE_FEES,
-  cases, invoices, expenses, products, jobs, applications, messages, orders, team, appointments,
+  STAGES, SERVICE_FEES, ENQUIRY_STAGES,
+  cases, invoices, expenses, products, jobs, applications, messages, orders, team, appointments, enquiries,
   get settings() { return settings; },
   createCase, actOnCase, payInvoice, addExpense, checkout, addApplication, addMessage, summary,
-  addAppointment, setAppointmentStatus, addTeamMember, updateSettings,
+  addAppointment, setAppointmentStatus, addTeamMember, updateSettings, setEnquiryStage,
   addProduct, updateProduct, deleteProduct
 };

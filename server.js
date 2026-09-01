@@ -35,6 +35,7 @@ app.get('/api/state', (req, res) => {
     orders: db.orders,
     team: db.team,
     appointments: db.appointments,
+    enquiries: db.enquiries,
     settings: db.settings,
     summary: db.summary()
   });
@@ -127,6 +128,14 @@ app.post('/api/appointments/:id/status', (req, res) => {
   const apt = db.setAppointmentStatus(req.params.id, status);
   if (!apt) return bad(res, 'Unknown appointment.');
   ok(res, { appointment: apt });
+});
+
+/* ------------------------------- Enquiries ------------------------------- */
+app.post('/api/enquiries/:id/stage', (req, res) => {
+  const { stage } = req.body || {};
+  const enquiry = db.setEnquiryStage(req.params.id, stage);
+  if (!enquiry) return bad(res, 'Unknown enquiry or stage.');
+  ok(res, { enquiry });
 });
 
 /* --------------------------------- Team ----------------------------------- */
