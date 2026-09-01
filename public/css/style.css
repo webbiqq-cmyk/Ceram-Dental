@@ -66,8 +66,9 @@ img{max-width:100%; display:block;}
 .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:600; font-size:18px;}
 .brand-mark{width:34px; height:34px; border-radius:10px; background:var(--violet-soft); display:flex; align-items:center; justify-content:center; padding:5px; flex-shrink:0;}
 .brand-mark img{width:100%; height:100%; object-fit:contain;}
-.main-nav{display:flex; gap:26px; margin:0 auto 0 44px; font-weight:600; font-size:14px; color:var(--ink-soft);}
-.main-nav a:hover, .main-nav a.active{color:var(--violet);}
+.main-nav{display:flex; gap:10px; margin:0 auto; font-weight:700; font-size:14px; color:var(--ink-soft);}
+.main-nav a{padding:7px 14px; border-radius:9px; transition:background .15s ease, color .15s ease;}
+.main-nav a:hover, .main-nav a.active{color:#fff; background:var(--violet);}
 .topbar-actions{display:flex; align-items:center; gap:10px;}
 .icon-btn{position:relative; background:var(--surface-sunken); border:1px solid var(--line); width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--ink);}
 .icon-btn:hover{border-color:var(--violet); color:var(--violet);}
