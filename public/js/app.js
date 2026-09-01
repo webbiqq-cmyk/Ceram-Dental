@@ -20,7 +20,8 @@
     { key: 'bridges', label: 'Bridges', fee: 320, desc: 'Multi-unit fixed bridges with matched shade and contacts.', icon: 'M3 17h18M6 17V9l3-3h6l3 3v8' },
     { key: 'implants', label: 'Implants', fee: 200, desc: 'Implant-supported restorations, your system and abutment.', icon: 'M12 3v10m0 0-3 8h6l-3-8Z' },
     { key: 'surgical_guide', label: 'Surgical Guide', fee: 150, desc: 'Pilot or fully-guided surgical guides from your scan.', icon: 'M4 4h16v16H4Zm4 4h8v8H8Z' },
-    { key: 'dsd', label: 'Digital Smile Design', fee: 60, desc: 'Full smile mockups and design previews before any prep.', icon: 'M4 13c2-5 14-5 16 0M9 17h6' }
+    { key: 'dsd', label: 'Digital Smile Design', fee: 60, desc: 'Full smile mockups and design previews before any prep.', icon: 'M4 13c2-5 14-5 16 0M9 17h6' },
+    { key: 'aligners', label: 'Clear Aligners', fee: 220, desc: 'Invisible aligner treatment planned and reviewed by our orthodontist.', icon: 'M5 9a7 7 0 0 1 14 0v3a7 7 0 0 1-14 0Zm0 3h14' }
   ];
   var SVC = {}; SERVICES.forEach(function (s) { SVC[s.key] = s; });
 
@@ -113,8 +114,12 @@
   }
   var TOOTH_PATH = 'M12 21c-1.6-3-2-6.4-2-9.2C10 8.5 8.7 6 6.5 6 4 6 3 8.3 3 10.5c0 5 2.6 9 4.6 10.3.7.5 1.6-.1 1.8-1l.6-3c.2-1 1.8-1 2 0l.6 3c.2.9 1.1 1.5 1.8 1 2-1.3 4.6-5.3 4.6-10.3C21 8.3 20 6 17.5 6 15.3 6 14 8.5 14 11.8c0 2.8-.4 6.2-2 9.2Z';
   var ADMIN_TABS = [
-    ['overview', 'Overview'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
+    ['overview', 'Overview'], ['enquiries', 'Enquiries'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
     ['products', 'Products'], ['orders', 'Shop Orders'], ['team', 'Team'], ['applications', 'Careers'], ['messages', 'Messages'], ['settings', 'Settings']
+  ];
+  var ENQUIRY_STAGES = [
+    { key: 'new', label: 'New' }, { key: 'contacted', label: 'Contacted' },
+    { key: 'booked', label: 'Consultation booked' }, { key: 'closed', label: 'Closed' }
   ];
   var PRODUCT_CATEGORIES = ['Chairside kit', 'Patient retail'];
 
@@ -170,7 +175,7 @@
   }
 
   /* ================================ state ================================ */
-  var DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], team: [], appointments: [], settings: {}, summary: {} };
+  var DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], team: [], appointments: [], enquiries: [], settings: {}, summary: {} };
   var UI = {
     cart: JSON.parse(localStorage.getItem('ceram_cart') || '[]'),
     wizard: null,
@@ -231,7 +236,7 @@
   function currentRoute() { return (location.hash || '#/').slice(2); }
 
   async function router() {
-    closeDrawer(); closeCart(); closeApplyModal();
+    closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal();
     var route = currentRoute();
     var fn = routes[route] || renderHome;
     document.querySelectorAll('.main-nav a').forEach(function (a) {
@@ -242,12 +247,11 @@
     app.style.opacity = 0;
     try { await loadState(); } catch (e) { /* server briefly unavailable — keep last known state */ }
     var html = await fn();
-    requestAnimationFrame(function () {
-      app.innerHTML = html;
-      attachPageHandlers(route);
-      initReveal();
-      requestAnimationFrame(function () { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });
-    });
+    app.innerHTML = html;
+    window.scrollTo(0, 0);
+    attachPageHandlers(route);
+    initReveal();
+    requestAnimationFrame(function () { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });
   }
 
   /* =============================== shared chrome =========================== */
@@ -288,7 +292,6 @@
 
   /* ================================== HOME ================================ */
   function renderHome() {
-    var doctors = DATA.team.slice(0, 3);
     var st = DATA.settings || {};
     var phone = st.phone || '+973 1713 1123';
     function step(n, t, d) {
@@ -298,7 +301,7 @@
       '<div class="page page-flush">' +
       '<section class="home-hero">' +
         '<div class="hero-copy reveal">' +
-          '<span class="kicker">Welcome to Ceram Dental · New Zinj, Manama</span>' +
+          '<span class="hero-loc">Ceram Dental &middot; New Zinj, Manama</span>' +
           '<h1>Your smile, in careful hands.</h1>' +
           '<p class="welcome">Come in for a routine check-up or a full smile makeover — either way you&rsquo;re looked after by doctors who take the time to explain, and a ceramics lab one floor up that shapes your crowns and veneers by hand. No rush, no pressure. Just a clear plan, a comfortable visit, and a result that looks like it was always yours.</p>' +
           '<div class="cta-row">' +
@@ -307,8 +310,7 @@
           '</div>' +
         '</div>' +
         '<div class="hero-photo reveal">' +
-          '<img src="/images/reception.jpg" alt="Inside the Ceram Dental clinic, New Zinj" fetchpriority="high" decoding="async">' +
-          '<span class="hero-photo-cap">Our clinic, New Zinj</span>' +
+          '<img src="/images/clinic-front.jpg" alt="The front of the Ceram Dental clinic at night, New Zinj, Manama" fetchpriority="high" decoding="async">' +
         '</div>' +
       '</section>' +
 
@@ -334,7 +336,7 @@
           '<a class="btn btn-primary" href="#/about">Learn more about us →</a>' +
         '</div>' +
         '<div class="split-media">' +
-          '<img src="/images/lab.jpg" alt="A ceramist layering a crown in the Ceram Dental lab" loading="lazy" decoding="async">' +
+          '<img src="/images/clinic-care.jpg" alt="A Ceram Dental dentist treating a patient in the clinic" loading="lazy" decoding="async">' +
           '<div class="split-badge"><b>5-point QC</b><span>on every case, before pickup</span></div>' +
         '</div>' +
       '</div>' +
@@ -361,19 +363,19 @@
       '</div>' +
 
       '<div class="section">' +
-        '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2>Meet the clinicians</h2></div>' +
+        '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2>Meet the clinicians</h2>' +
+          '<p class="lede" style="margin-top:8px;">Tap any doctor to see their training and experience.</p></div>' +
           '<a class="btn btn-ghost btn-sm" href="#/about">Meet the team →</a></div>' +
-        '<div class="dept-grid">' + doctors.map(function (d, i) {
-          return '<div class="dept-card reveal" style="--i:' + i + '"><div class="dept-avatar">' + d.initials + '</div><h3>' + d.name + '</h3><p>' + d.role + '</p></div>';
-        }).join('') + '</div>' +
+        '<div class="doctor-tiles">' + DATA.team.map(function (d, i) { return doctorTile(d, i); }).join('') + '</div>' +
       '</div>' +
 
       '<div class="section">' +
         '<div class="section-head"><div><span class="eyebrow">Step inside</span><h2>Visit the clinic</h2></div></div>' +
         '<div class="visit-grid">' +
-          '<div class="space-card reveal" style="background-image:url(/images/hero-night.jpg)"><span class="tag">Ceram Dental, New Zinj</span></div>' +
-          '<div class="space-card reveal" style="background-image:url(/images/reception.jpg)"><span class="tag">Reception</span></div>' +
-          '<div class="space-card reveal" style="background-image:url(/images/lounge.jpg)"><span class="tag">Patient lounge</span></div>' +
+          '<div class="space-card reveal" style="background-image:url(/images/clinic-front.jpg)"><span class="tag">Ceram Dental, New Zinj</span></div>' +
+          '<div class="space-card reveal" style="background-image:url(/images/clinic-reception.jpg)"><span class="tag">Reception</span></div>' +
+          '<div class="space-card reveal" style="background-image:url(/images/clinic-lounge.jpg)"><span class="tag">Patient lounge</span></div>' +
+          '<div class="space-card reveal" style="background-image:url(/images/clinic-care.jpg)"><span class="tag">In the chair</span></div>' +
         '</div>' +
       '</div>' +
 
@@ -408,10 +410,9 @@
         '<p class="lede">We started as a chairside ceramics studio and grew into a full dental clinic — our own doctors, an in-house CAD-CAM lab, and a QC desk that checks every restoration the same way, twice, before it reaches you.</p></div>' +
 
       '<div class="section">' +
-        '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2 style="font-size:21px; margin-top:4px;">Meet the team</h2></div></div>' +
-        '<div class="dept-grid">' + DATA.team.map(function (d, i) {
-          return '<div class="dept-card reveal" style="--i:' + i + '"><div class="dept-avatar">' + d.initials + '</div><h3>' + d.name + '</h3><p>' + d.role + '</p></div>';
-        }).join('') + '</div>' +
+        '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2 style="font-size:21px; margin-top:4px;">Meet the team</h2>' +
+          '<p class="lede" style="margin-top:8px;">' + DATA.team.length + ' dentists and specialists &mdash; orthodontics, periodontics, endodontics, oral surgery, implants and cosmetic dentistry, all under one roof.</p></div></div>' +
+        '<div class="doctor-grid">' + DATA.team.map(function (d, i) { return doctorCard(d, i); }).join('') + '</div>' +
       '</div>' +
 
       '<div class="section vm-grid">' +
@@ -437,13 +438,77 @@
       '</div>' +
 
       '<div class="section space-grid">' +
-        '<div class="space-card reveal" style="background-image:url(/images/lounge.jpg); min-height:300px;"><span class="tag">Patient lounge</span></div>' +
-        '<div class="space-card reveal" style="background-image:url(/images/reception.jpg); min-height:300px;"><span class="tag">Reception, New Zinj</span></div>' +
+        '<div class="space-card reveal" style="background-image:url(/images/clinic-reception.jpg); min-height:300px;"><span class="tag">Reception, New Zinj</span></div>' +
+        '<div class="space-card reveal" style="background-image:url(/images/clinic-front.jpg); min-height:300px;"><span class="tag">Ceram Dental at night</span></div>' +
       '</div>' +
       '</div></div>' + footer()
     );
   }
   function statTile(n, label) { return '<div class="value-tile reveal"><div class="n">' + n + '</div><span>' + label + '</span></div>'; }
+
+  function doctorAvatar(d) {
+    return d.photo
+      ? '<div class="doc-photo"><img src="' + esc(d.photo) + '" alt="' + esc(d.name) + '" loading="lazy" decoding="async"></div>'
+      : '<div class="doc-photo doc-photo-fallback">' + esc(d.initials || '') + '</div>';
+  }
+  function doctorCard(d, i) {
+    var creds = (d.credentials || []).slice(0, 4).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+    return '<button type="button" class="doctor-card reveal" data-doctor="' + esc(d.id) + '" style="--i:' + (i || 0) + '">' +
+      doctorAvatar(d) +
+      '<div class="doc-body">' +
+        '<div class="doc-head"><h3>' + esc(d.name) + '</h3>' + (d.nameAr ? '<span class="doc-ar" dir="rtl">' + esc(d.nameAr) + '</span>' : '') + '</div>' +
+        '<span class="doc-role">' + esc(d.role) + '</span>' +
+        (d.years ? '<span class="doc-years">' + d.years + '+ years&rsquo; experience</span>' : '') +
+        (creds ? '<ul class="doc-creds">' + creds + '</ul>' : '') +
+        '<span class="doc-more">Full profile &rarr;</span>' +
+      '</div>' +
+    '</button>';
+  }
+
+  function doctorTile(d, i) {
+    return '<button type="button" class="doctor-tile reveal" data-doctor="' + esc(d.id) + '" style="--i:' + (i % 6) + '">' +
+      (d.photo
+        ? '<span class="dt-photo"><img src="' + esc(d.photo) + '" alt="' + esc(d.name) + '" loading="lazy" decoding="async"></span>'
+        : '<span class="dt-photo dt-photo-fallback">' + esc(d.initials || '') + '</span>') +
+      '<span class="dt-name">' + esc(d.name) + '</span>' +
+      (d.nameAr ? '<span class="dt-ar" dir="rtl">' + esc(d.nameAr) + '</span>' : '') +
+      '<span class="dt-role">' + esc(d.role) + '</span>' +
+      (d.years ? '<span class="dt-years">' + d.years + '+ yrs</span>' : '') +
+    '</button>';
+  }
+
+  function doctorModalHtml(d) {
+    if (!d) return '';
+    var creds = (d.credentials || []).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+    return '<div class="modal-backdrop" id="doctorModal"><div class="modal doctor-modal">' +
+      '<button class="drawer-close doctor-modal-close" data-close-modal aria-label="Close">✕</button>' +
+      '<div class="dm-top">' +
+        (d.photo
+          ? '<div class="dm-photo"><img src="' + esc(d.photo) + '" alt="' + esc(d.name) + '"></div>'
+          : '<div class="dm-photo dt-photo-fallback">' + esc(d.initials || '') + '</div>') +
+        '<div>' +
+          '<h3>' + esc(d.name) + '</h3>' +
+          (d.nameAr ? '<div class="dm-ar" dir="rtl">' + esc(d.nameAr) + '</div>' : '') +
+          '<span class="doc-role">' + esc(d.role) + '</span>' +
+          (d.years ? '<div class="dm-years">' + d.years + '+ years&rsquo; experience</div>' : '') +
+        '</div>' +
+      '</div>' +
+      (creds ? '<div class="dm-creds"><h4>Training &amp; credentials</h4><ul>' + creds + '</ul></div>' : '') +
+      '<a class="btn btn-primary" href="#/contact" data-close-modal>Book a consultation</a>' +
+    '</div></div>';
+  }
+  function openDoctorModal(id) {
+    var d = (DATA.team || []).find(function (x) { return x.id === id; });
+    if (!d) return;
+    closeDoctorModal();
+    var host = document.createElement('div');
+    host.id = 'doctorModalHost';
+    host.innerHTML = doctorModalHtml(d);
+    document.body.appendChild(host);
+    host.querySelectorAll('[data-close-modal]').forEach(function (b) { b.addEventListener('click', closeDoctorModal); });
+    document.getElementById('doctorModal').addEventListener('click', function (e) { if (e.target.id === 'doctorModal') closeDoctorModal(); });
+  }
+  function closeDoctorModal() { var el = document.getElementById('doctorModalHost'); if (el) el.remove(); }
 
   /* ================================= SERVICES ============================== */
   function renderServices() {
@@ -812,8 +877,9 @@
   /* ================================== ADMIN ===================================== */
   function renderAdmin() {
     var tab = UI.adminTab;
-    var badges = { appointments: DATA.summary.newAppointments, applications: DATA.applications.length, messages: DATA.messages.length };
+    var badges = { enquiries: DATA.summary.newEnquiries, appointments: DATA.summary.newAppointments, applications: DATA.applications.length, messages: DATA.messages.length };
     var body =
+      tab === 'enquiries' ? adminEnquiries() :
       tab === 'appointments' ? adminAppointments() :
       tab === 'invoices' ? adminInvoices() :
       tab === 'expenses' ? adminExpenses() :
@@ -871,6 +937,48 @@
       '</div>';
   }
 
+  function chanSlug(c) { return String(c || '').toLowerCase().replace(/[^a-z]+/g, ''); }
+
+  function adminEnquiries() {
+    if (!DATA.enquiries.length) return '<div class="empty-note">No enquiries yet.</div>';
+    var keys = ENQUIRY_STAGES.map(function (s) { return s.key; });
+    var byStage = {};
+    ENQUIRY_STAGES.forEach(function (s) { byStage[s.key] = DATA.enquiries.filter(function (e) { return e.stage === s.key; }); });
+    var igCount = DATA.enquiries.filter(function (e) { return e.channel === 'Instagram DM'; }).length;
+
+    var strip = '<div class="stat-strip reveal" style="margin:0 0 20px;">' +
+      '<div class="chipstat"><b>' + byStage.new.length + '</b><span>New / unread</span></div>' +
+      '<div class="chipstat"><b>' + byStage.contacted.length + '</b><span>In conversation</span></div>' +
+      '<div class="chipstat"><b>' + byStage.booked.length + '</b><span>Consultations booked</span></div>' +
+      '<div class="chipstat"><b>' + igCount + '</b><span>From Instagram</span></div>' +
+    '</div>';
+
+    var lanes = ENQUIRY_STAGES.map(function (s) {
+      var cards = byStage[s.key].map(function (e) {
+        var idx = keys.indexOf(e.stage);
+        var next = ENQUIRY_STAGES[idx + 1];
+        return '<div class="enq-card">' +
+          '<div class="enq-top"><span class="enq-name">' + esc(e.name) + '</span>' +
+            '<span class="enq-chan chan-' + chanSlug(e.channel) + '">' + esc(e.channel) + '</span></div>' +
+          '<div class="enq-handle">' + esc(e.handle) + (e.service ? ' &middot; ' + esc(svcLabel(e.service)) : '') + '</div>' +
+          '<p class="enq-msg">' + esc(e.message) + '</p>' +
+          '<div class="enq-actions">' +
+            (next ? '<button class="btn btn-primary btn-sm" data-enq-stage="' + next.key + '" data-enq-id="' + e.id + '">' + next.label + ' &rarr;</button>' : '') +
+            (e.stage !== 'closed'
+              ? '<button class="btn btn-ghost btn-sm" data-enq-stage="closed" data-enq-id="' + e.id + '">Close</button>'
+              : '<button class="btn btn-ghost btn-sm" data-enq-stage="new" data-enq-id="' + e.id + '">Reopen</button>') +
+          '</div></div>';
+      }).join('') || '<div class="lane-cards lane-empty">Nothing here.</div>';
+      return '<section class="lane' + (byStage[s.key].length ? '' : ' is-empty') + '">' +
+        '<div class="lane-head"><span class="dot" style="background:var(--violet)"></span><h3>' + s.label + '</h3>' +
+        '<span class="cnt">' + byStage[s.key].length + '</span></div>' +
+        '<div class="lane-cards">' + cards + '</div></section>';
+    }).join('');
+
+    return '<p style="color:var(--ink-soft); font-size:13.5px; margin-bottom:16px;">New-patient enquiries from Instagram DMs, WhatsApp and the website &mdash; one acceptance flow from first message to booked consultation.</p>' +
+      strip + '<div class="lab-pipeline reveal">' + lanes + '</div>';
+  }
+
   function adminAppointments() {
     if (!DATA.appointments.length) return '<div class="empty-note">No appointment requests yet.</div>';
     var rows = DATA.appointments.map(function (a) {
@@ -920,7 +1028,8 @@
 
   function adminTeam() {
     var rows = DATA.team.map(function (m) {
-      return '<div class="team-mini"><div class="av">' + m.initials + '</div><div><div class="t" style="font-weight:600;">' + esc(m.name) + '</div><div class="s" style="color:var(--ink-soft); font-size:12.5px;">' + esc(m.role) + '</div></div></div>';
+      var av = m.photo ? '<div class="av"><img src="' + esc(m.photo) + '" alt="" loading="lazy"></div>' : '<div class="av">' + esc(m.initials) + '</div>';
+      return '<div class="team-mini">' + av + '<div><div class="t" style="font-weight:600;">' + esc(m.name) + (m.years ? ' <span style="color:var(--ink-soft); font-weight:400;">· ' + m.years + '+ yrs</span>' : '') + '</div><div class="s" style="color:var(--ink-soft); font-size:12.5px;">' + esc(m.role) + '</div></div></div>';
     }).join('');
     return '<div class="card reveal" style="margin-bottom:20px;"><span class="eyebrow" style="margin-bottom:12px;">Add a team member</span>' +
       '<form id="teamForm" class="team-form">' +
@@ -1250,6 +1359,7 @@
       document.querySelectorAll('[data-admin-tab]').forEach(function (b) { b.addEventListener('click', function () { UI.adminTab = b.dataset.adminTab; renderCurrent(); }); });
       document.querySelectorAll('[data-pay-invoice]').forEach(function (b) { b.addEventListener('click', async function () { try { await api('/api/invoices/' + b.dataset.payInvoice + '/pay', { method: 'POST' }); await loadState(); renderCurrent(); toast('Invoice marked paid'); } catch (e) { toast(e.message); } }); });
       document.querySelectorAll('[data-appt-status]').forEach(function (b) { b.addEventListener('click', async function () { try { await api('/api/appointments/' + b.dataset.apptId + '/status', { method: 'POST', body: JSON.stringify({ status: b.dataset.apptStatus }) }); await loadState(); renderCurrent(); toast('Appointment updated'); } catch (e) { toast(e.message); } }); });
+      document.querySelectorAll('[data-enq-stage]').forEach(function (b) { b.addEventListener('click', async function () { try { await api('/api/enquiries/' + b.dataset.enqId + '/stage', { method: 'POST', body: JSON.stringify({ stage: b.dataset.enqStage }) }); await loadState(); renderCurrent(); toast('Enquiry updated'); } catch (e) { toast(e.message); } }); });
       var ef = document.getElementById('expenseForm');
       if (ef) ef.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -1319,6 +1429,7 @@
 
     // case cards / rows (portal + studio)
     document.querySelectorAll('[data-open]').forEach(function (el) { el.addEventListener('click', function () { openDrawer(el.dataset.open, el.dataset.from); }); });
+    document.querySelectorAll('[data-doctor]').forEach(function (el) { el.addEventListener('click', function () { openDoctorModal(el.dataset.doctor); }); });
   }
 
   function openApplyModal(jobId) {
@@ -1369,7 +1480,7 @@
       var act = e.target.closest('[data-act]'); if (act) handleCaseAction(act.dataset.act, act.dataset.id);
     });
 
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); closeCart(); closeApplyModal(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal(); } });
 
     window.addEventListener('hashchange', router);
     if (!location.hash) location.hash = '#/';
