@@ -14,8 +14,20 @@ npm install
 npm start
 ```
 
-Then open **http://localhost:3000**. Data lives in memory (`db.js`) and
-resets whenever the server restarts — there's no database to set up.
+Then open **http://localhost:3000**. Data lives in memory (`src/models/`)
+and resets whenever the server restarts — there's no database to set up.
+
+## Code layout
+
+- `server.js` — entry point only; starts `src/app.js` listening.
+- `src/routes/`, `src/controllers/`, `src/models/`, `src/services/` — one
+  file per HTTP resource / entity, so a fix always starts from a
+  predictable place (e.g. an invoices bug → `src/models/invoice.model.js`).
+- `public/js/pages/` — one render function (+ its own event wiring) per
+  page, loaded as native ES modules (no build step). Admin's 11 tabs each
+  get their own file under `public/js/pages/admin/`.
+- `public/js/components/`, `public/js/utils/` — pieces shared across pages
+  (case detail drawer, cart, doctor modal; formatting/tooth-diagram helpers).
 
 ## What's here
 
