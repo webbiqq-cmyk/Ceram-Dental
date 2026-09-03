@@ -15,12 +15,25 @@ function inRange(date, from, to) {
   return true;
 }
 
+// Strict YYYY-MM-DD only. `from`/`to` end up in a filename and then a
+// Content-Disposition header — Node's http module throws on invalid
+// header characters, and a query string is exactly the kind of thing an
+// attacker (or just a bad link) puts arbitrary bytes into. Rejecting
+// anything that isn't a plain date here, before it reaches a header,
+// closes that off at the source rather than relying only on the
+// asyncHandler safety net downstream.
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+function sanitizeDateParam(v) {
+  if (typeof v !== 'string' || !DATE_ONLY.test(v)) return null;
+  return Number.isNaN(new Date(v).getTime()) ? null : v;
+}
+
 // Defaults to the current calendar month when no range is given — matches
 // "export this month's X" being the common case.
 function resolveRange(query) {
   const now = new Date();
-  const from = query.from || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const to = query.to || now.toISOString().slice(0, 10);
+  const from = sanitizeDateParam(query.from) || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const to = sanitizeDateParam(query.to) || now.toISOString().slice(0, 10);
   return { from, to };
 }
 

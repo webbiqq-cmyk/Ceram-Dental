@@ -2,6 +2,7 @@ const { ok, bad } = require('../utils/respond');
 const userModel = require('../models/user.model');
 const authService = require('../services/auth.service');
 const { logAction } = require('../utils/audit');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 function list(req, res) {
   ok(res, { users: userModel.list() });
@@ -52,4 +53,4 @@ function remove(req, res) {
   ok(res);
 }
 
-module.exports = { list, create, update, resetPassword, remove };
+module.exports = { list, create: asyncHandler(create), update, resetPassword: asyncHandler(resetPassword), remove };

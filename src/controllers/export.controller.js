@@ -6,6 +6,7 @@ const orderModel = require('../models/order.model');
 const summaryService = require('../services/summary.service');
 const { inRange, resolveRange, buildXlsx, sendXlsx, buildReportDocx, sendDocx } = require('../services/export.service');
 const { logAction } = require('../utils/audit');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 async function invoices(req, res) {
   const { from, to } = resolveRange(req.query);
@@ -131,4 +132,11 @@ async function report(req, res) {
 
 function fmt(d) { return new Date(d).toISOString().slice(0, 10); }
 
-module.exports = { invoices, expenses, appointments, cases, orders, report };
+module.exports = {
+  invoices: asyncHandler(invoices),
+  expenses: asyncHandler(expenses),
+  appointments: asyncHandler(appointments),
+  cases: asyncHandler(cases),
+  orders: asyncHandler(orders),
+  report: asyncHandler(report)
+};

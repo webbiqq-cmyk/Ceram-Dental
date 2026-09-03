@@ -4,6 +4,7 @@ const sessionModel = require('../models/session.model');
 const activityLog = require('../models/activityLog.model');
 const { ok, bad } = require('../utils/respond');
 const { COOKIE_NAMES, COOKIE_OPTIONS, verifyRawToken } = require('../middleware/auth');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 function isValidRole(role) { return userModel.ROLES.includes(role); }
 
@@ -74,4 +75,4 @@ function mySessions(req, res) {
   ok(res, { sessions });
 }
 
-module.exports = { login, logout, me, changePassword, mySessions };
+module.exports = { login: asyncHandler(login), logout, me, changePassword: asyncHandler(changePassword), mySessions };
