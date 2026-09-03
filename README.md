@@ -36,7 +36,16 @@ start with a console warning, which is fine for development but means
 every restart invalidates existing sessions.
 
 Optional: `SESSION_TTL_HOURS` (default `12`) controls how long a login
-session lasts before needing to sign in again.
+session lasts before needing to sign in again. `REMEMBER_TTL_DAYS`
+(default `30`) controls how long a "remember this device" login lasts
+instead (see Authentication below).
+
+Optional: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+`CLOUDINARY_API_SECRET` enable image upload for products (Admin → Products
+gets an "Upload image" field that signs a direct-to-Cloudinary upload — the
+file never passes through this server). Without them the feature is simply
+hidden; nothing breaks, and product images fall back to a manually-entered
+URL as before.
 
 ## Demo login credentials
 
@@ -68,13 +77,40 @@ gets its own cookie (`admin_session` / `dentist_session` / `lab_session`),
 so a session for one never grants access to another. Sessions are JWTs
 (`jsonwebtoken`) in httpOnly, sameSite=strict cookies; passwords are
 bcrypt-hashed (`src/models/user.model.js`); login is rate-limited per IP
-per role (`src/middleware/security.js`). `GET /api/state` itself is
+per role (`src/middleware/security.js`), and every `/api` request also sits
+behind a general per-IP ceiling on top of that. `GET /api/state` itself is
 role-aware: an anonymous visitor gets only the public-safe fields (team,
 jobs, active products, settings) — cases, invoices, expenses etc. are
 included only when that specific role's session is valid. Case actions
 are further restricted per role in `src/controllers/cases.controller.js`
 (dentist: approve/reject/pickup; lab: advance/qc-accept/qc-reject/pickup)
 to match what each portal's UI actually exposes as buttons.
+
+Every issued session is tracked server-side (`src/models/session.model.js`)
+by a unique `jti`, not just trusted to expire on its own — so logout
+actually revokes it, and Admin → Accounts & Access can force any device
+signed out on demand. Checking "remember this device" at login issues a
+longer-lived session (`REMEMBER_TTL_DAYS`, default 30 days) instead of a
+literal saved password — same revocation, same cookie, just a longer clock,
+so a familiar device skips re-login without weakening the model.
+
+Admin → **Accounts & Access** is the one place logins, roles and access for
+all three portals get created, deactivated, password-reset or deleted
+(with a safeguard against removing/deactivating the last active admin) —
+and it doubles as oversight: every account's active sessions are listed
+there with a one-click "sign out" per device, so admin can see and end
+anyone's active session on the spot. Every create/update/delete, login and
+logout is written to an audit trail (`src/models/activityLog.model.js`,
+Admin → **Activity Log**), and role-targeted in-app notifications
+(`src/models/notification.model.js`, the bell in the top bar, polled every
+25s) fire on the events each role cares about — a new case for lab, a
+mockup ready for review for the dentist, and so on.
+
+Admin → **Export Data** downloads real Excel (`exceljs`) and Word
+(`docx`) files — invoices, expenses, appointments, cases and orders as
+spreadsheets, plus a one-page business summary as a Word doc — filterable
+by date range (defaults to the current month), for manual/offline record
+keeping alongside the live dashboards.
 
 ## What's here
 
@@ -92,8 +128,10 @@ to match what each portal's UI actually exposes as buttons.
   QC → Design → Doctor Approval → CAD-CAM → Layering → QC/Photography →
   Ready for Pickup).
 - **Accounts & Admin** (`/admin`, sign-in required) — revenue and
-  outstanding invoices, expense logging, shop orders, and the
-  applications/messages that come in through Careers and Contact.
+  outstanding invoices, expense logging, shop orders, the
+  applications/messages that come in through Careers and Contact, plus
+  central Accounts & Access management, an Activity Log, and Export Data
+  (see Authentication above).
 
 Submitting a case, checking out in the shop, applying to a job, or sending a
 contact message all write to the same in-memory store, so they show up

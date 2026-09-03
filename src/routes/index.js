@@ -17,5 +17,11 @@ router.use(require('./appointments.routes'));
 router.use(require('./enquiries.routes'));
 router.use(require('./team.routes'));
 router.use(require('./settings.routes'));
+router.use(require('./adminUsers.routes'));
+router.use(require('./adminActivity.routes'));
+router.use(require('./adminSessions.routes'));
+router.use(require('./notifications.routes'));
+router.use(require('./export.routes'));
+router.use(require('./uploads.routes'));
 
 module.exports = router;

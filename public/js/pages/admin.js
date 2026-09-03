@@ -16,6 +16,9 @@ import { adminTeam, attachTeamHandlers } from './admin/team.js';
 import { adminApplications } from './admin/applications.js';
 import { adminMessages } from './admin/messages.js';
 import { adminSettings, attachSettingsHandlers } from './admin/settings.js';
+import { adminAccounts, attachAccountsHandlers } from './admin/accounts.js';
+import { adminActivity } from './admin/activity.js';
+import { adminExport, attachExportHandlers } from './admin/export.js';
 
 const TAB_BODY = {
   overview: adminOverview,
@@ -28,7 +31,10 @@ const TAB_BODY = {
   team: adminTeam,
   applications: adminApplications,
   messages: adminMessages,
-  settings: adminSettings
+  settings: adminSettings,
+  accounts: adminAccounts,
+  activity: adminActivity,
+  export: adminExport
 };
 
 const TAB_HANDLERS = {
@@ -38,7 +44,9 @@ const TAB_HANDLERS = {
   expenses: attachExpensesHandlers,
   products: attachProductsHandlers,
   team: attachTeamHandlers,
-  settings: attachSettingsHandlers
+  settings: attachSettingsHandlers,
+  accounts: attachAccountsHandlers,
+  export: attachExportHandlers
 };
 
 function isSignedIn() { return !!(DATA.auth && DATA.auth.admin); }

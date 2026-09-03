@@ -9,5 +9,6 @@ router.post('/auth/:role/login', loginLimiter, auth.login);
 router.post('/auth/:role/logout', auth.logout);
 router.get('/auth/:role/me', requireRoleParam, auth.me);
 router.post('/auth/:role/change-password', requireRoleParam, auth.changePassword);
+router.get('/auth/:role/sessions', requireRoleParam, auth.mySessions);
 
 module.exports = router;

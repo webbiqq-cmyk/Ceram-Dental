@@ -1,11 +1,12 @@
 // Hash-based router — maps '#/route' to a render function, re-fetches
 // server state on every navigation, then wires up that page's interactions.
-import { loadState } from './state.js';
+import { loadState, loadNotifications } from './state.js';
 import { initReveal } from './reveal.js';
 import { closeDrawer } from './components/drawer.js';
 import { closeCart } from './components/cart.js';
 import { closeApplyModal } from './components/applyModal.js';
 import { closeDoctorModal } from './components/doctor.js';
+import { updateNotifUI } from './components/notifications.js';
 import { attachPageHandlers } from './handlers.js';
 
 import { renderHome } from './pages/home.js';
@@ -56,6 +57,7 @@ export async function router() {
   window.scrollTo(0, 0);
   attachPageHandlers(route);
   initReveal();
+  loadNotifications().then(updateNotifUI);
   requestAnimationFrame(() => { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });
 }
 

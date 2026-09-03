@@ -1,8 +1,11 @@
-// Auth users — one seeded account per portal for this demo/handoff phase.
-// Passwords are never stored in plaintext, only bcrypt hashes; the actual
-// demo credentials were generated randomly and handed to the client
-// out-of-band (never committed to git). Real per-staff accounts can be
-// added later with addUser() below without changing the auth flow at all.
+// Auth users — one seeded account per role for this demo/handoff phase,
+// plus full CRUD so Admin can create real named staff accounts once the
+// clinic is ready to move off the shared demo logins. Passwords are never
+// stored in plaintext, only bcrypt hashes; the actual demo credentials
+// were generated randomly and handed to the client out-of-band (never
+// committed to git).
+const crypto = require('crypto');
+
 const ROLES = ['admin', 'dentist', 'lab'];
 
 const users = [
@@ -13,7 +16,8 @@ const users = [
     passwordHash: '$2a$12$bTO9nkvBdN9p8TsZy3k1.OANN4S8lhNWxJ5sXluEC9bRkauOYq.hO',
     role: 'admin',
     name: 'Practice Admin',
-    active: true
+    active: true,
+    createdAt: new Date()
   },
   {
     id: 'usr-dentist-1',
@@ -21,7 +25,8 @@ const users = [
     passwordHash: '$2a$12$L1KLx/A7iCRRovP9rM1mrOc0iajq64fTgbENc17lh04tX7IjQovaq',
     role: 'dentist',
     name: 'Dentist Portal',
-    active: true
+    active: true,
+    createdAt: new Date()
   },
   {
     id: 'usr-lab-1',
@@ -29,7 +34,8 @@ const users = [
     passwordHash: '$2a$12$rShw6/ZK4Bl8qNRVL0SPwe1/EpihClvryCO/H.KnBuwKqpA0gl.UC',
     role: 'lab',
     name: 'Lab Studio',
-    active: true
+    active: true,
+    createdAt: new Date()
   }
 ];
 
@@ -49,4 +55,52 @@ function setPasswordHash(id, passwordHash) {
   return u;
 }
 
-module.exports = { ROLES, users, findByUsernameAndRole, findById, setPasswordHash };
+function publicView(u) {
+  return { id: u.id, username: u.username, role: u.role, name: u.name, active: u.active, createdAt: u.createdAt };
+}
+
+function list() { return users.map(publicView); }
+
+function createUser({ username, passwordHash, role, name }) {
+  const uname = String(username || '').trim();
+  if (!uname || !ROLES.includes(role) || !passwordHash) return null;
+  if (users.some(x => x.username.toLowerCase() === uname.toLowerCase() && x.role === role)) return null; // no duplicate username within a role
+  const u = { id: 'usr-' + crypto.randomUUID(), username: uname, passwordHash, role, name: name || uname, active: true, createdAt: new Date() };
+  users.push(u);
+  return publicView(u);
+}
+
+function countActiveAdmins() { return users.filter(u => u.role === 'admin' && u.active).length; }
+
+function setActive(id, active) {
+  const u = findById(id);
+  if (!u) return { error: 'Unknown account.' };
+  if (!active && u.role === 'admin' && countActiveAdmins() <= 1) {
+    return { error: 'Cannot deactivate the last remaining admin account.' };
+  }
+  u.active = !!active;
+  return { user: publicView(u) };
+}
+
+function updateName(id, name) {
+  const u = findById(id);
+  if (!u) return null;
+  if (name != null && String(name).trim()) u.name = String(name).trim();
+  return publicView(u);
+}
+
+function removeUser(id) {
+  const u = findById(id);
+  if (!u) return { error: 'Unknown account.' };
+  if (u.role === 'admin' && countActiveAdmins() <= 1 && u.active) {
+    return { error: 'Cannot delete the last remaining admin account.' };
+  }
+  const i = users.findIndex(x => x.id === id);
+  users.splice(i, 1);
+  return { ok: true };
+}
+
+module.exports = {
+  ROLES, users, findByUsernameAndRole, findById, setPasswordHash,
+  list, createUser, setActive, updateName, removeUser, publicView
+};

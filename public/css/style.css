@@ -84,6 +84,17 @@ img{max-width:100%; display:block;}
 .dash-menu a:hover{background:var(--violet-soft); color:var(--violet);}
 .nav-toggle{display:none; background:none; border:none; font-size:20px; color:var(--ink); margin-left:auto;}
 
+.notif-menu{padding:0; min-width:320px; max-width:90vw; max-height:420px; overflow-y:auto;}
+.notif-head{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line); font-weight:700; font-size:13.5px; position:sticky; top:0; background:var(--surface);}
+.notif-item{padding:11px 14px; border-bottom:1px solid var(--line); cursor:pointer;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item:hover{background:var(--surface-sunken);}
+.notif-item.unread{background:var(--violet-soft);}
+.notif-item.unread:hover{background:color-mix(in srgb, var(--violet-soft) 80%, var(--surface-sunken));}
+.notif-title{font-weight:600; font-size:13px;}
+.notif-body{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+.notif-time{font-size:11px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:4px;}
+
 @media (max-width: 900px){
   .main-nav{display:none;}
   .nav-toggle{display:block;}

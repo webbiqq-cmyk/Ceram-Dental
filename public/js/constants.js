@@ -55,7 +55,8 @@ export const TOOTH_PATH = 'M12 21c-1.6-3-2-6.4-2-9.2C10 8.5 8.7 6 6.5 6 4 6 3 8.
 
 export const ADMIN_TABS = [
   ['overview', 'Overview'], ['enquiries', 'Enquiries'], ['appointments', 'Appointments'], ['invoices', 'Invoices'], ['expenses', 'Expenses'],
-  ['products', 'Products'], ['orders', 'Shop Orders'], ['team', 'Team'], ['applications', 'Careers'], ['messages', 'Messages'], ['settings', 'Settings']
+  ['products', 'Products'], ['orders', 'Shop Orders'], ['team', 'Team'], ['applications', 'Careers'], ['messages', 'Messages'], ['settings', 'Settings'],
+  ['accounts', 'Accounts & Access'], ['activity', 'Activity Log'], ['export', 'Export Data']
 ];
 
 export const ENQUIRY_STAGES = [

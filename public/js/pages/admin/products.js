@@ -4,6 +4,7 @@ import { productMediaHtml } from '../../utils/productMedia.js';
 import { PRODUCT_CATEGORIES } from '../../constants.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
+import { uploadWidgetHtml, attachUploadHandlers } from '../../components/cloudinaryUpload.js';
 
 function catOptions(selected) {
   return PRODUCT_CATEGORIES.map(c => '<option' + (c === selected ? ' selected' : '') + '>' + c + '</option>').join('');
@@ -25,6 +26,7 @@ export function adminProducts() {
       '<div class="field"><label>SKU</label><input id="np-sku" placeholder="Optional"></div>' +
       '<div class="field"><label>Stock on hand</label><input id="np-stock" type="number" min="0" step="1" placeholder="Optional"></div>' +
       '<div class="field full"><label>Image URL</label><input id="np-image" placeholder="https://… (leave blank for a placeholder tile)"></div>' +
+      (DATA.cloudinaryConfigured ? uploadWidgetHtml('np-image') : '') +
       '<div class="field full"><label>Description</label><textarea id="np-desc" placeholder="Shown on the shop card"></textarea></div>' +
       '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
         '<textarea id="np-specs" placeholder="Material: A-silicone&#10;Set time: 45 s&#10;Shelf life: 24 months"></textarea></div>' +
@@ -50,7 +52,8 @@ export function adminProducts() {
         '<div class="field"><label>Shop visibility</label><select name="active">' +
           '<option value="true"' + (p.active === false ? '' : ' selected') + '>Listed in shop</option>' +
           '<option value="false"' + (p.active === false ? ' selected' : '') + '>Hidden</option></select></div>' +
-        '<div class="field full"><label>Image URL</label><input name="image" value="' + esc(p.image || '') + '" placeholder="https://… (blank = placeholder tile)"></div>' +
+        '<div class="field full"><label>Image URL</label><input id="pe-image-' + esc(p.id) + '" name="image" value="' + esc(p.image || '') + '" placeholder="https://… (blank = placeholder tile)"></div>' +
+        (DATA.cloudinaryConfigured ? uploadWidgetHtml('pe-image-' + p.id) : '') +
         '<div class="field full"><label>Description</label><textarea name="desc">' + esc(p.desc || '') + '</textarea></div>' +
         '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
           '<textarea name="specs" rows="4">' + esc(specsToText(p.specs)) + '</textarea></div>' +
@@ -65,6 +68,7 @@ export function adminProducts() {
 }
 
 export function attachProductsHandlers() {
+  if (DATA.cloudinaryConfigured) attachUploadHandlers(document, 'products');
   const paf = document.getElementById('productAddForm');
   if (paf) paf.addEventListener('submit', async e => {
     e.preventDefault();

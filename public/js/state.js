@@ -9,7 +9,13 @@ export async function api(path, opts) {
   return json;
 }
 
-export const DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], team: [], appointments: [], enquiries: [], settings: {}, summary: {}, auth: { admin: false, dentist: false, lab: false } };
+export const DATA = {
+  cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [],
+  orders: [], team: [], appointments: [], enquiries: [], settings: {}, summary: {},
+  auth: { admin: false, dentist: false, lab: false },
+  users: [], activeSessions: [], activity: [], cloudinaryConfigured: false,
+  notifications: [], unreadNotifications: 0
+};
 
 export const UI = {
   cart: JSON.parse(localStorage.getItem('ceram_cart') || '[]'),
@@ -19,7 +25,8 @@ export const UI = {
   shopTab: 'patients',
   labStage: 'all',
   portalTab: 'cases',
-  cartOpen: false
+  cartOpen: false,
+  notifOpen: false
 };
 
 export function saveCart() {
@@ -37,4 +44,17 @@ export async function loadState() {
   const s = await api('/api/state');
   delete s.ok;
   Object.assign(DATA, s);
+}
+
+// Notifications are fetched on their own, lighter cycle (see app.js's
+// polling interval) rather than only on navigation — someone sitting on
+// one page for a while should still see the badge update.
+export async function loadNotifications() {
+  const signedIntoAny = DATA.auth.admin || DATA.auth.dentist || DATA.auth.lab;
+  if (!signedIntoAny) { DATA.notifications = []; DATA.unreadNotifications = 0; return; }
+  try {
+    const res = await api('/api/notifications');
+    DATA.notifications = res.notifications;
+    DATA.unreadNotifications = res.unread;
+  } catch (e) { /* not signed in / transient error — keep last known state */ }
 }

@@ -16,6 +16,10 @@ const COOKIE_OPTIONS = {
 
 function cookieNameFor(role) { return COOKIE_NAMES[role]; }
 
+// Decode+verify a token without knowing its role in advance — used by
+// logout to find the jti to revoke.
+function verifyRawToken(token) { return verifyToken(token); }
+
 function readSession(req, role) {
   const name = COOKIE_NAMES[role];
   if (!name) return null;
@@ -61,4 +65,4 @@ function requireRoleParam(req, res, next) {
   next();
 }
 
-module.exports = { COOKIE_NAMES, COOKIE_OPTIONS, cookieNameFor, readSession, requireRole, requireAnyRole, requireRoleParam };
+module.exports = { COOKIE_NAMES, COOKIE_OPTIONS, cookieNameFor, readSession, requireRole, requireAnyRole, requireRoleParam, verifyRawToken };

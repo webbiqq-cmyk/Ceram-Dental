@@ -29,5 +29,8 @@ module.exports = {
   NODE_ENV,
   IS_PRODUCTION,
   JWT_SECRET,
-  SESSION_TTL_HOURS: Number(process.env.SESSION_TTL_HOURS) || 12
+  SESSION_TTL_HOURS: Number(process.env.SESSION_TTL_HOURS) || 12,
+  // "Remember this device" sessions — opt-in at login, still fully
+  // revocable (see src/models/session.model.js), just longer-lived.
+  REMEMBER_TTL_DAYS: Number(process.env.REMEMBER_TTL_DAYS) || 30
 };

@@ -13,6 +13,13 @@ const app = express();
 // real client, not the proxy hop — needed for secure cookies and rate
 // limiting to work correctly in production.
 app.set('trust proxy', 1);
+// Express's default query parser (qs) has a known, currently-unpatched-
+// in-our-range prototype-pollution/DoS advisory for deeply nested
+// bracket syntax. Nothing here needs that — every query param we read
+// (date-range filters, etc.) is a flat string — so switch to Node's
+// built-in simple parser and sidestep the vulnerable code path entirely
+// rather than just judging it low-risk and moving on.
+app.set('query parser', 'simple');
 
 app.use(helmetMiddleware);
 app.use(compression());

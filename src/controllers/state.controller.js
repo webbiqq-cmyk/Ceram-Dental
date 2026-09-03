@@ -10,8 +10,12 @@ const teamModel = require('../models/team.model');
 const appointmentModel = require('../models/appointment.model');
 const enquiryModel = require('../models/enquiry.model');
 const settingsModel = require('../models/settings.model');
+const userModel = require('../models/user.model');
+const sessionModel = require('../models/session.model');
+const activityLog = require('../models/activityLog.model');
 const summaryService = require('../services/summary.service');
 const { readSession } = require('../middleware/auth');
+const { isConfigured: cloudinaryConfigured } = require('../config/cloudinary');
 
 // One consolidated read the client re-fetches after every mutation — but
 // unlike before, what comes back now depends on who's asking. Every caller
@@ -41,7 +45,10 @@ function getState(req, res) {
     orders: [],
     appointments: [],
     enquiries: [],
-    summary: {}
+    summary: {},
+    users: [],
+    activeSessions: [],
+    activity: []
   };
 
   const needsCases = isAdmin || isDentist || isLab;
@@ -56,6 +63,10 @@ function getState(req, res) {
     payload.appointments = appointmentModel.appointments;
     payload.enquiries = enquiryModel.enquiries;
     payload.summary = summaryService.summary();
+    payload.users = userModel.list();
+    payload.activeSessions = sessionModel.listAll();
+    payload.activity = activityLog.list({ limit: 100 });
+    payload.cloudinaryConfigured = cloudinaryConfigured;
   }
 
   res.json(payload);
