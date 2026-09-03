@@ -5,6 +5,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const { helmetMiddleware, apiLimiter } = require('./middleware/security');
+const { requestLog } = require('./middleware/requestLog');
 const apiRoutes = require('./routes');
 
 const app = express();
@@ -21,10 +22,22 @@ app.set('trust proxy', 1);
 // rather than just judging it low-risk and moving on.
 app.set('query parser', 'simple');
 
+app.use(requestLog);
 app.use(helmetMiddleware);
 app.use(compression());
 app.use(cookieParser());
 app.use(express.json({ limit: '100kb' })); // small, deliberate ceiling — nothing here legitimately sends more
+
+// Registered before the rate limiter and ahead of static/API routing so an
+// uptime monitor's ping is never itself throttled or queued behind other
+// traffic — exactly the moment it needs to be reliable is when everything
+// else might be under load. Under /api (not /health) purely so Vercel's
+// routing (vercel.json) sends it to this function rather than looking for
+// a static file — see README/build manual §11.
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/api', apiLimiter, apiRoutes);
 

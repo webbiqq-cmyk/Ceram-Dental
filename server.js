@@ -29,9 +29,26 @@ process.on('uncaughtException', (err) => {
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Ceram Dental demo running → http://localhost:${PORT}`);
   });
+
+  // Graceful shutdown for any always-on host (a VM, Render, Docker, systemd
+  // — anything that sends SIGTERM before killing the process). Finishes
+  // in-flight requests instead of dropping them mid-response, then exits.
+  // Doesn't apply to Vercel: each serverless invocation is already its own
+  // short-lived process with no equivalent shutdown signal to catch.
+  function shutdown(signal) {
+    console.log(`[shutdown] ${signal} received, closing server…`);
+    server.close(() => {
+      console.log('[shutdown] closed cleanly.');
+      process.exit(0);
+    });
+    // Don't hang forever if a connection never closes on its own.
+    setTimeout(() => process.exit(1), 10000).unref();
+  }
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 module.exports = app;

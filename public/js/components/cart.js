@@ -34,7 +34,13 @@ export function renderCartDrawer() {
     '<div class="cart-foot"><div class="total"><span>Total</span><span>' + money(total) + '</span></div><button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button></div>';
 }
 
-export function openCart() { UI.cartOpen = true; renderCartDrawer(); document.getElementById('cartBackdrop').classList.add('open'); document.getElementById('cartDrawer').classList.add('open'); }
+export function openCart() {
+  UI.cartOpen = true; renderCartDrawer();
+  document.getElementById('cartBackdrop').classList.add('open');
+  const drawer = document.getElementById('cartDrawer');
+  drawer.classList.add('open');
+  drawer.focus();
+}
 export function closeCart() { UI.cartOpen = false; document.getElementById('cartBackdrop').classList.remove('open'); document.getElementById('cartDrawer').classList.remove('open'); }
 
 export function addToCart(id) {

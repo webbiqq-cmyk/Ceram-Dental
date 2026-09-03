@@ -19,7 +19,7 @@ function kv(k, v) { return '<div class="kv"><span class="k">' + k + '</span><spa
 
 export function injectDrawerShell() {
   const div = document.createElement('div');
-  div.innerHTML = '<div class="backdrop" id="backdrop"></div><div class="drawer" id="drawer"><div class="drawer-head"><div><div class="cid" id="dw-cid"></div><h3 id="dw-title"></h3></div><button class="drawer-close" id="dw-close">✕</button></div><div class="drawer-body" id="dw-body"></div><div class="drawer-actions" id="dw-actions"></div></div>';
+  div.innerHTML = '<div class="backdrop" id="backdrop"></div><div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dw-title" tabindex="-1"><div class="drawer-head"><div><div class="cid" id="dw-cid"></div><h3 id="dw-title"></h3></div><button class="drawer-close" id="dw-close" aria-label="Close">✕</button></div><div class="drawer-body" id="dw-body"></div><div class="drawer-actions" id="dw-actions"></div></div>';
   document.body.appendChild(div);
   document.getElementById('backdrop').addEventListener('click', closeDrawer);
   document.getElementById('dw-close').addEventListener('click', closeDrawer);
@@ -61,7 +61,13 @@ export function openDrawer(id, from) {
     '<div class="drawer-sec"><h4>Protocol of acceptance</h4><div class="proto-mini">' + protoHtml + '</div></div>' +
     '<div class="drawer-sec"><h4>Timeline</h4><div class="timeline">' + histHtml + '</div></div>';
   document.getElementById('dw-actions').innerHTML = actionsFor(c, from);
+  const wasAlreadyOpen = dr.classList.contains('open');
   back.classList.add('open'); dr.classList.add('open');
+  // Move focus in only on the transition from closed → open, not on every
+  // re-render of an already-open drawer (case actions call openDrawer()
+  // again to refresh its contents — re-stealing focus there would yank it
+  // away from whatever the person just clicked).
+  if (!wasAlreadyOpen) dr.focus();
 }
 
 // Set apart from openDrawer so router.js can clear it without importing the

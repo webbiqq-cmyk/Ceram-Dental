@@ -5,8 +5,8 @@ import { toast } from '../toast.js';
 function applyModalHtml(jobId) {
   const job = DATA.jobs.find(j => j.id === jobId);
   return (
-    '<div class="modal-backdrop" id="applyModal"><div class="modal">' +
-      '<div class="modal-head"><h3>Apply — ' + esc(job ? job.title : '') + '</h3><button class="drawer-close" data-close-modal>✕</button></div>' +
+    '<div class="modal-backdrop" id="applyModal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="applyModalTitle" tabindex="-1">' +
+      '<div class="modal-head"><h3 id="applyModalTitle">Apply — ' + esc(job ? job.title : '') + '</h3><button class="drawer-close" data-close-modal aria-label="Close">✕</button></div>' +
       '<form id="applyForm" class="form-grid">' +
         '<input type="hidden" id="ap-job" value="' + jobId + '">' +
         field('full', 'text', 'ap-name', 'Full name', true) +
@@ -26,6 +26,7 @@ export function openApplyModal(jobId) {
   document.body.appendChild(div);
   div.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', closeApplyModal));
   document.getElementById('applyModal').addEventListener('click', e => { if (e.target.id === 'applyModal') closeApplyModal(); });
+  document.getElementById('ap-name').focus();
   document.getElementById('applyForm').addEventListener('submit', async e => {
     e.preventDefault();
     try {

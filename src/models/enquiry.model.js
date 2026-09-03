@@ -21,4 +21,20 @@ function setEnquiryStage(id, stage) {
   return e;
 }
 
-module.exports = { ENQUIRY_STAGES, enquiries, setEnquiryStage };
+// Logs a lead staff received somewhere this app can't see directly — an
+// Instagram DM, a WhatsApp message, a phone call — so it enters the same
+// acceptance pipeline as everything else instead of living only in
+// someone's head or a separate notebook.
+function addEnquiry({ name, handle, channel, service, message }) {
+  const e = {
+    id: nextId('enquiry', 'ENQ-'),
+    name: String(name || '').trim(), handle: String(handle || '').trim(),
+    channel: String(channel || '').trim(), service: String(service || '').trim(),
+    stage: 'new', message: String(message || '').trim(), createdAt: new Date()
+  };
+  if (!e.name) return null;
+  enquiries.unshift(e);
+  return e;
+}
+
+module.exports = { ENQUIRY_STAGES, enquiries, setEnquiryStage, addEnquiry };

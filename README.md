@@ -17,6 +17,17 @@ npm start
 Then open **http://localhost:3000**. Data lives in memory (`src/models/`)
 and resets whenever the server restarts — there's no database to set up.
 
+Run the automated test suite (`test/`, Node's built-in test runner, no
+extra dependencies) with:
+
+```
+npm test
+```
+
+It also runs automatically on every push via GitHub Actions
+(`.github/workflows/ci.yml`). `GET /api/health` is a lightweight,
+unrate-limited endpoint for uptime monitoring.
+
 ## Deploying — required environment variable
 
 **`JWT_SECRET` must be set before deploying to production**, or every
@@ -66,6 +77,8 @@ committed). See project handoff notes, or use `POST
 - `public/js/pages/` — one render function (+ its own event wiring) per
   page, loaded as native ES modules (no build step). Admin's 11 tabs each
   get their own file under `public/js/pages/admin/`.
+- `test/` — the automated suite (`npm test`); `test/helpers/testApp.js` is
+  shared setup, not itself a test file.
 - `public/js/components/`, `public/js/utils/` — pieces shared across pages
   (case detail drawer, cart, doctor modal, the login gate; formatting/
   tooth-diagram helpers).

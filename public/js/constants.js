@@ -64,4 +64,6 @@ export const ENQUIRY_STAGES = [
   { key: 'booked', label: 'Consultation booked' }, { key: 'closed', label: 'Closed' }
 ];
 
+export const ENQUIRY_CHANNELS = ['Instagram DM', 'WhatsApp', 'Website form', 'Phone call', 'Walk-in'];
+
 export const PRODUCT_CATEGORIES = ['Chairside kit', 'Patient retail'];

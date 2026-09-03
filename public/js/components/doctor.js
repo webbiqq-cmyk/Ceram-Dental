@@ -36,7 +36,7 @@ export function doctorTile(d, i) {
 function doctorModalHtml(d) {
   if (!d) return '';
   const creds = (d.credentials || []).map(c => '<li>' + esc(c) + '</li>').join('');
-  return '<div class="modal-backdrop" id="doctorModal"><div class="modal doctor-modal">' +
+  return '<div class="modal-backdrop" id="doctorModal"><div class="modal doctor-modal" role="dialog" aria-modal="true" aria-label="' + esc(d.name) + '" tabindex="-1">' +
     '<button class="drawer-close doctor-modal-close" data-close-modal aria-label="Close">✕</button>' +
     '<div class="dm-top">' +
       (d.photo
@@ -64,6 +64,7 @@ export function openDoctorModal(id) {
   document.body.appendChild(host);
   host.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', closeDoctorModal));
   document.getElementById('doctorModal').addEventListener('click', e => { if (e.target.id === 'doctorModal') closeDoctorModal(); });
+  host.querySelector('.doctor-modal').focus();
 }
 
 export function closeDoctorModal() {
