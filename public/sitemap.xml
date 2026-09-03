@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Only the root URL is listed because this is a hash-routed single-page app
+  — /about, /services, /shop etc. only exist as client-side fragments
+  (#/about) that a crawler's HTTP request never actually carries, so they
+  aren't separate crawlable pages today. Once the site moves to real
+  path-based routing (see README.md), each public page should get its own
+  <url> entry here.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ceram-dental-hazel.vercel.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

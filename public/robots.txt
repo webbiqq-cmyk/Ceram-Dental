@@ -1,0 +1,12 @@
+# This is a single-page app using hash-based routing (#/about, #/shop, …),
+# so search engines only ever see one real URL — the root. There is
+# nothing to Disallow here for that reason: a hash fragment is never sent
+# to the server, so it was never crawlable to begin with, and the private
+# portals (Admin, Dentist Portal, Lab Studio) are additionally gated
+# behind login regardless. See README.md for the recommended follow-up
+# (server-side rendering or path-based routing) once real per-page SEO is
+# wanted.
+User-agent: *
+Allow: /
+
+Sitemap: https://ceram-dental-hazel.vercel.app/sitemap.xml
