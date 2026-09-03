@@ -9,7 +9,9 @@ import { toast } from '../toast.js';
 // this module calls renderCurrent() after a case action) — safe because both
 // sides only touch the imported binding inside function bodies, never at
 // module-evaluation time.
-import { renderCurrent } from '../router.js';
+import { renderCurrent, repaintCurrent } from '../router.js';
+import { predictCaseAfterAction } from '../utils/caseActions.js';
+import { newIdempotencyKey } from '../utils/idempotency.js';
 
 export function pillHtml(c) { return '<span class="pill st-' + c.stage + '"><span class="dot"></span>' + labelFor(c.stage) + '</span>'; }
 
@@ -92,11 +94,35 @@ function actionsFor(c, from) {
 }
 
 export async function handleCaseAction(act, id) {
+  const idx = DATA.cases.findIndex(x => x.id === id);
+  const previous = idx !== -1 ? DATA.cases[idx] : null;
+  const optimistic = previous ? predictCaseAfterAction(previous, act) : null;
+
+  if (optimistic) {
+    // Show the move immediately — a lab tech advancing several cases in a
+    // row shouldn't wait on a round trip to see each one land. Reconciled
+    // with the server's real response (or rolled back) below.
+    DATA.cases[idx] = optimistic;
+    await repaintCurrent();
+    const d = getDrawerState();
+    if (d && d.id === id) openDrawer(id, d.from);
+  }
+
   try {
-    await api('/api/cases/' + id + '/action', { method: 'POST', body: JSON.stringify({ act }) });
+    const key = newIdempotencyKey();
+    await api('/api/cases/' + id + '/action', { method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify({ act }) });
     await loadState();
     renderCurrent();
-    const d = getDrawerState();
-    if (d && d.id === id) openDrawer(id, d.from); else closeDrawer();
-  } catch (e) { toast(e.message); }
+    const d2 = getDrawerState();
+    if (d2 && d2.id === id) openDrawer(id, d2.from); else closeDrawer();
+  } catch (e) {
+    if (optimistic) {
+      // The move didn't actually happen — put the case back the way it was.
+      DATA.cases[idx] = previous;
+      await repaintCurrent();
+      const d3 = getDrawerState();
+      if (d3 && d3.id === id) openDrawer(id, d3.from);
+    }
+    toast(e.message);
+  }
 }

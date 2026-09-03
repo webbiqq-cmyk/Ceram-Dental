@@ -62,3 +62,25 @@ export async function router() {
 }
 
 export function renderCurrent() { router(); }
+
+// Re-paints the current route from whatever's already in DATA — no server
+// round trip. router()/renderCurrent() always calls loadState() first, so
+// it can't be used for an optimistic update: the fetch it kicks off would
+// just overwrite a local optimistic change with server data that hasn't
+// caught up yet. This is the same navToken-guarded paint step, minus the
+// fetch — used by drawer.js's handleCaseAction() to show a case move
+// immediately, and to roll it back cleanly if the request then fails.
+export async function repaintCurrent() {
+  const myToken = ++navToken;
+  const route = currentRoute();
+  const fn = routes[route] || renderHome;
+  const html = await fn();
+  if (myToken !== navToken) return;
+  const app = document.getElementById('app');
+  app.innerHTML = html;
+  attachPageHandlers(route);
+  // No reveal-on-scroll choreography here — this is a repaint of content
+  // that's already on screen (an optimistic update or its rollback), not
+  // a fresh page landing, so nothing should fade or blink back in.
+  app.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+}

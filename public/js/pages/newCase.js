@@ -8,6 +8,7 @@ import { isRestoration, shadeCombo, toothVizHtml } from '../utils/design.js';
 import { footer } from '../components/footer.js';
 import { toast } from '../toast.js';
 import { renderCurrent } from '../router.js';
+import { newIdempotencyKey } from '../utils/idempotency.js';
 
 function freshWizard(preService) {
   return {
@@ -113,8 +114,13 @@ async function submitWizard() {
     layering: w.layering, glaze: w.glaze, surface: w.surface,
     shade: { cervical: w.shadeCervical, body: w.shadeBody, incisal: w.shadeIncisal }
   } : null;
+  // One key for this submission, reused if the user retries after a
+  // failure (a dropped connection right at submit shouldn't be able to
+  // create the case twice) — fresh only the first time this wizard
+  // instance attempts a submit.
+  if (!w.submitKey) w.submitKey = newIdempotencyKey();
   try {
-    const res = await api('/api/cases', { method: 'POST', body: JSON.stringify({ clinic: w.clinic, patient: w.patient, service: w.service, shade: shadeCombo(design && design.shade) || w.shadeBody, instructions: w.instructions, protocol: w.protocol, design }) });
+    const res = await api('/api/cases', { method: 'POST', headers: { 'Idempotency-Key': w.submitKey }, body: JSON.stringify({ clinic: w.clinic, patient: w.patient, service: w.service, shade: shadeCombo(design && design.shade) || w.shadeBody, instructions: w.instructions, protocol: w.protocol, design }) });
     w.newId = res.case.id;
     w.step = 4;
     await loadState();

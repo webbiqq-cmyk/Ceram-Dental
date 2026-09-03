@@ -1,6 +1,14 @@
 import { DATA, UI, api, loadState, saveCart } from '../state.js';
 import { money, field } from '../utils/format.js';
 import { toast } from '../toast.js';
+import { newIdempotencyKey } from '../utils/idempotency.js';
+
+// One key per checkout attempt, reused across a retry of the same click
+// (a dropped connection right at checkout shouldn't be able to place the
+// order twice) but reset the moment the cart itself changes — otherwise a
+// genuinely different order could get silently deduped against a stale
+// key and replay the previous order's response instead of placing itself.
+let checkoutKey = null;
 
 function cartHead() { return '<div class="cart-head"><h3 style="font-size:17px;">Your cart</h3><button class="drawer-close" id="cartClose">✕</button></div>'; }
 
@@ -41,6 +49,7 @@ export function changeQty(id, delta) {
   if (!line) return;
   line.qty += delta;
   if (line.qty <= 0) UI.cart = UI.cart.filter(i => i.id !== id);
+  checkoutKey = null; // cart changed — any in-progress checkout attempt is now stale
   saveCart(); renderCartDrawer();
 }
 
@@ -48,8 +57,10 @@ export async function checkout() {
   const name = document.getElementById('co-name').value.trim();
   if (!name) { toast('Add your clinic or name first.'); return; }
   const address = document.getElementById('co-address').value.trim();
+  if (!checkoutKey) checkoutKey = newIdempotencyKey();
   try {
-    const res = await api('/api/checkout', { method: 'POST', body: JSON.stringify({ items: UI.cart, customer: { name, address } }) });
+    const res = await api('/api/checkout', { method: 'POST', headers: { 'Idempotency-Key': checkoutKey }, body: JSON.stringify({ items: UI.cart, customer: { name, address } }) });
+    checkoutKey = null;
     UI.cart = []; saveCart();
     await loadState();
     document.getElementById('cartDrawer').innerHTML = cartHead() + '<div class="confirm"><div class="check-mark">✓</div><h3>Order placed</h3><div class="cid">' + res.order.id + '</div><p style="color:var(--ink-soft);">' + money(res.order.total) + ' · we\'ll include it with your next pickup.</p></div>';

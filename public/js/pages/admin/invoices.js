@@ -2,6 +2,7 @@ import { DATA, api, loadState } from '../../state.js';
 import { money, fmtDate } from '../../utils/format.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
+import { newIdempotencyKey } from '../../utils/idempotency.js';
 
 export function adminInvoices() {
   const rows = DATA.invoices.map(inv =>
@@ -13,10 +14,16 @@ export function adminInvoices() {
 }
 
 export function attachInvoicesHandlers() {
-  document.querySelectorAll('[data-pay-invoice]').forEach(b => b.addEventListener('click', async () => {
-    try {
-      await api('/api/invoices/' + b.dataset.payInvoice + '/pay', { method: 'POST' });
-      await loadState(); renderCurrent(); toast('Invoice marked paid');
-    } catch (e) { toast(e.message); }
-  }));
+  document.querySelectorAll('[data-pay-invoice]').forEach(b => {
+    // One key per click — a double-click or a retry after a dropped
+    // connection replays the same "mark paid" instead of risking it
+    // running twice.
+    const key = newIdempotencyKey();
+    b.addEventListener('click', async () => {
+      try {
+        await api('/api/invoices/' + b.dataset.payInvoice + '/pay', { method: 'POST', headers: { 'Idempotency-Key': key } });
+        await loadState(); renderCurrent(); toast('Invoice marked paid');
+      } catch (e) { toast(e.message); }
+    });
+  });
 }

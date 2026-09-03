@@ -3,7 +3,12 @@
 // module and reads/mutates these same objects directly.
 
 export async function api(path, opts) {
-  const res = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts));
+  // Merge headers rather than letting a plain Object.assign clobber the
+  // whole headers object — a caller passing its own headers (e.g. an
+  // Idempotency-Key) would otherwise silently lose Content-Type and the
+  // server would never parse the JSON body at all.
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers);
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.ok === false) throw new Error(json.error || 'Something went wrong.');
   return json;
