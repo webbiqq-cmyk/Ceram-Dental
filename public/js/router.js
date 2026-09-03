@@ -29,7 +29,17 @@ const routes = {
 
 export function currentRoute() { return (location.hash || '#/').slice(2); }
 
+// Two router() calls can overlap — a hashchange firing while the previous
+// navigation's loadState()/render is still in flight (fast clicking, or a
+// login submit re-rendering right as the user navigates away). Without a
+// guard, whichever async chain finishes last wins and can paint a stale
+// page over a newer one. This token makes every call check, right before
+// it touches the DOM, that it's still the most recent navigation —
+// otherwise it quietly discards its own (now-stale) result.
+let navToken = 0;
+
 export async function router() {
+  const myToken = ++navToken;
   closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal();
   const route = currentRoute();
   const fn = routes[route] || renderHome;
@@ -41,6 +51,7 @@ export async function router() {
   app.style.opacity = 0;
   try { await loadState(); } catch (e) { /* server briefly unavailable — keep last known state */ }
   const html = await fn();
+  if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
   app.innerHTML = html;
   window.scrollTo(0, 0);
   attachPageHandlers(route);

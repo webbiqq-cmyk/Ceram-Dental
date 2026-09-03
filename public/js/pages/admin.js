@@ -1,9 +1,10 @@
 // Admin shell — sidebar + tab dispatch. Each tab's own render/handlers live
-// in pages/admin/<tab>.js; this file just picks the right one.
+// in pages/admin/<tab>.js; this file just picks the right one. Gated
+// behind an admin session — see components/authGate.js.
 import { DATA, UI } from '../state.js';
 import { ADMIN_TABS } from '../constants.js';
 import { renderCurrent } from '../router.js';
-
+import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
 import { adminOverview } from './admin/overview.js';
 import { adminEnquiries, attachEnquiriesHandlers } from './admin/enquiries.js';
 import { adminAppointments, attachAppointmentsHandlers } from './admin/appointments.js';
@@ -40,13 +41,19 @@ const TAB_HANDLERS = {
   settings: attachSettingsHandlers
 };
 
+function isSignedIn() { return !!(DATA.auth && DATA.auth.admin); }
+
 export function renderAdmin() {
+  if (!isSignedIn()) {
+    return renderLoginGate({ role: 'admin', title: 'Accounts & Admin', subtitle: 'Sign in with the admin account to manage billing, expenses, team and settings.' });
+  }
   const tab = UI.adminTab;
   const badges = { enquiries: DATA.summary.newEnquiries, appointments: DATA.summary.newAppointments, applications: DATA.applications.length, messages: DATA.messages.length };
   const render = TAB_BODY[tab] || adminOverview;
   const body = render();
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1 style="font-size:1.9rem;">Run the business, not just the pipeline.</h1></div>' +
+    '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1 style="font-size:1.9rem;">Run the business, not just the pipeline.</h1>' +
+      '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
     '<div class="admin-shell">' +
       '<nav class="admin-sidebar">' + ADMIN_TABS.map(t => {
         const count = badges[t[0]];
@@ -59,7 +66,10 @@ export function renderAdmin() {
 }
 
 export function attachAdminHandlers() {
+  if (!isSignedIn()) { attachAuthGateHandlers(); return; }
   document.querySelectorAll('[data-admin-tab]').forEach(b => b.addEventListener('click', () => { UI.adminTab = b.dataset.adminTab; renderCurrent(); }));
   const attach = TAB_HANDLERS[UI.adminTab];
   if (attach) attach();
+  const logoutBtn = document.getElementById('adminLogoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logout('admin'));
 }

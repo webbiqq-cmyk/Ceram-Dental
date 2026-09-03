@@ -4,6 +4,9 @@ import { STAGES } from '../constants.js';
 // Circular with router.js (router.js's routes table needs renderStudio) —
 // safe here since renderCurrent is only called from inside event handlers.
 import { renderCurrent } from '../router.js';
+import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
+
+function isSignedIn() { return !!(DATA.auth && DATA.auth.lab); }
 
 function stageTone(key) {
   if (key === 'ready') return 'var(--ready)';
@@ -22,6 +25,9 @@ function kcardHtml(c) {
 }
 
 export function renderStudio() {
+  if (!isSignedIn()) {
+    return renderLoginGate({ role: 'lab', title: 'Lab Studio', subtitle: 'Sign in to view and progress the case pipeline.' });
+  }
   const stageFilter = UI.labStage || 'all';
   const lanes = STAGES.filter(s => stageFilter === 'all' || stageFilter === s.key).map(s => {
     const cards = DATA.cases.filter(c => c.stage === s.key);
@@ -45,7 +51,8 @@ export function renderStudio() {
     }).join('');
 
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal" style="margin-bottom:16px;"><span class="eyebrow-accent">Internal · Lab Studio</span><h1 style="font-size:1.9rem;">Case pipeline</h1></div>' +
+    '<div class="page-head reveal" style="margin-bottom:16px;"><span class="eyebrow-accent">Internal · Lab Studio</span><h1 style="font-size:1.9rem;">Case pipeline</h1>' +
+      '<button class="btn btn-ghost btn-sm" id="studioLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
     '<div class="stat-strip reveal" style="margin:0 0 20px;">' +
       '<div class="chipstat"><b>' + inLab + '</b><span>In lab hands</span></div>' +
       '<div class="chipstat"><b>' + awaitingDoc + '</b><span>Awaiting doctor</span></div>' +
@@ -60,6 +67,7 @@ export function renderStudio() {
 }
 
 export function attachStudioHandlers() {
+  if (!isSignedIn()) { attachAuthGateHandlers(); return; }
   document.querySelectorAll('[data-lab-stage]').forEach(b => b.addEventListener('click', () => { UI.labStage = b.dataset.labStage; renderCurrent(); }));
   const ls = document.getElementById('labSearch');
   if (ls) ls.addEventListener('input', () => {
@@ -75,4 +83,6 @@ export function attachStudioHandlers() {
     });
     const nm = document.getElementById('labNoMatch'); if (nm) nm.hidden = shown !== 0;
   });
+  const logoutBtn = document.getElementById('studioLogoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logout('lab'));
 }

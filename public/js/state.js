@@ -9,7 +9,7 @@ export async function api(path, opts) {
   return json;
 }
 
-export const DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], team: [], appointments: [], enquiries: [], settings: {}, summary: {} };
+export const DATA = { cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [], orders: [], team: [], appointments: [], enquiries: [], settings: {}, summary: {}, auth: { admin: false, dentist: false, lab: false } };
 
 export const UI = {
   cart: JSON.parse(localStorage.getItem('ceram_cart') || '[]'),

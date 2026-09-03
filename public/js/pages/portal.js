@@ -5,6 +5,9 @@ import { STAGES, STAGE_INDEX } from '../constants.js';
 import { footer } from '../components/footer.js';
 import { pillHtml } from '../components/drawer.js';
 import { renderCurrent } from '../router.js';
+import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
+
+function isSignedIn() { return !!(DATA.auth && DATA.auth.dentist); }
 
 function portalCases() {
   if (!DATA.cases.length) return '<div class="empty-note">No cases yet — start one from the website.</div>';
@@ -66,11 +69,15 @@ function portalBilling() {
 }
 
 export function renderPortal() {
+  if (!isSignedIn()) {
+    return renderLoginGate({ role: 'dentist', title: 'Dentist portal', subtitle: 'Sign in to track your cases and approve mockups.' });
+  }
   const tab = UI.portalTab || 'cases';
   const body = tab === 'billing' ? portalBilling() : portalCases();
   return '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">Dentist portal</span><h1 style="font-size:1.9rem;">My cases</h1>' +
-      '<p class="lede">Track every case you\'ve sent us, and approve mockups the moment they\'re ready.</p></div>' +
+      '<p class="lede">Track every case you\'ve sent us, and approve mockups the moment they\'re ready.</p>' +
+      '<button class="btn btn-ghost btn-sm" id="portalLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
     '<div class="dash-tabs">' +
       '<button class="dash-tab' + (tab === 'cases' ? ' active' : '') + '" data-portal-tab="cases">Cases</button>' +
       '<button class="dash-tab' + (tab === 'billing' ? ' active' : '') + '" data-portal-tab="billing">Billing</button>' +
@@ -79,6 +86,7 @@ export function renderPortal() {
 }
 
 export function attachPortalHandlers() {
+  if (!isSignedIn()) { attachAuthGateHandlers(); return; }
   document.querySelectorAll('[data-portal-tab]').forEach(b => b.addEventListener('click', () => { UI.portalTab = b.dataset.portalTab; renderCurrent(); }));
   const ps = document.getElementById('portalSearch');
   if (ps) ps.addEventListener('input', () => {
@@ -90,4 +98,6 @@ export function attachPortalHandlers() {
     });
     const nm = document.getElementById('portalNoMatch'); if (nm) nm.hidden = shown !== 0;
   });
+  const logoutBtn = document.getElementById('portalLogoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logout('dentist'));
 }

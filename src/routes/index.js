@@ -4,6 +4,7 @@ const express = require('express');
 
 const router = express.Router();
 
+router.use(require('./auth.routes'));
 router.use(require('./state.routes'));
 router.use(require('./cases.routes'));
 router.use(require('./invoices.routes'));

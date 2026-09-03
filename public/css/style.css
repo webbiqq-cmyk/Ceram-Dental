@@ -418,6 +418,11 @@ img{max-width:100%; display:block;}
 .modal{background:var(--surface); border-radius:16px; box-shadow:var(--shadow); max-width:480px; width:100%; padding:26px; max-height:88vh; overflow-y:auto;}
 .modal-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
 
+/* ================= AUTH GATE (private portal login) ================= */
+.login-gate{max-width:380px; margin:40px auto; background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); padding:32px;}
+.login-gate h1{margin-top:8px;}
+.login-gate .lede{margin-top:10px; margin-bottom:22px;}
+
 /* ================= WIZARD (start a case) ================= */
 .wizard{background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); overflow:hidden;}
 .wiz-head{padding:26px 30px 0;}
