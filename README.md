@@ -202,13 +202,26 @@ demo, flips to `final` and runs through it again — same order number,
 same file/message thread, same history — rather than becoming a second,
 disconnected order. Every other job type is a single pass.
 
-The whole thing lives behind `DATABASE_URL` (see Deploying above) —
 `src/db/migrations/` (schema + seed data), `src/services/workflow.service.js`
 (the state machine — every status transition in the system in one place),
-`src/db/jobOrders.repo.js` (raw SQL, no ORM), `src/routes/orders.routes.js`.
-Verified end-to-end (every role, both veneer stages, rejection paths at
-every gate) against a real local Postgres instance before shipping — see
-that verification in this project's history for the exact scenarios covered.
+`src/routes/orders.routes.js`. Verified end-to-end (every role, both veneer
+stages, rejection paths at every gate) against a real local Postgres
+instance before shipping — see that verification in this project's
+history for the exact scenarios covered.
+
+**Works with or without `DATABASE_URL` set.** `src/db/jobOrders.store.js`
+picks the storage backend once at boot: the real, persistent Postgres repo
+(`jobOrders.repo.js`) when `DATABASE_URL` is set, an in-memory one
+(`jobOrders.memory.js`, same seed accounts, same interface) when it isn't
+— so this runs immediately on a fresh deploy with zero setup, exactly
+like every other model in `src/models/` already does for the rest of the
+site. `workflow.service.js` and the controller are written against that
+shared interface, not against either backend directly, so the rules
+behave identically on both — only persistence differs: the in-memory
+store resets on every restart/cold start and isn't shared across
+concurrent serverless instances, same trade-off the rest of this demo
+already accepts. Set `DATABASE_URL` (see Deploying above) the moment real
+persistence matters — no code changes needed, it switches on its own.
 
 Because login is disabled by default (see Authentication above), there's
 one shared seeded identity per single-person role (dentist, receptionist,

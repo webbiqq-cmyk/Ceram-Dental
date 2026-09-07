@@ -5,7 +5,7 @@
 // Controllers only translate an HTTP request into a call here and the
 // result back into JSON; every rule about what's allowed to happen next
 // is decided in this file.
-const repo = require('../db/jobOrders.repo');
+const repo = require('../db/jobOrders.store');
 const { WorkflowError } = require('../utils/errors');
 
 const IMPLANT_TYPES = ['implant_crown', 'implant_bridge'];

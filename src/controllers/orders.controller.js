@@ -1,6 +1,6 @@
 const { ok, bad } = require('../utils/respond');
 const wf = require('../services/workflow.service');
-const repo = require('../db/jobOrders.repo');
+const repo = require('../db/jobOrders.store');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { WorkflowError } = require('../utils/errors');
 
