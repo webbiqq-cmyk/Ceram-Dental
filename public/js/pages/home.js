@@ -16,7 +16,7 @@ export function renderHome() {
     '<section class="home-hero">' +
       '<div class="hero-copy reveal">' +
         '<span class="hero-loc">Ceram Dental &middot; New Zinj, Manama</span>' +
-        '<h1>Your smile, in careful hands.</h1>' +
+        '<h1 class="serif">Your smile, in careful hands.</h1>' +
         '<p class="welcome">Come in for a routine check-up or a full smile makeover — either way you&rsquo;re looked after by doctors who take the time to explain, and a ceramics lab one floor up that shapes your crowns and veneers by hand. No rush, no pressure. Just a clear plan, a comfortable visit, and a result that looks like it was always yours.</p>' +
         '<div class="cta-row">' +
           '<a class="btn btn-primary btn-lg" href="#/contact">Book a consultation</a>' +
@@ -102,7 +102,7 @@ export function renderHome() {
     '<div class="section cta-banner reveal">' +
       '<h2>Ready for your best smile?</h2>' +
       '<p>Book a consultation and our team will help you find the right treatment — no pressure, just a plan.</p>' +
-      '<div class="cta-row"><a class="btn btn-white" href="#/contact">Book a consultation</a><a class="btn btn-onphoto" href="tel:+97317131123">Call ' + esc(phone) + '</a></div>' +
+      '<div class="cta-row"><a class="btn btn-white" href="#/contact">Book a consultation</a><a class="btn btn-ghost" href="tel:+97317131123">Call ' + esc(phone) + '</a></div>' +
     '</div>' +
 
     '</div></div>' + footer()

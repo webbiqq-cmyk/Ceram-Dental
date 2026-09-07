@@ -12,7 +12,7 @@ export function renderContact() {
   const s = DATA.settings || {};
   return (
     '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Contact</span><h1>Book a consultation.</h1>' +
+    '<div class="page-head reveal"><span class="eyebrow-accent">Contact</span><h1 class="serif">Book a consultation.</h1>' +
       '<p class="lede">Tell us what you need and a preferred day — we\'ll call to confirm a time. For anything urgent, phone or WhatsApp us directly.</p></div>' +
     '<div class="section grid-2">' +
       '<div class="card reveal info-card">' +

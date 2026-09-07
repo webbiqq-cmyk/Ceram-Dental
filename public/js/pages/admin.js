@@ -62,13 +62,13 @@ export function renderAdmin() {
   return '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1 style="font-size:1.9rem;">Run the business, not just the pipeline.</h1>' +
       '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
-    '<div class="admin-shell">' +
-      '<nav class="admin-sidebar">' + ADMIN_TABS.map(t => {
+    '<div class="dash-shell">' +
+      '<nav class="dash-sidebar">' + ADMIN_TABS.map(t => {
         const count = badges[t[0]];
-        return '<button class="admin-nav-item' + (tab === t[0] ? ' active' : '') + '" data-admin-tab="' + t[0] + '">' + t[1] +
+        return '<button class="dash-nav-item' + (tab === t[0] ? ' active' : '') + '" data-admin-tab="' + t[0] + '">' + t[1] +
           (count ? '<span class="badge">' + count + '</span>' : '') + '</button>';
       }).join('') + '</nav>' +
-      '<div class="admin-main">' + body + '</div>' +
+      '<div class="dash-main">' + body + '</div>' +
     '</div>' +
   '</div></div>';
 }

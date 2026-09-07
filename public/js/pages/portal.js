@@ -17,11 +17,11 @@ function portalCases() {
   const ready = DATA.cases.filter(c => c.stage === 'ready' && !c.pickedUp);
   const outstanding = DATA.invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + i.amount, 0);
 
-  const strip = '<div class="stat-strip reveal" style="margin:0 0 22px;">' +
-    '<div class="chipstat"><b>' + active + '</b><span>Active cases</span></div>' +
-    '<div class="chipstat"><b>' + review.length + '</b><span>Awaiting your review</span></div>' +
-    '<div class="chipstat"><b>' + ready.length + '</b><span>Ready for pickup</span></div>' +
-    '<div class="chipstat"><b>' + money(outstanding) + '</b><span>Outstanding balance</span></div>' +
+  const strip = '<div class="stat-row reveal">' +
+    '<div class="stat-card"><div class="n">' + active + '</div><div class="l">Active cases</div></div>' +
+    '<div class="stat-card' + (review.length ? ' tone-gold' : '') + '"><div class="n">' + review.length + '</div><div class="l">Awaiting your review</div></div>' +
+    '<div class="stat-card"><div class="n">' + ready.length + '</div><div class="l">Ready for pickup</div></div>' +
+    '<div class="stat-card"><div class="n">' + money(outstanding) + '</div><div class="l">Outstanding balance</div></div>' +
   '</div>';
 
   const reviewBlock = review.length ? (
@@ -75,9 +75,12 @@ export function renderPortal() {
   const tab = UI.portalTab || 'cases';
   const body = tab === 'billing' ? portalBilling() : portalCases();
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Dentist portal</span><h1 style="font-size:1.9rem;">My cases</h1>' +
-      '<p class="lede">Track every case you\'ve sent us, and approve mockups the moment they\'re ready.</p>' +
-      '<button class="btn btn-ghost btn-sm" id="portalLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
+    '<div class="welcome-card reveal">' +
+      '<div><span class="eyebrow-accent">Dentist portal</span><h1 style="font-size:1.9rem;">Welcome back.</h1>' +
+        '<p class="lede" style="margin-top:8px;">Track every case you\'ve sent us, and approve mockups the moment they\'re ready.</p>' +
+        '<button class="btn btn-ghost btn-sm" id="portalLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
+      '<a class="btn btn-gold btn-lg" href="#/new-case">+ Create job order</a>' +
+    '</div>' +
     '<div class="dash-tabs">' +
       '<button class="dash-tab' + (tab === 'cases' ? ' active' : '') + '" data-portal-tab="cases">Cases</button>' +
       '<button class="dash-tab' + (tab === 'billing' ? ' active' : '') + '" data-portal-tab="billing">Billing</button>' +

@@ -7,7 +7,7 @@ export function renderServices() {
   return (
     '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">Services</span>' +
-      '<h1>Six treatments, one careful process.</h1>' +
+      '<h1 class="serif">Six treatments, one careful process.</h1>' +
       '<p class="lede">Whatever brings you in, your doctor follows the same thorough process — a clear plan, an accurate scan, and a restoration checked before it ever reaches your mouth.</p></div>' +
 
     '<div class="section">' + SERVICES.map((s, i) => {

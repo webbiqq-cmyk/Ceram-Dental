@@ -31,7 +31,12 @@ export const UI = {
   labStage: 'all',
   portalTab: 'cases',
   cartOpen: false,
-  notifOpen: false
+  notifOpen: false,
+  // Which case is expanded on each of the (preview) lab-role dashboards —
+  // see public/js/pages/designer.js / technician.js / qc.js.
+  designerOpenId: null,
+  technicianOpenId: null,
+  qcOpenId: null
 };
 
 export function saveCart() {

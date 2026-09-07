@@ -9,7 +9,7 @@ export function renderShop() {
   return (
     '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">Shop</span>' +
-      '<h1>Care that continues at home.</h1>' +
+      '<h1 class="serif">Care that continues at home.</h1>' +
       '<p class="lede">Patient retail for after your visit, and chairside essentials for the practices we work with.</p></div>' +
     '<div class="dash-tabs">' +
       '<button class="dash-tab' + (UI.shopTab === 'patients' ? ' active' : '') + '" data-shop-tab="patients">For Patients</button>' +

@@ -62,6 +62,15 @@ a{color:inherit; text-decoration:none;}
 :focus-visible{outline:2px solid var(--violet); outline-offset:2px;}
 img{max-width:100%; display:block;}
 .mono{font-family:var(--font-mono);}
+/* Elegant serif for true brand moments (marketing H1s) — applied selectively
+   per page, never on dashboard/operational headings, which stay on the
+   sans display face for density and legibility (a table-dense QC screen
+   set in a display serif reads as decoration, not information). */
+.serif{font-family:var(--font-accent); font-weight:400; letter-spacing:-.01em;}
+/* A hairline gold rule — the one recurring "premium moment" motif, used
+   sparingly to mark a section transition or divide a card, never as a
+   background fill. */
+.gold-rule{border:none; height:2px; background:var(--gold-gradient); border-radius:2px; opacity:.85;}
 .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); display:block;}
 .eyebrow-accent{font-family:var(--font-accent); font-size:16px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold); font-weight:400; display:block;}
 .u{max-width:1160px; margin:0 auto; padding:0 28px;}
@@ -120,12 +129,18 @@ img{max-width:100%; display:block;}
 }
 
 /* ---- buttons ---- */
-.btn{display:inline-flex; align-items:center; gap:8px; border-radius:9px; padding:11px 20px; font-weight:600; font-size:14.5px; border:1px solid transparent; transition:transform .1s, background .15s;}
+.btn{display:inline-flex; align-items:center; gap:8px; border-radius:10px; padding:11px 20px; font-weight:600; font-size:14.5px; border:1px solid transparent; transition:transform .12s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;}
 .btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--violet); color:#fff;}
-.btn-primary:hover{background:var(--violet-deep);}
+.btn-primary:hover{background:var(--violet-deep); box-shadow:0 6px 16px -6px color-mix(in srgb, var(--violet) 55%, transparent);}
 .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
 .btn-ghost:hover{border-color:var(--violet); color:var(--violet);}
+/* Reserved for the one primary action per premium screen (Create Job
+   Order, Approve, Submit) — a gold-gradient button reads as "the
+   important one" precisely because it's rare; using it for every button
+   would just make it the new default and lose that signal. */
+.btn-gold{background:var(--gold-gradient); color:var(--violet-deep); font-weight:700; border-color:transparent;}
+.btn-gold:hover{filter:brightness(1.04); box-shadow:0 8px 20px -8px color-mix(in srgb, var(--gold) 55%, transparent);}
 .btn-onphoto{background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.55); color:#fff; backdrop-filter:blur(6px);}
 .btn-onphoto:hover{background:rgba(255,255,255,.24);}
 .btn-sm{padding:7px 13px; font-size:13px; border-radius:7px;}
@@ -160,7 +175,7 @@ img{max-width:100%; display:block;}
   display:grid; grid-template-columns:1.05fr .95fr; align-items:stretch;
   min-height:clamp(500px, 76vh, 700px);
   background:
-    radial-gradient(680px circle at 12% 18%, var(--violet-soft), transparent 60%),
+    radial-gradient(680px circle at 12% 12%, var(--gold-soft), transparent 62%),
     linear-gradient(180deg, #FFFFFF 0%, var(--porcelain) 100%);
   overflow:hidden;
 }
@@ -178,8 +193,8 @@ img{max-width:100%; display:block;}
   content:""; width:22px; height:1.5px; background:var(--violet); display:inline-block;
 }
 .hero-copy h1{
-  font-size:clamp(2.5rem,5.4vw,4rem); line-height:1.03;
-  letter-spacing:-.032em; color:var(--ink); font-weight:600; max-width:14ch;
+  font-size:clamp(2.5rem,5.4vw,4.2rem); line-height:1.08;
+  letter-spacing:-.01em; color:var(--violet); font-weight:400; max-width:14ch;
 }
 .hero-copy .welcome{
   margin-top:22px; max-width:48ch; font-size:clamp(1rem,1.25vw,1.12rem);
@@ -233,21 +248,24 @@ img{max-width:100%; display:block;}
 .svc-more{margin-top:16px; font-size:13px; font-weight:700; color:var(--violet); opacity:.55; transition:opacity .15s;}
 .svc-card:hover .svc-more{opacity:1;}
 
+/* A calm cream moment, not a full plum block — plum is the anchor color
+   (nav, sidebar, key buttons), not something the whole page gets draped
+   in every time a section wants attention. This band leans on the soft
+   champagne end of the palette instead, with a thin gold rule as the one
+   accent and plum reserved for the heading text and the primary button. */
 .cta-banner{
-  position:relative; overflow:hidden; border-radius:20px; padding:56px 44px; text-align:center; color:rgba(255,255,255,.9);
-  border:1px solid var(--plum-surface);
+  position:relative; overflow:hidden; border-radius:20px; padding:56px 44px; text-align:center;
+  border:1px solid var(--line);
   background:
-    radial-gradient(600px circle at 50% -30%, rgba(255,255,255,.06), transparent 65%),
-    var(--plum-surface);
+    radial-gradient(680px circle at 50% -40%, var(--gold-soft), transparent 65%),
+    var(--surface);
 }
 .cta-banner::before{content:""; position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);}
-.cta-banner h2{color:#fff; font-size:clamp(1.5rem,2.8vw,2rem); position:relative;}
-.cta-banner p{color:rgba(255,255,255,.72); margin-top:12px; max-width:52ch; margin-left:auto; margin-right:auto; position:relative;}
+.cta-banner h2{color:var(--violet); font-size:clamp(1.5rem,2.8vw,2rem); position:relative;}
+.cta-banner p{color:var(--ink-soft); margin-top:12px; max-width:52ch; margin-left:auto; margin-right:auto; position:relative;}
 .cta-banner .cta-row{margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; position:relative;}
-.cta-banner .btn-onphoto{background:transparent; border-color:rgba(255,255,255,.4); color:#fff;}
-.cta-banner .btn-onphoto:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.6);}
-.btn-white{background:#fff; color:var(--plum-surface); border-color:#fff;}
-.btn-white:hover{background:var(--porcelain);}
+.btn-white{background:var(--violet); color:#fff; border-color:var(--violet);}
+.btn-white:hover{background:var(--violet-deep);}
 
 /* light accent card — pairs a violet accent with a white surface for contrast */
 .card.accent{border-top:3px solid var(--violet);}
@@ -429,9 +447,18 @@ img{max-width:100%; display:block;}
 .field{display:flex; flex-direction:column; gap:6px;}
 .field.full{grid-column:1/-1;}
 .field label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
-.field input, .field select, .field textarea{font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--porcelain); color:var(--ink);}
+.field input, .field select, .field textarea{font-family:inherit; font-size:14px; padding:10px 12px; border-radius:9px; border:1px solid var(--line); background:var(--porcelain); color:var(--ink); transition:border-color .15s ease, box-shadow .15s ease;}
 .field textarea{resize:vertical; min-height:90px;}
-.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--violet);}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--violet); box-shadow:0 0 0 3px var(--violet-soft); outline:none;}
+.field .hint{font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+/* A form broken into named sections instead of one long list — used by
+   the job order intake wizard's "Doctor/Clinic, Job type, Case details…"
+   grouping. */
+.form-section{margin-bottom:26px; padding-bottom:26px; border-bottom:1px solid var(--line);}
+.form-section:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+.form-section-head{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+.form-section-head .n{width:24px; height:24px; border-radius:50%; background:var(--violet-soft); color:var(--violet); font-family:var(--font-display); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.form-section-head h4{font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink);}
 .info-card{display:flex; flex-direction:column; gap:16px;}
 .info-row{display:flex; gap:12px; align-items:flex-start; font-size:13.5px;}
 .info-row .ic{width:34px; height:34px; border-radius:9px; background:var(--violet-soft); color:var(--violet); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
@@ -603,18 +630,27 @@ img{max-width:100%; display:block;}
 .tl-item .note{font-size:12.5px; color:var(--amber); margin-top:3px;}
 .drawer-actions{padding:18px 24px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap; background:var(--surface-sunken);}
 
-/* ================= ADMIN ================= */
-.admin-shell{display:grid; grid-template-columns:216px 1fr; gap:32px; align-items:start;}
-.admin-sidebar{display:flex; flex-direction:column; gap:2px; position:sticky; top:84px;}
-.admin-nav-item{display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-weight:600; font-size:13.5px; color:var(--ink-soft); text-align:left; background:none; border:none; width:100%;}
-.admin-nav-item:hover{background:var(--surface-sunken); color:var(--ink);}
-.admin-nav-item.active{background:var(--violet-soft); color:var(--violet);}
-.admin-nav-item .badge{margin-left:auto; background:var(--critical); color:#fff; font-size:10px; font-family:var(--font-mono); border-radius:100px; padding:1px 7px; min-width:16px; text-align:center;}
-.admin-main{min-width:0;}
+/* ================= DASHBOARD SHELL (Admin, and every lab role) =================
+   One shared sidebar+content layout for every operational dashboard. Plum
+   lives here deliberately — sidebar/nav is exactly the "anchor," not a
+   full-page wash — with the gold gradient reserved for the one active
+   destination, so it reads as a premium selection rather than a loud one. */
+.dash-shell{display:grid; grid-template-columns:230px 1fr; gap:28px; align-items:start;}
+.dash-sidebar{
+  display:flex; flex-direction:column; gap:2px; position:sticky; top:84px;
+  background:var(--violet); border-radius:16px; padding:14px 10px;
+  box-shadow:0 14px 34px -18px color-mix(in srgb, var(--violet) 60%, transparent);
+}
+.dash-nav-item{display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:10px; font-weight:600; font-size:13.5px; color:rgba(255,255,255,.66); text-align:left; background:none; border:none; width:100%; transition:background .15s ease, color .15s ease;}
+.dash-nav-item:hover{background:rgba(255,255,255,.08); color:#fff;}
+.dash-nav-item.active{background:var(--gold-gradient); color:var(--violet-deep); font-weight:700;}
+.dash-nav-item .badge{margin-left:auto; background:var(--critical); color:#fff; font-size:10px; font-family:var(--font-mono); border-radius:100px; padding:1px 7px; min-width:16px; text-align:center;}
+.dash-nav-item.active .badge{background:var(--violet); }
+.dash-main{min-width:0;}
 @media (max-width: 820px){
-  .admin-shell{grid-template-columns:1fr;}
-  .admin-sidebar{flex-direction:row; overflow-x:auto; position:static; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:22px;}
-  .admin-nav-item{flex-shrink:0;}
+  .dash-shell{grid-template-columns:1fr;}
+  .dash-sidebar{flex-direction:row; overflow-x:auto; position:static; margin-bottom:22px; border-radius:14px;}
+  .dash-nav-item{flex-shrink:0; width:auto; white-space:nowrap;}
 }
 
 .stat-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:36px;}
@@ -702,3 +738,119 @@ img{max-width:100%; display:block;}
   .icon-btn{width:32px; height:32px;}
   .nav-toggle{font-size:17px;}
 }
+
+/* ================= SEMANTIC STATUS TONES =================
+   Four muted, brand-compatible tones instead of a status-by-status color
+   list — the lab workflow's ~19 statuses all reduce to "not started yet /
+   in progress / done / needs attention," and every new pill just picks
+   one of these four rather than inventing a new hue per status. */
+.pill-neutral{background:var(--violet-soft); color:var(--violet);}
+.pill-progress{background:var(--amber-soft); color:var(--amber);}
+.pill-success{background:var(--ready-soft); color:var(--ready);}
+.pill-danger{background:var(--critical-soft); color:var(--critical);}
+
+/* ================= STAGE TRACKER =================
+   The one shared "beautiful progress tracker" component — used on every
+   case detail view. Plain job: pass one array of steps. Veneer: pass two
+   labelled groups (Demo, Final) via .stage-tracker.two-part, so the two
+   linked stages read as one continuous case, not two unrelated boards. */
+.stage-tracker{display:flex; flex-direction:column; gap:18px;}
+.st-group-label{display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--gold);}
+.st-group-label::after{content:""; flex:1; height:1px; background:var(--gold-gradient); opacity:.5;}
+.st-row{display:flex; align-items:flex-start;}
+.st-step{display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; min-width:0; position:relative;}
+.st-step .st-dot{
+  width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:var(--surface); border:2px solid var(--line); color:var(--ink-soft);
+  font-family:var(--font-display); font-weight:700; font-size:12px; flex-shrink:0; z-index:1;
+  transition:background .2s ease, border-color .2s ease, color .2s ease;
+}
+.st-step .st-label{font-size:11.5px; font-weight:600; color:var(--ink-soft); text-align:center; line-height:1.3; padding:0 4px;}
+.st-step::before{
+  content:""; position:absolute; top:14px; left:calc(-50% + 15px); width:calc(100% - 30px); height:2px;
+  background:var(--line); z-index:0;
+}
+.st-step:first-child::before{display:none;}
+.st-step.done .st-dot{background:var(--gold-gradient); border-color:transparent; color:var(--violet-deep);}
+.st-step.done::before{background:var(--gold-gradient);}
+.st-step.now .st-dot{background:var(--violet); border-color:var(--violet); color:#fff; box-shadow:0 0 0 5px var(--violet-soft);}
+.st-step.now .st-label{color:var(--violet); font-weight:700;}
+.st-step.rejected .st-dot{background:var(--critical-soft); border-color:var(--critical); color:var(--critical);}
+.st-step.rejected .st-label{color:var(--critical);}
+@media (max-width:640px){
+  .st-step .st-label{display:none;}
+  .st-step .st-dot{width:24px; height:24px; font-size:10px;}
+  .st-step::before{top:11px;}
+}
+
+/* ================= CASE CHAT =================
+   Case-scoped messaging (doctor <-> designer today, open to other roles
+   at the UI level) — kept deliberately plain: bubbles, timestamps, one
+   input. Nothing chat apps don't already teach people to read at a glance. */
+.chat-thread{display:flex; flex-direction:column; gap:14px; padding:18px; max-height:420px; overflow-y:auto; background:var(--porcelain); border:1px solid var(--line); border-radius:14px;}
+.chat-msg{display:flex; flex-direction:column; max-width:78%; gap:4px;}
+.chat-msg.mine{align-self:flex-end; align-items:flex-end;}
+.chat-bubble{padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.5; background:var(--surface); border:1px solid var(--line); color:var(--ink);}
+.chat-msg.mine .chat-bubble{background:var(--violet); border-color:var(--violet); color:#fff; border-bottom-right-radius:4px;}
+.chat-msg:not(.mine) .chat-bubble{border-bottom-left-radius:4px;}
+.chat-meta{font-size:10.5px; color:var(--ink-soft); font-family:var(--font-mono); padding:0 4px;}
+.chat-empty{color:var(--ink-soft); font-size:13px; text-align:center; padding:30px 10px;}
+.chat-input-row{display:flex; gap:10px; margin-top:12px;}
+.chat-input-row input{flex:1;}
+
+/* ================= FILE UPLOAD ZONE ================= */
+.upload-zone{
+  border:1.5px dashed var(--line); border-radius:14px; padding:26px 20px; text-align:center;
+  background:var(--porcelain); transition:border-color .15s ease, background .15s ease; cursor:pointer;
+}
+.upload-zone:hover, .upload-zone.drag-over{border-color:var(--gold); background:var(--gold-soft);}
+.upload-zone .ic{width:40px; height:40px; border-radius:12px; background:var(--violet-soft); color:var(--violet); display:flex; align-items:center; justify-content:center; margin:0 auto 12px;}
+.upload-zone .t{font-weight:600; font-size:13.5px;}
+.upload-zone .d{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+.upload-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; margin-top:14px;}
+.upload-thumb{position:relative; aspect-ratio:1/1; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:var(--surface-sunken);}
+.upload-thumb img{width:100%; height:100%; object-fit:cover;}
+.upload-thumb .cat{position:absolute; left:5px; bottom:5px; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; background:rgba(34,26,43,.72); color:#fff; padding:2px 6px; border-radius:100px;}
+
+/* ================= QC CHECKLIST ================= */
+.qc-checklist{display:flex; flex-direction:column; gap:8px;}
+.qc-item{display:flex; align-items:center; gap:12px; padding:13px 15px; border:1px solid var(--line); border-radius:11px; background:var(--surface); cursor:pointer; transition:border-color .15s ease;}
+.qc-item:hover{border-color:var(--gold-light);}
+.qc-item .qc-chk{width:22px; height:22px; border-radius:6px; border:1.5px solid var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; background:var(--porcelain);}
+.qc-item.checked{border-color:color-mix(in srgb, var(--ready) 40%, var(--line));}
+.qc-item.checked .qc-chk{background:var(--gold-gradient); border-color:transparent; color:var(--violet-deep);}
+.qc-item .lbl{font-weight:600; font-size:13.5px; flex:1;}
+
+/* ================= DASHBOARD PAGE-HEAD / WELCOME ================= */
+/* A softer, warmer variant of .page-head for the doctor dashboard's
+   landing moment — a small cream card instead of bare text, so "welcoming
+   and easy" has an actual visual shape instead of just a friendlier
+   sentence. */
+.welcome-card{
+  display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  background:linear-gradient(135deg, var(--gold-soft) 0%, var(--surface) 60%);
+  border:1px solid var(--line); border-radius:18px; padding:26px 28px; margin-bottom:32px;
+}
+.welcome-card h1{margin-top:6px;}
+.stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px;}
+.stat-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow);}
+.stat-card .n{font-family:var(--font-display); font-size:26px; font-weight:600; font-variant-numeric:tabular-nums;}
+.stat-card .l{font-size:12px; color:var(--ink-soft); margin-top:4px; font-weight:600;}
+.stat-card.tone-gold{border-color:color-mix(in srgb, var(--gold) 35%, var(--line));}
+.stat-card.tone-gold .n{color:var(--gold);}
+.stat-card.tone-danger .n{color:var(--critical);}
+@media (max-width:820px){ .stat-row{grid-template-columns:1fr 1fr;} }
+
+/* ================= PREMIUM CASE CARD ================= */
+/* Shared by every role dashboard's queue — one consistent, readable case
+   card instead of each dashboard inventing its own. */
+.case-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); transition:border-color .15s ease, transform .12s ease;}
+.case-card:hover{border-color:var(--gold-light); transform:translateY(-2px);}
+.case-card .cc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.case-card .cc-id{font-family:var(--font-mono); font-weight:700; color:var(--violet); font-size:13px;}
+.case-card .cc-type{font-size:10.5px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); margin-top:2px;}
+.case-card .cc-title{font-weight:600; font-size:14.5px; margin-top:8px;}
+.case-card .cc-sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+.case-card .cc-foot{display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
+.case-list{display:flex; flex-direction:column; gap:12px;}
+.case-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px;}

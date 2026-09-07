@@ -19,13 +19,18 @@ import { renderNewCase } from './pages/newCase.js';
 import { renderPortal } from './pages/portal.js';
 import { renderStudio } from './pages/studio.js';
 import { renderAdmin } from './pages/admin.js';
+import { renderReception } from './pages/reception.js';
+import { renderDesigner } from './pages/designer.js';
+import { renderTechnician } from './pages/technician.js';
+import { renderQC } from './pages/qc.js';
 
 export const PUBLIC_ROUTES = { '': 1, 'about': 1, 'services': 1, 'shop': 1, 'contact': 1, 'careers': 1, 'new-case': 1 };
 
 const routes = {
   '': renderHome, 'about': renderAbout, 'services': renderServices, 'shop': renderShop,
   'contact': renderContact, 'careers': renderCareers, 'new-case': renderNewCase,
-  'portal': renderPortal, 'studio': renderStudio, 'admin': renderAdmin
+  'portal': renderPortal, 'studio': renderStudio, 'admin': renderAdmin,
+  'reception': renderReception, 'designer': renderDesigner, 'technician': renderTechnician, 'qc': renderQC
 };
 
 export function currentRoute() { return (location.hash || '#/').slice(2); }

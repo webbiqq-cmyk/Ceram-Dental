@@ -15,7 +15,7 @@ export function renderAbout() {
   return (
     '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">About Ceram Dental</span>' +
-      '<h1>Your dental clinic, with its own ceramics lab.</h1>' +
+      '<h1 class="serif">Your dental clinic, with its own ceramics lab.</h1>' +
       '<p class="lede">We started as a chairside ceramics studio and grew into a full dental clinic — our own doctors, an in-house CAD-CAM lab, and a QC desk that checks every restoration the same way, twice, before it reaches you.</p></div>' +
 
     '<div class="section">' +

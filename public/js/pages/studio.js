@@ -53,11 +53,15 @@ export function renderStudio() {
   return '<div class="page"><div class="u">' +
     '<div class="page-head reveal" style="margin-bottom:16px;"><span class="eyebrow-accent">Internal · Lab Studio</span><h1 style="font-size:1.9rem;">Case pipeline</h1>' +
       '<button class="btn btn-ghost btn-sm" id="studioLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
-    '<div class="stat-strip reveal" style="margin:0 0 20px;">' +
-      '<div class="chipstat"><b>' + inLab + '</b><span>In lab hands</span></div>' +
-      '<div class="chipstat"><b>' + awaitingDoc + '</b><span>Awaiting doctor</span></div>' +
-      '<div class="chipstat"><b>' + readyN + '</b><span>Ready for pickup</span></div>' +
-      '<div class="chipstat"><b>' + revs + '</b><span>In revision</span></div>' +
+    '<div class="stat-row reveal">' +
+      '<div class="stat-card"><div class="n">' + inLab + '</div><div class="l">In lab hands</div></div>' +
+      '<div class="stat-card tone-gold"><div class="n">' + awaitingDoc + '</div><div class="l">Awaiting doctor</div></div>' +
+      '<div class="stat-card"><div class="n">' + readyN + '</div><div class="l">Ready for pickup</div></div>' +
+      '<div class="stat-card' + (revs ? ' tone-danger' : '') + '"><div class="n">' + revs + '</div><div class="l">In revision</div></div>' +
+    '</div>' +
+    '<div class="lab-chips reveal" style="margin-bottom:24px;">' +
+      '<a class="lab-chip" href="#/reception">→ Reception</a><a class="lab-chip" href="#/designer">→ Design</a>' +
+      '<a class="lab-chip" href="#/technician">→ Technician</a><a class="lab-chip" href="#/qc">→ Quality Inspector</a>' +
     '</div>' +
     '<div class="lab-toolbar reveal"><input type="search" id="labSearch" placeholder="Search case, clinic, patient…" autocomplete="off">' +
       '<div class="lab-chips">' + chips + '</div></div>' +

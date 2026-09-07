@@ -11,6 +11,10 @@ import { attachCareersHandlers } from './pages/careers.js';
 import { attachPortalHandlers } from './pages/portal.js';
 import { attachStudioHandlers } from './pages/studio.js';
 import { attachAdminHandlers } from './pages/admin.js';
+import { attachReceptionHandlers } from './pages/reception.js';
+import { attachDesignerHandlers } from './pages/designer.js';
+import { attachTechnicianHandlers } from './pages/technician.js';
+import { attachQCHandlers } from './pages/qc.js';
 import { openDrawer } from './components/drawer.js';
 import { openDoctorModal } from './components/doctor.js';
 
@@ -22,7 +26,11 @@ const ROUTE_HANDLERS = {
   careers: attachCareersHandlers,
   portal: attachPortalHandlers,
   studio: attachStudioHandlers,
-  admin: attachAdminHandlers
+  admin: attachAdminHandlers,
+  reception: attachReceptionHandlers,
+  designer: attachDesignerHandlers,
+  technician: attachTechnicianHandlers,
+  qc: attachQCHandlers
 };
 
 export function attachPageHandlers(route) {
