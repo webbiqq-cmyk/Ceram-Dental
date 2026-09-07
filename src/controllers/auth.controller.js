@@ -15,7 +15,9 @@ async function login(req, res) {
   const { username, password, remember } = req.body || {};
   if (!username || !password) return bad(res, 'Username and password are required.');
 
-  const user = await authService.login(username, password, role);
+  let user;
+  try { user = await authService.login(username, password, role); }
+  catch (err) { return bad(res, 'Unable to sign in right now. Please try again.'); }
   if (!user) return bad(res, 'Incorrect username or password.');
 
   const { token, maxAgeMs } = await authService.issueToken(user, { remember: !!remember });

@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const db = require('../db/pool');
-const { transaction } = require('../db/records');
+const records = require('../db/records');
+const { transaction } = records;
 const ROLES = ['admin', 'dentist', 'lab', 'receptionist', 'designer', 'technician', 'qc'];
 
 // In-memory seed — used only when DATABASE_URL isn't set (demo / zero-setup
@@ -42,8 +43,12 @@ async function createUser({username,passwordHash,role,name,phone,email,accountTy
   if (!username || !ROLES.includes(role) || !passwordHash) return null;
   const u={id:crypto.randomUUID(),username,passwordHash,role,name:name || username,phone:phone||'',email:email||'',accountType:accountType||'',company:company||'',active:true,createdAt:new Date()};
   if (!db.pool) { if(users.some(x=>x.role===role && x.username.toLowerCase()===username.toLowerCase())) return null; users.push(u); return publicView(u); }
-  const {rows}=await db.query('INSERT INTO users(id,username,password_hash,role,name,phone,email,account_type,company) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING RETURNING *',[u.id,username,passwordHash,role,u.name,u.phone,u.email,u.accountType,u.company]);
-  return publicView(decode(rows[0])) || null;
+  const {rows}=await db.query('INSERT INTO users(id,username,password_hash,role,name) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING RETURNING *',[u.id,username,passwordHash,role,u.name]);
+  if (!rows[0]) return null;
+  // Profile fields live in the durable record store so signup works against
+  // databases that have not yet applied migration 008.
+  await records.put('user_profiles',{id:u.id,phone:u.phone,email:u.email,accountType:u.accountType,company:u.company});
+  return publicView({...decode(rows[0]),...u});
 }
 async function revokeSessions(id) { await require('./session.model').revokeForUser(id); }
 async function setPasswordHash(id,hash) {
