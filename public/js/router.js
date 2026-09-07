@@ -23,6 +23,7 @@ import { renderReception } from './pages/reception.js';
 import { renderDesigner } from './pages/designer.js';
 import { renderTechnician } from './pages/technician.js';
 import { renderQC } from './pages/qc.js';
+import { renderNewOrder } from './pages/newOrder.js';
 
 export const PUBLIC_ROUTES = { '': 1, 'about': 1, 'services': 1, 'shop': 1, 'contact': 1, 'careers': 1, 'new-case': 1 };
 
@@ -30,7 +31,8 @@ const routes = {
   '': renderHome, 'about': renderAbout, 'services': renderServices, 'shop': renderShop,
   'contact': renderContact, 'careers': renderCareers, 'new-case': renderNewCase,
   'portal': renderPortal, 'studio': renderStudio, 'admin': renderAdmin,
-  'reception': renderReception, 'designer': renderDesigner, 'technician': renderTechnician, 'qc': renderQC
+  'reception': renderReception, 'designer': renderDesigner, 'technician': renderTechnician, 'qc': renderQC,
+  'new-order': renderNewOrder
 };
 
 export function currentRoute() { return (location.hash || '#/').slice(2); }

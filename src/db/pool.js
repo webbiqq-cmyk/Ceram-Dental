@@ -14,16 +14,17 @@ if (!connectionString) {
   console.warn('[db] DATABASE_URL is not set — the lab workflow system (job orders, assignments, chat, files) cannot function until it is.');
 }
 
+// A local Postgres (docker, or installed directly — this is a normal dev
+// setup, not just a test hack) isn't configured for TLS by default and
+// will refuse an SSL negotiation outright, so only force it for a real
+// remote host. Render's external endpoint uses a Render-managed cert
+// chain Node's default CA bundle doesn't carry, so full chain
+// verification fails even though the connection is genuinely encrypted —
+// the relaxed check is the trust model Render's own docs recommend for
+// external connections.
+const isLocalHost = /^(postgres(ql)?:\/\/[^@]*@)?(localhost|127\.0\.0\.1)/i.test(connectionString || '');
 const pool = connectionString
-  ? new Pool({
-      connectionString,
-      // Render's external Postgres endpoint requires TLS; it uses a
-      // Render-managed cert chain that Node's default CA bundle doesn't
-      // carry, so full chain verification fails even though the
-      // connection is genuinely encrypted. This is the same trust model
-      // Render's own docs recommend for external connections.
-      ssl: { rejectUnauthorized: false }
-    })
+  ? new Pool({ connectionString, ssl: isLocalHost ? false : { rejectUnauthorized: false } })
   : null;
 
 function query(text, params) {

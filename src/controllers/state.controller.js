@@ -36,6 +36,10 @@ function getState(req, res) {
     products: isAdmin ? productModel.products : productModel.products.filter(p => p.active !== false),
     settings: settingsModel.settings,
     auth: { admin: isAdmin, dentist: isDentist, lab: isLab },
+    // Not sensitive — just "is image upload configured at all" — needed
+    // by the lab-workflow file upload UI too, not admin-only like the
+    // product/team image uploader that originally introduced this flag.
+    cloudinaryConfigured,
     // Private — empty unless that portal's own session is valid.
     cases: [],
     invoices: [],
@@ -66,7 +70,6 @@ function getState(req, res) {
     payload.users = userModel.list();
     payload.activeSessions = sessionModel.listAll();
     payload.activity = activityLog.list({ limit: 100 });
-    payload.cloudinaryConfigured = cloudinaryConfigured;
   }
 
   res.json(payload);

@@ -175,6 +175,50 @@ contact message all write to the same in-memory store, so they show up
 immediately in the relevant dashboard — there's one case/customer record
 behind every surface, not four separate demos stitched together.
 
+## Lab workflow system (job orders)
+
+A second, newer system alongside the original case pipeline above —
+Postgres-backed (not in-memory), with five roles instead of two:
+
+- **`/new-order`** — a doctor creates a job order: job type, case details,
+  implant-specific fields when relevant, shade, instructions, delivery/
+  pickup preference.
+- **`/reception`** — accepts (assigning a designer in the same step) or
+  rejects incoming orders with a note.
+- **`/designer`** — the assigned queue, doctor files, case chat, and
+  "mark done" (which hands to a chosen technician).
+- **`/technician`** — the production queue with a per-job-type checklist
+  (a night guard is printed and cleaned; a crown is milled and glazed),
+  and "mark done" (hands to a chosen QC reviewer).
+- **`/qc`** — a checklist review, approve (→ the doctor) or reject
+  (→ back to the technician) with a note.
+- Back on **`/portal`**'s "Job Orders" tab, the doctor approves or
+  requests changes; reception then confirms completion and marks it
+  delivered/picked up.
+
+**Veneers are the one two-stage job**: the same order goes through the
+whole pipeline once as a `demo` and, the moment the doctor approves the
+demo, flips to `final` and runs through it again — same order number,
+same file/message thread, same history — rather than becoming a second,
+disconnected order. Every other job type is a single pass.
+
+The whole thing lives behind `DATABASE_URL` (see Deploying above) —
+`src/db/migrations/` (schema + seed data), `src/services/workflow.service.js`
+(the state machine — every status transition in the system in one place),
+`src/db/jobOrders.repo.js` (raw SQL, no ORM), `src/routes/orders.routes.js`.
+Verified end-to-end (every role, both veneer stages, rejection paths at
+every gate) against a real local Postgres instance before shipping — see
+that verification in this project's history for the exact scenarios covered.
+
+Because login is disabled by default (see Authentication above), there's
+one shared seeded identity per single-person role (dentist, receptionist,
+qc) and a small real roster for the two multi-person roles (designer,
+technician) — `src/db/migrations/005_seed_workflow_users.sql`. Every
+shared multi-role endpoint (list orders, chat, files, staff rosters) takes
+an explicit `asRole` so it knows which dashboard is asking, since every
+role's session check would otherwise look identical while login stays
+off — see `src/middleware/workflowRole.js`.
+
 `demo/index.html` is an earlier single-file mockup (still openable directly,
 no server needed) kept for reference; the Express app above is the current,
 fuller demo.

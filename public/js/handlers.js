@@ -15,6 +15,7 @@ import { attachReceptionHandlers } from './pages/reception.js';
 import { attachDesignerHandlers } from './pages/designer.js';
 import { attachTechnicianHandlers } from './pages/technician.js';
 import { attachQCHandlers } from './pages/qc.js';
+import { attachNewOrderHandlers } from './pages/newOrder.js';
 import { openDrawer } from './components/drawer.js';
 import { openDoctorModal } from './components/doctor.js';
 
@@ -30,7 +31,8 @@ const ROUTE_HANDLERS = {
   reception: attachReceptionHandlers,
   designer: attachDesignerHandlers,
   technician: attachTechnicianHandlers,
-  qc: attachQCHandlers
+  qc: attachQCHandlers,
+  'new-order': attachNewOrderHandlers
 };
 
 export function attachPageHandlers(route) {

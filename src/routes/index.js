@@ -23,5 +23,6 @@ router.use(require('./adminSessions.routes'));
 router.use(require('./notifications.routes'));
 router.use(require('./export.routes'));
 router.use(require('./uploads.routes'));
+router.use(require('./orders.routes'));
 
 module.exports = router;

@@ -36,7 +36,8 @@ export const UI = {
   // see public/js/pages/designer.js / technician.js / qc.js.
   designerOpenId: null,
   technicianOpenId: null,
-  qcOpenId: null
+  qcOpenId: null,
+  newOrderForm: null
 };
 
 export function saveCart() {

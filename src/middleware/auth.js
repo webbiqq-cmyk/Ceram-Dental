@@ -5,7 +5,19 @@
 const { verifyToken } = require('../services/auth.service');
 const { LOGIN_REQUIRED } = require('../config/env');
 
-const COOKIE_NAMES = { admin: 'admin_session', dentist: 'dentist_session', lab: 'lab_session' };
+// The four lab-workflow roles are added here so requireRole/requireAnyRole
+// work for the new /api/orders routes through the existing open-auth
+// bypass (see readSession below) — real login for them isn't wired yet
+// (auth.controller.js/user.model.js only know admin/dentist/lab; the
+// workflow roles' real accounts live in Postgres, seeded by
+// src/db/migrations/005). Flipping REQUIRE_LOGIN=true today would still
+// leave these four unable to sign in for real — migrating the login
+// system onto the same Postgres users table is a separate follow-up.
+const COOKIE_NAMES = {
+  admin: 'admin_session', dentist: 'dentist_session', lab: 'lab_session',
+  receptionist: 'receptionist_session', designer: 'designer_session',
+  technician: 'technician_session', qc: 'qc_session'
+};
 
 const COOKIE_OPTIONS = {
   httpOnly: true, // never readable from client-side JS — an XSS bug can't exfiltrate the session
