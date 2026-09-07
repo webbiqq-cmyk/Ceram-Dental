@@ -50,7 +50,7 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .chapter-heading p{color:var(--ink-soft);font-size:14px;}
 .chapter-content{display:grid;grid-template-columns:minmax(260px,.72fr) minmax(0,1.28fr);gap:58px;align-items:start;max-width:1020px;margin:0 auto;}
 .chapter-image{max-width:430px;}
-.chapter-image img{width:100%;aspect-ratio:4/3;object-fit:cover;}
+.chapter-image img{width:100%;height:clamp(260px,30vw,410px);aspect-ratio:4/3;object-fit:cover;object-position:center;border-radius:3px;}
 .chapter-image figcaption{padding-top:12px;font-family:var(--font-accent);font-style:italic;font-size:21px;color:var(--ink-soft);}
 .treatment{border-top:1px solid #c9bdcf;}
 .treatment:last-child{border-bottom:1px solid #c9bdcf;}
@@ -107,7 +107,7 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .about-page .doc-years{background:transparent;padding:0;margin-top:8px;}
 .about-page .doc-more{display:inline-block;border-bottom:1px solid var(--line);padding-bottom:5px;}
 .about-craft{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:44px 0 76px;border-bottom:1px solid var(--line);}
-.about-craft img{width:100%;aspect-ratio:1;object-fit:cover;}
+.about-craft img{width:100%;height:clamp(300px,34vw,500px);aspect-ratio:4/3;object-fit:cover;object-position:center;border-radius:3px;}
 .about-craft h2{font-size:46px;line-height:1.08;margin:18px 0;color:var(--violet);}
 .about-craft p{font-size:14px;line-height:1.85;color:var(--ink-soft);margin-bottom:24px;}
 .about-page .editorial-booking{background:linear-gradient(135deg,#f1e8f0,#fff);margin-top:0;}
@@ -224,7 +224,7 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories,.clinic-story{grid-template-columns:1fr;}
   .treatment-chapter{padding:50px 0;}
   .chapter-heading{gap:15px;}
-  .chapter-image img{aspect-ratio:4/3;}
+  .chapter-image img{height:280px;aspect-ratio:4/3;}
   .home-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .chapter-image{max-width:none;}
   .chapter-content{gap:28px;}
@@ -238,7 +238,7 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .about-page .doctor-card{grid-template-columns:95px minmax(0,1fr);}
   .about-page .doc-photo{width:95px;height:125px;}
   .about-craft{padding:20px 0 55px;}
-  .about-craft img{aspect-ratio:3/2;}
+  .about-craft img{height:300px;aspect-ratio:4/3;}
   .visit-story{margin:56px 0;gap:32px;}
   .visit-image img{height:340px;}
   .patient-stories{margin:56px 0;padding:40px 0;gap:32px;}
