@@ -19,6 +19,11 @@ export function renderHome() {
     ['Do you make crowns and veneers in-house?', 'Yes. Ceram has its own CAD-CAM ceramics lab, so many restorations are designed, milled, layered and checked under the same roof as the clinic.'],
     ['Can I book a cosmetic consultation first?', 'Yes. Start with a consultation, photos and a digital plan before deciding on veneers, crowns, whitening, aligners or a larger smile design.'],
     ['Where is Ceram Dental located?', (st.address || 'Highway 35, New Zinj, Manama, Bahrain') + '. The clinic is open ' + (st.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '.']
+    ,['How long does a first consultation take?', 'Allow around 45–60 minutes. We review your goals, examine your smile, take digital records where useful and explain suitable next steps.']
+    ,['Do you offer payment plans?', 'Treatment fees are explained before treatment starts. Ask our team about the payment options currently available for your plan.']
+    ,['Do you treat nervous patients?', 'Yes. Tell us when booking so we can allow extra time, explain each step and keep the appointment comfortable and predictable.']
+    ,['Can you repair or replace an old crown?', 'Often, yes. The doctor will assess the tooth, bite, gum health and existing restoration before recommending repair or replacement.']
+    ,['Do you see children?', 'We welcome children for preventive visits, gentle check-ups and age-appropriate guidance.']
   ];
   return (
     '<div class="page page-flush">' +

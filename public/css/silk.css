@@ -48,8 +48,9 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .chapter-number{font-family:var(--font-accent);font-size:30px;line-height:1;color:#8c7496;margin-top:6px;}
 .chapter-heading h2{font-size:46px;line-height:1.08;color:var(--violet);margin:9px 0 12px;}
 .chapter-heading p{color:var(--ink-soft);font-size:14px;}
-.chapter-content{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:64px;align-items:start;}
-.chapter-image img{width:100%;aspect-ratio:5/4;object-fit:cover;}
+.chapter-content{display:grid;grid-template-columns:minmax(260px,.72fr) minmax(0,1.28fr);gap:58px;align-items:start;max-width:1020px;margin:0 auto;}
+.chapter-image{max-width:430px;}
+.chapter-image img{width:100%;aspect-ratio:4/3;object-fit:cover;}
 .chapter-image figcaption{padding-top:12px;font-family:var(--font-accent);font-style:italic;font-size:21px;color:var(--ink-soft);}
 .treatment{border-top:1px solid #c9bdcf;}
 .treatment:last-child{border-bottom:1px solid #c9bdcf;}
@@ -81,6 +82,12 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .editorial-booking h2{font-size:46px;line-height:1.1;color:var(--violet);margin:18px 0 28px;}
 .about-hero>img{object-position:center 40%;}
 .team-section{padding:76px 0;}
+.clinic-story{display:grid;grid-template-columns:.85fr 1.15fr;gap:70px;padding:64px 0;border-bottom:1px solid var(--line);}
+.clinic-story h2{font-size:42px;line-height:1.08;color:var(--violet);}
+.clinic-story p{font-size:14px;line-height:1.9;color:var(--ink-soft);max-width:52ch;}
+.clinic-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;}
+.clinic-facts span{border-top:1px solid var(--line);padding-top:12px;font-size:11px;color:var(--ink-soft);line-height:1.5;}
+.clinic-facts b{display:block;color:var(--gold);font:500 18px var(--font-accent);margin-bottom:5px;}
 .team-heading{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:end;margin-bottom:38px;}
 .team-heading h2{font-size:44px;line-height:1.1;margin-top:12px;color:var(--violet);}
 .team-heading p{font-size:14px;color:var(--ink-soft);line-height:1.8;}
@@ -103,6 +110,7 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .about-craft img{width:100%;aspect-ratio:1;object-fit:cover;}
 .about-craft h2{font-size:46px;line-height:1.08;margin:18px 0;color:var(--violet);}
 .about-craft p{font-size:14px;line-height:1.85;color:var(--ink-soft);margin-bottom:24px;}
+.about-page .editorial-booking{background:linear-gradient(135deg,#f1e8f0,#fff);margin-top:0;}
 .craft-values{display:flex;flex-wrap:wrap;gap:16px;margin-top:34px;font-size:11px;color:var(--gold);}
 .craft-values span{padding-top:12px;border-top:1px solid var(--line);}
 .visit-story{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin:90px 0;padding:0;}
@@ -143,7 +151,7 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .public-site .dt-years{background:transparent;padding:0;}
 .public-site .cta-banner{padding:54px 28px;}
 .public-site .cta-banner h2{font-size:44px;line-height:1.1;}
-.site-footer{margin-top:0;background:#281735;content-visibility:visible;contain-intrinsic-size:none;}
+.site-footer{margin-top:0;background:linear-gradient(145deg,#281735,#1e122c);content-visibility:visible;contain-intrinsic-size:none;}
 .site-footer::before{display:none;}
 .footer-invitation{display:flex;justify-content:space-between;align-items:center;gap:36px;padding:54px 0;border-bottom:1px solid #55435c;}
 .footer-invitation .eyebrow{color:#d9c7e1;}
@@ -159,6 +167,7 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .site-footer .about-copy{font-size:12px;line-height:1.9;}
 .site-footer .social-row{display:flex;flex-wrap:wrap;}
 .site-footer .social-row a{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:30px;height:30px;border:0;background:transparent;margin:0;}
+.site-footer .footer-grid>div:not(.footer-identity):not(.footer-contact){padding-top:4px;}
 .footer-bottom{font-size:10px;line-height:1.8;padding:22px 0;border-color:#55435c;}
 .footer-bottom>span:last-child{max-width:52ch;}
 .workplace .page-head{padding-bottom:20px;border-bottom:1px solid var(--line);}
@@ -174,12 +183,18 @@ body[data-page="contact"] .info-card{border-top:1px solid var(--line);padding-to
 body[data-page="contact"] .field input,body[data-page="contact"] .field select,body[data-page="contact"] .field textarea{background:#fff;border-radius:3px;}
 .contact-scene{width:100%;height:280px;object-fit:cover;object-position:center 60%;margin:0 0 50px;}
 .collection-banner{width:100%;height:260px;object-fit:cover;margin-bottom:40px;}
+.careers-intro{display:grid;grid-template-columns:.7fr 1.3fr;gap:36px;padding:28px 0 42px;border-bottom:1px solid var(--line);}
+.careers-intro p{font-size:14px;line-height:1.85;color:var(--ink-soft);max-width:55ch;}
+.careers-perks{grid-column:2;display:flex;flex-wrap:wrap;gap:10px;margin-top:-18px;}
+.careers-perks span{padding:8px 12px;background:#fff;border:1px solid var(--line);font-size:11px;color:var(--violet);}
+.careers-list h2{font-size:42px;color:var(--violet);}
 body[data-page="careers"] .job-card{background:transparent;border-width:0 0 1px;border-radius:0;padding:26px 0;}
 body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line);padding:20px;}
 @media(min-width:1600px){.editorial-hero-copy h1{font-size:84px;}}
 @media(max-width:980px){
   .editorial-intro{grid-template-columns:1fr 1.5fr;gap:25px;}.editorial-intro>.eyebrow{grid-column:1/-1;}
   .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story{gap:32px;}
+  .clinic-story{gap:32px;}
   .chapter-heading h2{font-size:40px;}
   .about-page .doctor-card{grid-template-columns:85px minmax(0,1fr);gap:15px;}
   .about-page .doc-photo{width:85px;height:115px;}
@@ -199,16 +214,19 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .chapter-nav button{font-size:11px;}
   .editorial-intro{padding:54px 0;grid-template-columns:1fr;gap:20px;}
   .editorial-intro h2,.chapter-heading h2,.team-heading h2,.about-craft h2,.visit-details h2{font-size:38px;}
-  .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories{grid-template-columns:1fr;}
+  .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories,.clinic-story{grid-template-columns:1fr;}
   .treatment-chapter{padding:50px 0;}
   .chapter-heading{gap:15px;}
   .chapter-image img{aspect-ratio:3/2;}
+  .chapter-image{max-width:none;}
   .chapter-content{gap:28px;}
   .clinical-chapter,.referral-section{padding:50px 0;}
   .clinical-chapter h2,.referral-section h2{font-size:36px;}
   .editorial-booking{padding:58px 0;}
   .editorial-booking h2{font-size:38px;}
   .team-section{padding:50px 0;}
+  .clinic-story{padding:50px 0;}
+  .clinic-facts{grid-template-columns:1fr;gap:12px;}
   .about-page .doctor-card{grid-template-columns:95px minmax(0,1fr);}
   .about-page .doc-photo{width:95px;height:125px;}
   .about-craft{padding:20px 0 55px;}
@@ -220,6 +238,8 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .story blockquote{font-size:29px;}
   .footer-invitation{align-items:flex-start;flex-direction:column;gap:24px;padding:42px 0;}
   .footer-invitation h2{font-size:35px;}
+  .careers-intro{grid-template-columns:1fr;gap:18px;}
+  .careers-perks{grid-column:auto;margin-top:0;}
   .footer-grid{grid-template-columns:1fr 1fr;gap:32px 24px;}
   .footer-identity,.footer-contact{grid-column:1/-1;}
   .footer-identity{display:grid;grid-template-columns:76px 1fr;gap:14px 24px;}

@@ -2,7 +2,7 @@
 // (current tab, cart, open wizard/drawer). Everything else imports this
 // module and reads/mutates these same objects directly.
 
-let stateRequest=null, stateLoadedAt=0, loadedPage=0;
+let stateRequest=null, stateLoadedAt=0, loadedPage=0, stateGeneration=0, stateRequestToken=0;
 export async function api(path, opts={}) {
   const method=(opts.method || 'GET').toUpperCase();
   const mutation=!['GET','HEAD'].includes(method);
@@ -12,8 +12,8 @@ export async function api(path, opts={}) {
   try {
     const res=await fetch(path,{...opts,headers,signal:opts.signal || controller.signal});
     const json=await res.json().catch(()=>({}));
-    if(!res.ok || json.ok===false)throw new Error(json.error || 'Request failed. Please try again.');
-    if(mutation)stateLoadedAt=0;
+    if(!res.ok || json.ok===false){ const err=new Error(json.error || 'Request failed. Please try again.'); err.status=res.status; throw err; }
+    if(mutation){stateLoadedAt=0; stateGeneration++;}
     return json;
   } finally {clearTimeout(timer);}
 }
@@ -63,7 +63,20 @@ export async function loadState() {
   if(loadedPage===page && Date.now()-stateLoadedAt<30000)return;
   if(stateRequest && loadedPage===page)return stateRequest;
   loadedPage=page;
-  stateRequest=api('/api/state?page='+page).then(s=>{delete s.ok;Object.assign(DATA,s);stateLoadedAt=Date.now();}).finally(()=>{stateRequest=null;});
+  const generation=stateGeneration;
+  const requestToken=++stateRequestToken;
+  stateRequest=api('/api/state?page='+page).then(s=>{
+    // A mutation or newer request may have completed while this response was in flight.
+    // Never let an older snapshot overwrite freshly changed client state.
+    if(generation!==stateGeneration || requestToken!==stateRequestToken)return;
+    delete s.ok; Object.assign(DATA,s); stateLoadedAt=Date.now();
+  }).catch(err=>{
+    if(err.status===401){
+      DATA.auth={admin:false,dentist:false,lab:false}; DATA.users=[]; DATA.activeSessions=[];
+      DATA.cases=[]; DATA.invoices=[]; DATA.expenses=[]; DATA.orders=[]; DATA.applications=[]; DATA.messages=[]; DATA.appointments=[]; DATA.enquiries=[];
+    }
+    throw err;
+  }).finally(()=>{if(requestToken===stateRequestToken)stateRequest=null;});
   return stateRequest;
 }
 

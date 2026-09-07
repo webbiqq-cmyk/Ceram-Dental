@@ -4,8 +4,9 @@ const { logAction } = require('../utils/audit');
 
 async function create(req, res) {
   const { category, description, amount } = req.body || {};
-  if (!category || !amount) return bad(res, 'Category and amount are required.');
+  if (!category || amount === undefined || amount === null || amount === '') return bad(res, 'Category and amount are required.');
   const exp = await expenseModel.addExpense({ category, description, amount: Number(amount) });
+  if (!exp) return bad(res, 'Enter a valid positive amount.');
   await logAction(req, 'expense:add', exp.category + ' — ' + exp.amount);
   ok(res, { expense: exp });
 }

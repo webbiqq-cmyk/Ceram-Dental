@@ -1,6 +1,6 @@
 # Backend hardening handoff
 
-Updated: 2026-09-08. **Work in progress; do not deploy this working tree yet.**
+Updated: 2026-09-08. **Hardening pass is locally verified; Claude should review the diff, configure production secrets/database, then commit and deploy through the normal release checks.**
 
 ## User instructions
 
@@ -49,6 +49,26 @@ Updated: 2026-09-08. **Work in progress; do not deploy this working tree yet.**
 9. Adapt tests to async model interfaces (test helper createUser/issueToken etc.). Add regressions for auth revocation/ownership, checkout concurrency, workflow rollback/transitions, invalid inputs, idempotency collisions, persistence/restart where local Postgres available.
 10. Run syntax checks, npm test, dependency audit, browser flows on desktop/mobile. Current post-edit syntax checks passed for controllers/models/services, but no runtime suite yet.
 11. Clean dead assets only after reference checks; keep original visual design. Update README/config docs honestly. Do not claim production or heavy-load proof without evidence.
+
+## Latest integration work
+
+- `public/js/state.js` now tags in-flight snapshots so an older `/api/state` response cannot overwrite newer mutation state. It also clears private client data after a 401 instead of leaving stale records visible.
+- API errors retain their HTTP status for the client cache logic; mutation cache invalidation remains automatic.
+- Settings writes lock the clinic record in PostgreSQL transactions.
+- Expense creation now bounds category/description, rejects non-finite or non-positive amounts, and stores amounts to three decimal places; the controller returns a validation error instead of creating an invalid row.
+- `npm test`: 64 passing, 1 skipped (PostgreSQL cross-process test skipped when no test database is configured).
+- Native syntax checks pass for the changed modules and server entry point.
+- `npm audit --omit=dev --audit-level=high` could not reach registry.npmjs.org in this environment (DNS/network failure); rerun it in CI or a networked shell.
+
+The working tree is intentionally uncommitted. Do not reset or discard these edits; Claude/user owns the final review, commit, and push.
+
+## Latest public-site UI work
+
+- Services chapters use a restrained 4:3 image treatment with a narrower media column so the copy and treatment accordions carry equal visual weight.
+- About now includes clinic context, care philosophy, a clinic-facts row, and a four-doctor fallback showcase with specialties and study/certification details when public state has not loaded yet.
+- Home FAQs now cover consultation length, payment options, nervous patients, crown replacement and children’s visits.
+- Careers now includes dental assistant, sterilisation/clinical support and patient experience roles, plus an introduction/perks panel. Existing Apply buttons open the working application form for every role.
+- Footer background and public-page supporting panels received a light visual refinement.
 
 ## Commands / environment
 
