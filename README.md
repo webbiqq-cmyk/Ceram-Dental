@@ -17,6 +17,12 @@ npm start
 Then open **http://localhost:3000**. Data lives in memory (`src/models/`)
 and resets whenever the server restarts — there's no database to set up.
 
+**Client walkthrough / demo, no login prompts:** `DEMO_MODE_NO_AUTH=true npm start`
+treats every visitor as signed into all three portals at once — no login
+screen anywhere. Off by default; prints an unmissable banner on startup
+whenever it's on. Never set this on a real deployment, and never merge a
+branch that sets it into `main`.
+
 Run the automated test suite (`test/`, Node's built-in test runner, no
 extra dependencies) with:
 

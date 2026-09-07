@@ -9,6 +9,15 @@
 
 const app = require('./src/app');
 
+if (process.env.DEMO_MODE_NO_AUTH === 'true') {
+  console.warn('\n' + '#'.repeat(70) + '\n' +
+    '#  DEMO MODE — AUTH IS DISABLED FOR ALL THREE PORTALS\n' +
+    '#  Every visitor is treated as signed-in admin, dentist AND lab.\n' +
+    '#  This is only ever safe on a private/local demo you control.\n' +
+    '#  Unset DEMO_MODE_NO_AUTH before this touches a real deployment.\n' +
+    '#'.repeat(70) + '\n');
+}
+
 // Last-resort safety net. Every known async route handler is wrapped in
 // asyncHandler (src/utils/asyncHandler.js), which turns a thrown/rejected
 // error into a normal 500 response for that one request — that's the real

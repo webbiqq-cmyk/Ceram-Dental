@@ -20,9 +20,26 @@ function cookieNameFor(role) { return COOKIE_NAMES[role]; }
 // logout to find the jti to revoke.
 function verifyRawToken(token) { return verifyToken(token); }
 
+// TEMPORARY, off-by-default demo bypass — for walking a client through the
+// portals live without a login screen in front of every one. Gated on an
+// env var nobody sets by accident: with DEMO_MODE_NO_AUTH unset (the
+// default, and the only setting that should ever reach a real deployment),
+// this changes nothing and every check below runs exactly as it always
+// has. One choke point (readSession) covers every route that gates on it
+// — requireRole, requireAnyRole, requireRoleParam, and /api/state's own
+// role checks — so there's no risk of some routes staying locked while
+// others open up. Printed loudly on every request so it's never silently
+// running. See README for how to turn it off again.
+const DEMO_MODE_NO_AUTH = process.env.DEMO_MODE_NO_AUTH === 'true';
+function demoSession(role) {
+  console.warn('[DEMO MODE] auth bypassed for role=' + role + ' — DEMO_MODE_NO_AUTH is set. Never leave this on for a real deployment.');
+  return { sub: 'demo-' + role, username: 'demo-' + role, role, name: 'Demo ' + role[0].toUpperCase() + role.slice(1), jti: 'demo-' + role, remembered: false };
+}
+
 function readSession(req, role) {
   const name = COOKIE_NAMES[role];
   if (!name) return null;
+  if (DEMO_MODE_NO_AUTH) return demoSession(role);
   const token = req.cookies && req.cookies[name];
   if (!token) return null;
   const decoded = verifyToken(token);
