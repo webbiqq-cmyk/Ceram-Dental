@@ -1,6 +1,13 @@
 // Locks in the case-pipeline permission model: which actions each portal
 // can take, matching what each UI actually exposes as buttons (see
 // src/controllers/cases.controller.js's ACTIONS_BY_ROLE).
+// Auth is disabled app-wide by default (see README) — force real login
+// enforcement back on for this file so the role-permission model below
+// (which only means something with real, distinct logins) still gets
+// exercised. Must be set before requiring testApp, which is what pulls in
+// src/app.js and its auth middleware.
+process.env.REQUIRE_LOGIN = 'true';
+
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { startTestServer, makeTestUser } = require('./helpers/testApp');

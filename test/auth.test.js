@@ -3,6 +3,12 @@
 // can't be forged or replayed across roles. Every assertion here mirrors
 // something already proven by hand during hardening — this is what keeps
 // it proven on every future change.
+// Auth is disabled app-wide by default (see README) — force real login
+// enforcement back on for this file, since that's the entire thing it's
+// testing. Must be set before requiring testApp, which is what pulls in
+// src/app.js and its auth middleware.
+process.env.REQUIRE_LOGIN = 'true';
+
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const jwt = require('jsonwebtoken');

@@ -1,6 +1,12 @@
 // Enquiries had no way in from the UI at all before this — only ever
 // seeded, never created. Staff logging a lead that arrived somewhere this
 // app can't see (an Instagram DM, a phone call) needs a real endpoint.
+// Auth is disabled app-wide by default (see README) — force real login
+// enforcement back on for this file so "admin-only" actually means
+// something here. Must be set before requiring testApp, which is what
+// pulls in src/app.js and its auth middleware.
+process.env.REQUIRE_LOGIN = 'true';
+
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { startTestServer, makeTestUser } = require('./helpers/testApp');

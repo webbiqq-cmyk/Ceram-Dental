@@ -9,12 +9,12 @@
 
 const app = require('./src/app');
 
-if (process.env.DEMO_MODE_NO_AUTH === 'true') {
+if (process.env.REQUIRE_LOGIN !== 'true') {
   console.warn('\n' + '#'.repeat(70) + '\n' +
-    '#  DEMO MODE — AUTH IS DISABLED FOR ALL THREE PORTALS\n' +
-    '#  Every visitor is treated as signed-in admin, dentist AND lab.\n' +
-    '#  This is only ever safe on a private/local demo you control.\n' +
-    '#  Unset DEMO_MODE_NO_AUTH before this touches a real deployment.\n' +
+    '#  AUTH IS DISABLED FOR ALL THREE PORTALS (for now)\n' +
+    '#  Every visitor is treated as signed-in admin, dentist AND lab —\n' +
+    '#  no login screen anywhere. See README for how to turn login back\n' +
+    '#  on (REQUIRE_LOGIN=true) before this is used as a real deployment.\n' +
     '#'.repeat(70) + '\n');
 }
 

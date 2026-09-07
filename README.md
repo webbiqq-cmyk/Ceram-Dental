@@ -17,11 +17,13 @@ npm start
 Then open **http://localhost:3000**. Data lives in memory (`src/models/`)
 and resets whenever the server restarts — there's no database to set up.
 
-**Client walkthrough / demo, no login prompts:** `DEMO_MODE_NO_AUTH=true npm start`
-treats every visitor as signed into all three portals at once — no login
-screen anywhere. Off by default; prints an unmissable banner on startup
-whenever it's on. Never set this on a real deployment, and never merge a
-branch that sets it into `main`.
+**Authentication is currently disabled.** Admin, Dentist Portal and Lab
+Studio are all directly reachable with no login screen — every visitor is
+treated as signed into all three at once. This is a deliberate, temporary
+state (see below), not the finished product; an unmissable banner prints
+on every startup to say so. Set `REQUIRE_LOGIN=true` to turn the original
+three-way login back on exactly as it was built (see Authentication below)
+— do that before any real deployment.
 
 Run the automated test suite (`test/`, Node's built-in test runner, no
 extra dependencies) with:
@@ -66,9 +68,11 @@ URL as before.
 
 ## Demo login credentials
 
-Admin, Dentist Portal and Lab Studio each require signing in — one seeded
-account per role, handed to the client separately from this repo (never
-committed). See project handoff notes, or use `POST
+Not needed while auth is disabled (see above) — every visitor already has
+full access to all three portals with no sign-in. When `REQUIRE_LOGIN=true`
+is set, Admin, Dentist Portal and Lab Studio each go back to requiring a
+real sign-in — one seeded account per role, handed to the client separately
+from this repo (never committed). See project handoff notes, or use `POST
 /api/auth/:role/change-password` once signed in to set your own.
 
 ## Code layout
@@ -91,7 +95,14 @@ committed). See project handoff notes, or use `POST
 
 ## Authentication
 
-Admin, Dentist Portal and Lab Studio are three independent logins — each
+**Currently disabled by default** — `src/middleware/auth.js`'s single
+`readSession()` choke point (which every role gate in the app goes
+through) returns an open session for whatever role is asked, for every
+visitor, regardless of cookies. Set `REQUIRE_LOGIN=true` to switch it back
+to real enforcement; nothing else below changed or was removed, it's just
+bypassed until that's set.
+
+When `REQUIRE_LOGIN=true`: Admin, Dentist Portal and Lab Studio are three independent logins — each
 gets its own cookie (`admin_session` / `dentist_session` / `lab_session`),
 so a session for one never grants access to another. Sessions are JWTs
 (`jsonwebtoken`) in httpOnly, sameSite=strict cookies; passwords are
@@ -139,14 +150,16 @@ keeping alongside the live dashboards.
 - **Start a Case** (`/new-case`) — the four-step intake wizard clinics use
   to open a case: service, case details, the protocol-of-acceptance
   checklist, review and submit.
-- **Dentist Portal** (`/portal`, sign-in required) — "My Cases" with live
-  status, the mockup approval step, and a billing tab showing invoices per
-  case.
-- **Lab Studio** (`/studio`, sign-in required) — the internal case pipeline
-  as a kanban board, matching the client's own whiteboard flow (Reception →
-  QC → Design → Doctor Approval → CAD-CAM → Layering → QC/Photography →
-  Ready for Pickup).
-- **Accounts & Admin** (`/admin`, sign-in required) — revenue and
+- **Dentist Portal** (`/portal`, sign-in required once `REQUIRE_LOGIN=true`,
+  open by default for now) — "My Cases" with live status, the mockup
+  approval step, and a billing tab showing invoices per case.
+- **Lab Studio** (`/studio`, sign-in required once `REQUIRE_LOGIN=true`,
+  open by default for now) — the internal case pipeline as a kanban board,
+  matching the client's own whiteboard flow (Reception → QC → Design →
+  Doctor Approval → CAD-CAM → Layering → QC/Photography → Ready for
+  Pickup).
+- **Accounts & Admin** (`/admin`, sign-in required once `REQUIRE_LOGIN=true`,
+  open by default for now) — revenue and
   outstanding invoices, expense logging, shop orders, the
   applications/messages that come in through Careers and Contact, plus
   central Accounts & Access management, an Activity Log, and Export Data
