@@ -329,6 +329,11 @@ img{max-width:100%; display:block;}
 .page-flush .step{background:transparent; border:0; border-top:1px solid var(--line); box-shadow:none; padding:20px 0;}
 .page-flush .cta-banner{border-radius:0; background:var(--violet); box-shadow:none;}
 .page-flush .cta-banner::before{display:none;}
+.page-flush .cta-banner h2{color:#fff;}
+.page-flush .cta-banner .eyebrow-accent{color:var(--gold-light);}
+.page-flush .cta-banner p{color:rgba(255,255,255,.78);}
+.page-flush .cta-banner .btn-ghost{border-color:rgba(255,255,255,.72);color:#fff;background:transparent;}
+.page-flush .cta-banner .btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.12);color:#fff;}
 .page-flush .doctor-tile{border-radius:4px;}
 .page-flush .shop-strip{background:transparent; border-width:1px 0; box-shadow:none; padding:28px 0;}
 .page-flush .faq-grid{grid-template-columns:1fr; gap:0;}
