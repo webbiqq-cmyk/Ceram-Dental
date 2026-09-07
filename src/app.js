@@ -8,6 +8,20 @@ const { helmetMiddleware, apiLimiter } = require('./middleware/security');
 const { requestLog } = require('./middleware/requestLog');
 const apiRoutes = require('./routes');
 
+// Applies the lab-workflow schema (src/db/migrations/) the first time this
+// process boots against a real database — see src/db/migrate.js for why
+// this runs here instead of being a manual step: the sandbox this was
+// built in has no network path to an external Postgres host at all, so a
+// deployed runtime applying it on its own first boot is the only path
+// that actually works. No-ops (cheap: one query) on every boot after the
+// first. Never fatal — the rest of the site (marketing pages, shop, the
+// existing case pipeline) doesn't depend on this schema.
+if (process.env.DATABASE_URL) {
+  require('./db/migrate').runMigrations()
+    .then(() => console.log('[db] lab workflow schema up to date.'))
+    .catch(err => console.error('[db] migration failed on boot:', err.message));
+}
+
 const app = express();
 
 // Behind Vercel's (or any) reverse proxy, so req.secure / req.ip reflect the
