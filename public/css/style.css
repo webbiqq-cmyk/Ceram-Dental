@@ -1,28 +1,47 @@
 :root{
-  /* Two colours only: one dark purple, and white. */
-  --porcelain:#FCFBFC;
-  --surface:#FFFFFF;
-  --surface-sunken:#F4F1F6;
+  /* Ceram's brand system, from two boards: the Ceram board itself gives the
+     primary purple and the gold (2d1142 / ffffff / ead4aa→6c491d) — that's
+     Ceram's own labeled hex, and their emblem is literally gold, so it's
+     kept exact and untouched. The Vivienne Paris board supplies the two
+     supporting moves layered on top: a near-black aubergine (sampled off
+     its swatch chips) for the darkest/hover purple instead of a generic
+     tint, and a warm pearl neutral (its "Pearl Silk" chip) as the page's
+     background warmth instead of a cool off-white — so the base feels like
+     the boutique-editorial board while the identity color stays Ceram's.
+     Gold is reserved for editorial accents and "this is finished" moments
+     (page eyebrows, hover glows, the vision panel, paid/ready status), not
+     wallpaper. Critical/overdue stays a true red — a usability signal, not
+     a brand color, and has to stay legible against both purple and gold. */
+  --porcelain:#F5F0E6;       /* warm pearl base (Vivienne "Pearl Silk"), not cool white */
+  --surface:#FFFFFF;         /* card/panel white — exact Ceram board hex */
+  --surface-sunken:#EFE8D8;
   --ink:#221A2B;
   --ink-soft:#6E6577;
-  --line:#E9E4EC;
-  --violet:#3B1C4A;
-  --violet-deep:#2B1338;
-  --violet-soft:#F0EBF3;
-  --rose:#3B1C4A;
+  --line:#E6DECF;
+
+  --violet:#2D1142;         /* brand primary — exact Ceram board hex, untouched */
+  --violet-deep:#1E1330;    /* near-black aubergine, off the Vivienne swatch chip */
+  --violet-soft:#EFEAF3;
+  --rose:#2D1142;
   --lavender:#C9BAD3;
-  --plum-surface:#3B1C4A;
-  --champagne:#3B1C4A;
-  --ready:#3B1C4A;
-  --ready-soft:#F0EBF3;
-  --amber:#3B1C4A;
-  --amber-soft:#F0EBF3;
+  --plum-surface:#2D1142;
+
+  --gold:#6C491D;           /* text/icon-safe bronze (Ceram board's dark gold stop) */
+  --gold-light:#EAD4AA;     /* pale champagne (Ceram board's light gold stop) — for use on dark purple */
+  --gold-soft:#FAF4EA;      /* champagne tint for badges/fills on white */
+  --gold-gradient:linear-gradient(135deg, #EAD4AA 0%, #6C491D 100%);
+
+  --champagne:#EAD4AA;
+  --ready:#6C491D;          /* "done/paid/ready" reads as gold, not an off-brand green */
+  --ready-soft:#FAF4EA;
+  --amber:#6E5570;          /* "in progress" — the Vivienne board's mid dusty mauve */
+  --amber-soft:#EFEAF3;
   --critical:#A8433E;
   --critical-soft:#F5E2DF;
-  --shadow: 0 1px 2px rgba(43,19,56,.06), 0 10px 30px -14px rgba(43,19,56,.16);
+  --shadow: 0 1px 2px rgba(30,19,48,.07), 0 10px 30px -14px rgba(30,19,48,.18);
 
   --font-display:'Outfit', ui-sans-serif, system-ui, sans-serif;
-  --font-body:'Mulish', ui-sans-serif, system-ui, sans-serif;
+  --font-body:'Montserrat', ui-sans-serif, system-ui, sans-serif;
   --font-accent:'Italiana', ui-serif, Georgia, serif;
   --font-mono:'IBM Plex Mono', ui-monospace, monospace;
 }
@@ -44,7 +63,7 @@ a{color:inherit; text-decoration:none;}
 img{max-width:100%; display:block;}
 .mono{font-family:var(--font-mono);}
 .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); display:block;}
-.eyebrow-accent{font-family:var(--font-accent); font-size:16px; letter-spacing:.06em; text-transform:uppercase; color:var(--violet); font-weight:400; display:block;}
+.eyebrow-accent{font-family:var(--font-accent); font-size:16px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold); font-weight:400; display:block;}
 .u{max-width:1160px; margin:0 auto; padding:0 28px;}
 [hidden]{display:none !important;}
 @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
@@ -221,6 +240,7 @@ img{max-width:100%; display:block;}
     radial-gradient(600px circle at 50% -30%, rgba(255,255,255,.06), transparent 65%),
     var(--plum-surface);
 }
+.cta-banner::before{content:""; position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);}
 .cta-banner h2{color:#fff; font-size:clamp(1.5rem,2.8vw,2rem); position:relative;}
 .cta-banner p{color:rgba(255,255,255,.72); margin-top:12px; max-width:52ch; margin-left:auto; margin-right:auto; position:relative;}
 .cta-banner .cta-row{margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; position:relative;}
@@ -279,7 +299,7 @@ img{max-width:100%; display:block;}
     radial-gradient(340px circle at 90% -10%, rgba(255,255,255,.14), transparent 60%),
     var(--plum-surface);
 }
-.vm-card.vision .eyebrow{color:var(--lavender);}
+.vm-card.vision .eyebrow{color:var(--gold-light);}
 .vm-card.vision p{color:rgba(255,255,255,.82);}
 .vm-card.mission{background:var(--surface); border:1px solid var(--line);}
 .vm-card p{margin-top:12px; font-size:14.5px; line-height:1.7;}
@@ -296,7 +316,7 @@ img{max-width:100%; display:block;}
 /* ---- Doctors ---- */
 .doctor-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:20px;}
 .doctor-card{display:flex; gap:16px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:var(--shadow); text-align:left; font:inherit; color:inherit; cursor:pointer; width:100%; transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;}
-.doctor-card:hover{transform:translateY(-3px); box-shadow:0 16px 36px -18px rgba(43,19,56,.34); border-color:var(--lavender);}
+.doctor-card:hover{transform:translateY(-3px); box-shadow:0 16px 36px -18px rgba(43,19,56,.34); border-color:var(--gold-light);}
 .doc-more{display:inline-block; margin-top:12px; font-size:12px; font-weight:600; color:var(--violet);}
 .doc-photo{width:104px; flex:0 0 104px; align-self:flex-start; border-radius:12px; overflow:hidden; background:var(--violet-soft); aspect-ratio:5/6;}
 .doc-photo img{width:100%; height:100%; object-fit:cover; object-position:top center;}
@@ -313,7 +333,7 @@ img{max-width:100%; display:block;}
 /* home doctor tiles (bigger, clickable -> modal) */
 .doctor-tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:20px;}
 .doctor-tile{display:flex; flex-direction:column; align-items:center; text-align:center; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 16px 20px; box-shadow:var(--shadow); font:inherit; color:inherit; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;}
-.doctor-tile:hover{transform:translateY(-4px); box-shadow:0 18px 40px -18px rgba(43,19,56,.36); border-color:var(--lavender);}
+.doctor-tile:hover{transform:translateY(-4px); box-shadow:0 18px 40px -18px rgba(43,19,56,.36); border-color:var(--gold-light);}
 .dt-photo{width:100%; aspect-ratio:1/1; border-radius:14px; overflow:hidden; background:var(--violet-soft); margin-bottom:13px;}
 .dt-photo img{width:100%; height:100%; object-fit:cover; object-position:top center;}
 .dt-photo-fallback{display:flex; align-items:center; justify-content:center; color:var(--violet); font-family:var(--font-display); font-weight:600; font-size:30px;}
@@ -623,7 +643,8 @@ img{max-width:100%; display:block;}
 .list-row .s{color:var(--ink-soft); font-size:12px;}
 
 /* ================= FOOTER ================= */
-.site-footer{background:var(--plum-surface); color:rgba(255,255,255,.86); margin-top:80px; content-visibility:auto; contain-intrinsic-size:auto 420px;}
+.site-footer{position:relative; background:var(--plum-surface); color:rgba(255,255,255,.86); margin-top:80px; content-visibility:auto; contain-intrinsic-size:auto 420px;}
+.site-footer::before{content:""; position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);}
 .footer-grid{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:36px; padding:52px 0 30px;}
 .site-footer h4{color:#fff; font-size:13px; text-transform:uppercase; letter-spacing:.05em; font-family:var(--font-mono); font-weight:500; margin-bottom:14px;}
 .site-footer a{color:rgba(255,255,255,.75); font-size:13.5px; display:block; margin-bottom:9px;}
