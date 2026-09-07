@@ -19,6 +19,7 @@ import { attachQCHandlers } from './pages/qc.js';
 import { attachNewOrderHandlers } from './pages/newOrder.js';
 import { openDrawer } from './components/drawer.js';
 import { openDoctorModal } from './components/doctor.js';
+import { addToCart } from './components/cart.js';
 
 const ROUTE_HANDLERS = {
   about: attachAboutHandlers,
@@ -40,6 +41,7 @@ const ROUTE_HANDLERS = {
 export function attachPageHandlers(route) {
   const attach = ROUTE_HANDLERS[route];
   if (attach) attach();
+  if (route !== 'shop') document.querySelectorAll('[data-add-product]').forEach(button => button.addEventListener('click', () => addToCart(button.dataset.addProduct)));
   document.querySelectorAll('[data-review-step]').forEach(button => button.addEventListener('click', () => {
     const track = document.getElementById('storiesTrack');
     if (!track) return;

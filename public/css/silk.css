@@ -183,6 +183,13 @@ body[data-page="contact"] .info-card{border-top:1px solid var(--line);padding-to
 body[data-page="contact"] .field input,body[data-page="contact"] .field select,body[data-page="contact"] .field textarea{background:#fff;border-radius:3px;}
 .contact-scene{width:100%;height:280px;object-fit:cover;object-position:center 60%;margin:0 0 50px;}
 .collection-banner{width:100%;height:260px;object-fit:cover;margin-bottom:40px;}
+.home-shop-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
+.home-shop-card{background:#fff;border:1px solid var(--line);padding:14px;min-width:0;}
+.home-shop-card .product-media{height:150px;margin:-14px -14px 14px;width:calc(100% + 28px);}
+.home-shop-card h3{font:500 21px/1.15 var(--font-accent);color:var(--violet);margin:7px 0 15px;}
+.home-shop-card .cat{font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;}
+.home-shop-row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:12px;}
+.home-shop-row b{font:600 14px var(--font-mono);color:var(--gold);}
 .careers-intro{display:grid;grid-template-columns:.7fr 1.3fr;gap:36px;padding:28px 0 42px;border-bottom:1px solid var(--line);}
 .careers-intro p{font-size:14px;line-height:1.85;color:var(--ink-soft);max-width:55ch;}
 .careers-perks{grid-column:2;display:flex;flex-wrap:wrap;gap:10px;margin-top:-18px;}
@@ -217,7 +224,8 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories,.clinic-story{grid-template-columns:1fr;}
   .treatment-chapter{padding:50px 0;}
   .chapter-heading{gap:15px;}
-  .chapter-image img{aspect-ratio:3/2;}
+  .chapter-image img{aspect-ratio:4/3;}
+  .home-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .chapter-image{max-width:none;}
   .chapter-content{gap:28px;}
   .clinical-chapter,.referral-section{padding:50px 0;}

@@ -7,6 +7,8 @@ import { visitSection } from '../components/visit.js';
 import { reviewSection } from '../components/reviews.js';
 import { brandLogoStack } from '../components/brand.js';
 import { editorialImage } from '../components/editorialImage.js';
+import { productMediaHtml } from '../utils/productMedia.js';
+import { addToCart } from '../components/cart.js';
 
 function step(n, t, d) {
   return '<div class="step reveal"><span class="num">' + n + '</span><h3>' + t + '</h3><p>' + d + '</p></div>';
@@ -115,6 +117,10 @@ export function renderHome() {
         '<p>Whitening kits, retainer cases and the products your dentist recommends — ready to collect at your next visit.</p></div>' +
       '<a class="btn btn-ghost" href="#/shop">Visit the shop →</a>' +
     '</section>' +
+
+    '<section class="section home-shop-preview reveal"><div class="section-head luxe-head"><div><span class="eyebrow">A little care between visits</span><h2 class="serif">Shop favourites</h2></div><a class="btn btn-ghost btn-sm" href="#/shop">View the full shop →</a></div><div class="home-shop-grid">' +
+      DATA.products.filter(p => p.active !== false).slice(0, 4).map(p => '<article class="home-shop-card">' + productMediaHtml(p) + '<span class="cat">' + esc(p.category) + '</span><h3>' + esc(p.name) + '</h3><div class="home-shop-row"><b>' + money(p.price) + '</b><button class="btn btn-primary btn-sm" data-add-product="' + esc(p.id) + '">Add</button></div></article>').join('') +
+    '</div></section>' +
 
     '<section class="section cta-banner reveal">' +
       '<span class="eyebrow-accent">Ceram Specialist Dental Center</span>' +
