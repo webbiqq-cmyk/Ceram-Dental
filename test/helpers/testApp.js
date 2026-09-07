@@ -7,6 +7,9 @@
 // purpose (see README). Instead each test creates its own throwaway
 // account with a known password via the same model/service layer the app
 // itself uses, so the suite never needs to know or hardcode a real secret.
+process.env.REQUIRE_LOGIN = 'true';
+process.env.NODE_ENV = 'test';
+if (process.env.DATABASE_URL && !process.env.CERAM_TEST_DATABASE) throw new Error('Refusing to run tests against an unapproved database.');
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-only-secret-' + Math.random().toString(36).slice(2);
 
 const app = require('../../src/app');
@@ -28,7 +31,7 @@ async function makeTestUser(role, opts) {
   const username = 'test-' + role + '-' + Math.random().toString(36).slice(2, 9);
   const password = 'TestPassword12345';
   const passwordHash = await authService.hashPassword(password);
-  const user = userModel.createUser(Object.assign({ username, passwordHash, role, name: 'Test ' + role }, opts));
+  const user = await userModel.createUser(Object.assign({ username, passwordHash, role, name: 'Test ' + role }, opts));
   return { user, username, password };
 }
 

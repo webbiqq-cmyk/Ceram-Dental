@@ -33,19 +33,20 @@ export function attachUploadZone(root, id, { role, orderId, stageType, category 
   input.addEventListener('change', async () => {
     const file = input.files[0];
     if (!file) return;
+    if(file.size>10*1024*1024){toast('Choose a file under 10 MB.');return;}
     status.textContent = 'Uploading…';
     try {
-      const { signature, timestamp, cloudName, apiKey, folder } = await api('/api/orders/uploads/sign?asRole=' + role, { method: 'POST', body: JSON.stringify({ folder: 'cases', orderId }) });
+      const { signature, params, cloudName, apiKey } = await api('/api/orders/uploads/sign?asRole=' + role, { method: 'POST', body: JSON.stringify({ folder: 'cases', orderId }) });
       const form = new FormData();
       form.append('file', file);
       form.append('api_key', apiKey);
-      form.append('timestamp', timestamp);
+      for(const [key,value] of Object.entries(params))form.append(key,String(value));
       form.append('signature', signature);
-      form.append('folder', folder);
+
       const res = await fetch('https://api.cloudinary.com/v1_1/' + cloudName + '/auto/upload', { method: 'POST', body: form });
       const json = await res.json();
       if (!res.ok || !json.secure_url) throw new Error((json.error && json.error.message) || 'Upload failed.');
-      await recordFile(role, orderId, { stageType, category, url: json.secure_url, publicId: json.public_id });
+      await recordFile(role, orderId, { stageType, category, url: json.secure_url, publicId: json.public_id, version:json.version, signature:json.signature });
       status.textContent = 'Uploaded ✓';
       toast('File attached to the case.');
       zone.dispatchEvent(new CustomEvent('case-file-uploaded', { bubbles: true }));

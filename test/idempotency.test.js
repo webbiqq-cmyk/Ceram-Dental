@@ -4,32 +4,32 @@ const idempotency = require('../src/models/idempotency.model');
 const { startTestServer } = require('./helpers/testApp');
 
 test('idempotency model', async (t) => {
-  await t.test('first request proceeds, a concurrent second is told to wait', () => {
-    const r1 = idempotency.begin('t:route', 'caller-1', 'key-a');
+  await t.test('first request proceeds, a concurrent second is told to wait', async () => {
+    const r1 = await idempotency.begin('t:route', 'caller-1', 'key-a');
     assert.equal(r1.existing, null);
-    const r2 = idempotency.begin('t:route', 'caller-1', 'key-a');
+    const r2 = await idempotency.begin('t:route', 'caller-1', 'key-a');
     assert.equal(r2.existing.status, 'pending');
   });
 
-  await t.test('once completed, a retry replays the stored response', () => {
-    const { key } = idempotency.begin('t:route', 'caller-2', 'key-b');
-    idempotency.complete(key, 200, { ok: true, from: 'original' });
-    const retry = idempotency.begin('t:route', 'caller-2', 'key-b');
+  await t.test('once completed, a retry replays the stored response', async () => {
+    const { key } = await idempotency.begin('t:route', 'caller-2', 'key-b');
+    await idempotency.complete(key, 200, { ok: true, from: 'original' });
+    const retry = await idempotency.begin('t:route', 'caller-2', 'key-b');
     assert.equal(retry.existing.status, 'done');
     assert.equal(retry.existing.statusCode, 200);
     assert.deepEqual(retry.existing.body, { ok: true, from: 'original' });
   });
 
-  await t.test('different callers with the same key text never collide', () => {
-    idempotency.begin('t:route', 'caller-3', 'shared-text');
-    const other = idempotency.begin('t:route', 'caller-4', 'shared-text');
+  await t.test('different callers with the same key text never collide', async () => {
+    await idempotency.begin('t:route', 'caller-3', 'shared-text');
+    const other = await idempotency.begin('t:route', 'caller-4', 'shared-text');
     assert.equal(other.existing, null, 'a different caller must get an independent scope');
   });
 
-  await t.test('abandon() frees the key for a clean retry', () => {
-    const { key } = idempotency.begin('t:route', 'caller-5', 'key-c');
-    idempotency.abandon(key);
-    const retry = idempotency.begin('t:route', 'caller-5', 'key-c');
+  await t.test('abandon() frees the key for a clean retry', async () => {
+    const { key } = await idempotency.begin('t:route', 'caller-5', 'key-c');
+    await idempotency.abandon(key);
+    const retry = await idempotency.begin('t:route', 'caller-5', 'key-c');
     assert.equal(retry.existing, null, 'an abandoned key must not still look pending or done');
   });
 });

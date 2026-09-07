@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 const { daysAgo } = require('../utils/dates');
 
@@ -7,21 +8,21 @@ const appointments = [
   { id: nextId('appointment', 'APT-'), name: 'Noor Abdulla', phone: '+973 3344 9021', service: 'dsd', preferredDate: daysAgo(-1), status: 'new', note: 'Saw the Instagram page, wants a preview first.', createdAt: daysAgo(0.4) }
 ];
 
-function addAppointment({ name, phone, service, preferredDate, note }) {
+async function addAppointment({ name, phone, service, preferredDate, note }) {
   const apt = {
     id: nextId('appointment', 'APT-'), name, phone: phone || '', service: service || '',
     preferredDate: preferredDate ? new Date(preferredDate) : null, note: note || '',
     status: 'new', createdAt: new Date()
   };
-  appointments.unshift(apt);
+  await records.insert('appointments', apt);
   return apt;
 }
 
-function setAppointmentStatus(id, status) {
-  const apt = appointments.find(a => a.id === id);
-  if (!apt) return null;
-  apt.status = status;
-  return apt;
+async function setAppointmentStatus(id, status) {
+  if (!['new','confirmed','completed','cancelled'].includes(status)) return null;
+  return records.update('appointments', id, row => { row.status = status; });
 }
 
-module.exports = { appointments, addAppointment, setAppointmentStatus };
+records.register('appointments', appointments);
+async function list(options) { return records.list('appointments', options); }
+module.exports = { list, appointments, addAppointment, setAppointmentStatus };

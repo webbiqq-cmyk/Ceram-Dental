@@ -1,7 +1,7 @@
 // Designer dashboard — wired to the real workflow backend.
 import { UI } from '../state.js';
 import { esc, fmtDateTime } from '../utils/format.js';
-import { jobTypeLabel, statusPill, stageTrackerHtml } from '../utils/mockWorkflow.js';
+import { jobTypeLabel, statusPill, stageTrackerHtml } from '../utils/workflow.js';
 import { listOrders, listStaff, getOrder, designDone, postMessage } from '../utils/ordersApi.js';
 import { uploadZoneHtml, attachUploadZone } from '../components/caseUpload.js';
 import { toast } from '../toast.js';
@@ -11,7 +11,7 @@ let technicianOptions = [];
 let detailCache = null; // { order, history, files, messages } for whichever case is open
 
 function fileChip(f) {
-  return '<a class="upload-thumb" href="' + f.url + '" target="_blank" rel="noopener" style="display:flex; align-items:center; justify-content:center; color:var(--ink-soft); text-decoration:none;"><span class="cat">' + esc(f.category) + '</span>' +
+  return '<a class="upload-thumb" href="' + esc(f.url) + '" target="_blank" rel="noopener" style="display:flex; align-items:center; justify-content:center; color:var(--ink-soft); text-decoration:none;"><span class="cat">' + esc(f.category) + '</span>' +
     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg></a>';
 }
 

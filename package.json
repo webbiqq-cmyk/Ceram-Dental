@@ -8,7 +8,9 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node --test test/*.test.js",
-    "migrate": "node src/db/migrate.js"
+    "migrate": "node src/db/migrate.js",
+    "setup": "node scripts/setup.js",
+    "maintenance": "node scripts/maintenance.js"
   },
   "engines": {
     "node": ">=18"
@@ -25,5 +27,11 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.23.0"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.1"
+    },
+    "qs": "^6.16.0"
   }
 }

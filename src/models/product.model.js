@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const products = [
   { id: 'shade-guide', name: 'VITA Classical Shade Guide', category: 'Chairside kit', price: 28, sku: 'CK-SHADE-01', stock: 14, active: true,
     desc: 'A1–D4 reference tabs for accurate shade calls before you scan.',
@@ -52,26 +53,25 @@ function normImage(v) {
   return /^(https?:\/\/|\/|data:image\/)/.test(s) ? s.slice(0, 600) : '';
 }
 
-function addProduct({ name, category, price, desc, sku, stock, specs, active, image }) {
+async function addProduct({ name, category, price, desc, sku, stock, specs, active, image }) {
   name = String(name || '').trim();
   const priceNum = normPrice(price);
   if (!name || priceNum == null) return null;
   let base = slugify(name) || 'product';
   let id = base, n = 2;
-  while (products.some(p => p.id === id)) id = base + '-' + (n++);
+  while (await records.get('products', id)) id = base + '-' + (n++);
   const p = {
     id, name, category: normCategory(category), price: priceNum,
     desc: String(desc || '').trim(), sku: String(sku || '').trim(),
     stock: normStock(stock), active: active === false ? false : true,
     image: normImage(image), specs: cleanSpecs(specs)
   };
-  products.unshift(p);
+  await records.insert('products', p);
   return p;
 }
 
-function updateProduct(id, patch) {
-  const p = products.find(x => x.id === id);
-  if (!p) return null;
+async function updateProduct(id, patch) {
+  return records.update('products', id, p => {
   if (patch.name != null && String(patch.name).trim()) p.name = String(patch.name).trim();
   if (patch.category != null) p.category = normCategory(patch.category);
   if (patch.price != null) { const pr = normPrice(patch.price); if (pr != null) p.price = pr; }
@@ -82,13 +82,11 @@ function updateProduct(id, patch) {
   if (patch.image !== undefined) p.image = normImage(patch.image);
   if (patch.specs !== undefined) p.specs = cleanSpecs(patch.specs);
   return p;
+  });
 }
 
-function deleteProduct(id) {
-  const i = products.findIndex(x => x.id === id);
-  if (i === -1) return null;
-  products.splice(i, 1);
-  return true;
-}
+async function deleteProduct(id) { return records.remove('products', id); }
 
-module.exports = { products, addProduct, updateProduct, deleteProduct };
+records.register('products', products);
+async function list(options) { return records.list('products', options); }
+module.exports = { list, products, addProduct, updateProduct, deleteProduct };

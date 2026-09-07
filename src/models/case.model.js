@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 const { daysAgo } = require('../utils/dates');
 const invoiceModel = require('./invoice.model');
@@ -65,24 +66,27 @@ function normDesign(d) {
   };
 }
 
-function createCase({ clinic, patient, service, shade, instructions, protocol, design }) {
+async function createCase({ clinic, patient, service, shade, instructions, protocol, design, ownerId }) {
+  return records.transaction(async () => {
   const id = nextId('case', 'CD-');
   const c = {
-    id, clinic: clinic || 'Walk-in submission', patient: patient || 'Unassigned',
+    id, ownerId: ownerId || null, clinic: clinic || 'Walk-in submission', patient: patient || 'Unassigned',
     service, tech: '—', shade: shade || '—', stage: 'reception',
     design: normDesign(design),
     createdAt: new Date(), protocol: Object.assign({ photos: false, scan: false, retraction: false, margins: false, contacts: false }, protocol),
     instructions: instructions || '', revisions: 0, pickedUp: false,
     history: [{ stage: 'reception', at: new Date(), note: 'Submitted via website' }]
   };
-  cases.unshift(c);
-  invoiceModel.createInvoiceForCase(c);
+  await records.insert('cases', c);
+  await invoiceModel.createInvoiceForCase(c);
   return c;
+  });
 }
 
-function actOnCase(id, act) {
-  const c = cases.find(x => x.id === id);
-  if (!c) return null;
+async function actOnCase(id, act) {
+  return records.update('cases', id, c => {
+  const permitted = { advance: ['reception','designer','cadcam','layering','qc_photo'], 'qc-accept':['qc'], 'qc-reject':['qc'], approve:['doctor_approval'], reject:['doctor_approval'], pickup:['ready'] };
+  if (!permitted[act]?.includes(c.stage) || (act === 'pickup' && c.pickedUp)) return null;
   const idx = STAGES.indexOf(c.stage);
   const push = (stage, note) => c.history.push({ stage, at: new Date(), note });
 
@@ -97,6 +101,9 @@ function actOnCase(id, act) {
   else return null;
 
   return c;
+  });
 }
 
-module.exports = { STAGES, cases, createCase, actOnCase };
+records.register('cases', cases);
+async function list(options) { return records.list('cases', options); }
+module.exports = { list, STAGES, cases, createCase, actOnCase };

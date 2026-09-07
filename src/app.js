@@ -7,27 +7,14 @@ const compression = require('compression');
 const { helmetMiddleware, apiLimiter } = require('./middleware/security');
 const { requestLog } = require('./middleware/requestLog');
 const apiRoutes = require('./routes');
-
-// Applies the lab-workflow schema (src/db/migrations/) the first time this
-// process boots against a real database — see src/db/migrate.js for why
-// this runs here instead of being a manual step: the sandbox this was
-// built in has no network path to an external Postgres host at all, so a
-// deployed runtime applying it on its own first boot is the only path
-// that actually works. No-ops (cheap: one query) on every boot after the
-// first. Never fatal — the rest of the site (marketing pages, shop, the
-// existing case pipeline) doesn't depend on this schema.
-if (process.env.DATABASE_URL) {
-  require('./db/migrate').runMigrations()
-    .then(() => console.log('[db] lab workflow schema up to date.'))
-    .catch(err => console.error('[db] migration failed on boot:', err.message));
-}
+const {validateBody} = require('./utils/validation');
 
 const app = express();
 
 // Behind Vercel's (or any) reverse proxy, so req.secure / req.ip reflect the
 // real client, not the proxy hop — needed for secure cookies and rate
 // limiting to work correctly in production.
-app.set('trust proxy', 1);
+app.set('trust proxy', process.env.TRUST_PROXY_HOPS ? require('./config/env').integer('TRUST_PROXY_HOPS', 0, 0, 5) : (process.env.VERCEL ? 1 : false));
 // Express's default query parser (qs) has a known, currently-unpatched-
 // in-our-range prototype-pollution/DoS advisory for deeply nested
 // bracket syntax. Nothing here needs that — every query param we read
@@ -53,15 +40,33 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use('/api', apiLimiter, apiRoutes);
+app.get('/api/ready', (req,res) => require('./db/readiness').ready().then(()=>res.json({ok:true})).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})));
+app.use('/api', apiLimiter, (req,res,next) => require('./db/readiness').ready().then(()=>next()).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})), (req, res, next) => {
+  res.set('Cache-Control', 'private, no-store');
+  next();
+}, (req,res,next) => {
+  if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
+    const origin=req.get('Origin');
+    const expected=process.env.APP_ORIGIN || req.protocol+'://'+req.get('host');
+    if (req.get('Sec-Fetch-Site') === 'cross-site' || (origin && origin !== expected)) return res.status(403).json({ok:false,error:'Cross-site request denied.'});
+  }
+  next();
+}, (req,res,next) => {
+  if(req.method==='POST' && ['/contact','/careers/apply','/appointments','/cases','/checkout'].includes(req.path)) return require('./middleware/security').submissionLimiter(req,res,next);
+  if(req.path.startsWith('/admin/export/')) return require('./middleware/security').exportLimiter(req,res,next);
+  if(req.path.endsWith('/uploads/sign')) return require('./middleware/security').uploadLimiter(req,res,next);
+  next();
+}, validateBody, require('./middleware/transaction').transactional, apiRoutes, (req,res)=>res.status(404).json({ok:false,error:'API route not found.'}));
 
 // Final error handler — anything that throws past this point (a bad JSON
 // body, an unexpected exception in a controller) gets a generic message,
 // never a stack trace or internal detail back to the client.
 app.use((err, req, res, next) => {
-  console.error(err);
+  if (req.rejectTransaction) return req.rejectTransaction(err);
+  if (!err.status || err.status >= 500) console.error('[request-error]', err.code || err.name);
   if (res.headersSent) return next(err);
-  res.status(err.status || 500).json({ ok: false, error: 'Something went wrong.' });
+  const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600 ? err.status : 500;
+  res.status(status).json({ ok: false, error: err.expose ? err.message : status === 413 ? 'Request is too large.' : status === 400 ? 'Invalid request.' : 'Something went wrong.' });
 });
 
 module.exports = app;

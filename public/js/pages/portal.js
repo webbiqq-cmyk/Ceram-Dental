@@ -6,7 +6,7 @@ import { footer } from '../components/footer.js';
 import { pillHtml } from '../components/drawer.js';
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
-import { jobTypeLabel, statusPill } from '../utils/mockWorkflow.js';
+import { jobTypeLabel, statusPill } from '../utils/workflow.js';
 import { listOrders, doctorDecision } from '../utils/ordersApi.js';
 import { openNoteModal } from '../components/noteModal.js';
 import { toast } from '../toast.js';

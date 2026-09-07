@@ -1,6 +1,8 @@
+import { renderLoginGate, attachAuthGateHandlers, logout } from './components/authGate.js';
+import { esc } from './utils/format.js';
 // Hash-based router — maps '#/route' to a render function, re-fetches
 // server state on every navigation, then wires up that page's interactions.
-import { loadState, loadNotifications } from './state.js';
+import { DATA, UI, loadState, loadNotifications } from './state.js';
 import { initReveal } from './reveal.js';
 import { closeDrawer } from './components/drawer.js';
 import { closeCart } from './components/cart.js';
@@ -45,11 +47,16 @@ export function currentRoute() { return (location.hash || '#/').slice(2); }
 // it touches the DOM, that it's still the most recent navigation —
 // otherwise it quietly discards its own (now-stale) result.
 let navToken = 0;
+let previousRoute;
+const workflowRoles={reception:'receptionist',designer:'designer',technician:'technician',qc:'qc','new-order':'dentist'};
 
 export async function router() {
   const myToken = ++navToken;
+  UI.workflowHasMore=false;
   closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal();
   const route = currentRoute();
+  if(previousRoute!==route){UI.dataPage=1;previousRoute=route;}
+  const role=workflowRoles[route];
   const fn = routes[route] || renderHome;
   document.querySelectorAll('.main-nav a').forEach(a => {
     a.classList.toggle('active', a.getAttribute('href') === '#/' + route);
@@ -58,14 +65,24 @@ export async function router() {
   const app = document.getElementById('app');
   app.style.opacity = 0;
   try { await loadState(); } catch (e) { /* server briefly unavailable — keep last known state */ }
-  const html = await fn();
+  let html;
+  try { html = role && !DATA.auth[role] ? renderLoginGate({role,title:'Staff sign in',subtitle:'Sign in with your assigned account to continue.'}) : await fn(); }
+  catch(e){html='<div class="page"><p>'+esc(e.message || 'Unable to load this page.')+'</p><button class="btn" id="retryPage">Retry</button></div>';} 
   if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
   app.innerHTML = html;
   document.body.classList.toggle('public-site', !!PUBLIC_ROUTES[route]);
   document.body.classList.toggle('workplace', !PUBLIC_ROUTES[route]);
   document.body.dataset.page = route || 'home';
   window.scrollTo(0, 0);
-  attachPageHandlers(route);
+  if(role && !DATA.auth[role]) attachAuthGateHandlers();
+  else attachPageHandlers(route);
+  document.getElementById('retryPage')?.addEventListener('click',()=>router());
+  if(role && DATA.auth[role]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.append(button);}
+  if(!PUBLIC_ROUTES[route] && (DATA.hasMore || UI.workflowHasMore || UI.dataPage>1)){
+    const nav=document.createElement('nav');nav.className='u';nav.setAttribute('aria-label','Record pages');
+    nav.innerHTML='<button class="btn btn-ghost" data-page-step="-1" '+(UI.dataPage<=1?'disabled':'')+'>Previous</button> <span>Page '+UI.dataPage+'</span> <button class="btn btn-ghost" data-page-step="1" '+(!(DATA.hasMore || UI.workflowHasMore)?'disabled':'')+'>Next</button>';
+    nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{UI.dataPage+=Number(b.dataset.pageStep);router();}));app.append(nav);
+  }
   initReveal();
   loadNotifications().then(updateNotifUI);
   requestAnimationFrame(() => { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });

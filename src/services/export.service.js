@@ -43,7 +43,7 @@ async function buildXlsx(sheetName, columns, rows) {
   wb.created = new Date();
   const sheet = wb.addWorksheet(sheetName);
   sheet.columns = columns;
-  rows.forEach(r => sheet.addRow(r));
+  rows.forEach(r => sheet.addRow(Object.fromEntries(Object.entries(r).map(([key, value]) => [key, typeof value === 'number' && Number.isFinite(value) ? value : typeof value === 'string' ? value : value == null ? '' : String(value)]))));
   sheet.getRow(1).font = { bold: true };
   sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0EBF3' } };
   sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };

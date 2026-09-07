@@ -1,12 +1,12 @@
 // Doctor-facing job order intake — the real Phase 3 form, wired to the
 // actual workflow backend (src/routes/orders.routes.js), replacing the
 // mock data every one of the four new lab dashboards previously read
-// from utils/mockWorkflow.js. Grouped sections instead of one long list,
+// from utils/workflow.js. Grouped sections instead of one long list,
 // per the design brief; implant fields only appear for the two implant
 // job types instead of being shown (and required) for everything.
 import { UI } from '../state.js';
 import { esc } from '../utils/format.js';
-import { JOB_TYPES, jobTypeLabel } from '../utils/mockWorkflow.js';
+import { JOB_TYPES, jobTypeLabel } from '../utils/workflow.js';
 import { createOrder } from '../utils/ordersApi.js';
 import { uploadZoneHtml, attachUploadZone } from '../components/caseUpload.js';
 import { toast } from '../toast.js';

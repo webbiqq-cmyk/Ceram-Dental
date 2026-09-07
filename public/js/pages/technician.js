@@ -1,7 +1,7 @@
 // Technician dashboard — wired to the real workflow backend.
 import { UI } from '../state.js';
 import { esc, fmtDateTime } from '../utils/format.js';
-import { jobTypeLabel, statusPill } from '../utils/mockWorkflow.js';
+import { jobTypeLabel, statusPill } from '../utils/workflow.js';
 import { listOrders, listStaff, productionDone } from '../utils/ordersApi.js';
 import { toast } from '../toast.js';
 import { renderCurrent } from '../router.js';

@@ -1,33 +1,8 @@
-// In-app notifications, targeted per role (or 'all' three) — the practical,
-// works-everywhere alternative to OS push notifications for this stage:
-// no service worker, no browser permission prompt, no VAPID keys, works
-// identically on phone/tablet/desktop the moment the portal is open. Real
-// push is a documented follow-up once there's a persistent database to
-// store push subscriptions in (see README).
-const { nextId } = require('../utils/ids');
-
-const notifications = [];
-
-function notify(role, { type, title, body, relatedId }) {
-  const n = { id: nextId('notification', 'NTF-'), role, type, title, body: body || '', relatedId: relatedId || '', read: false, createdAt: new Date() };
-  notifications.unshift(n);
-  if (notifications.length > 1000) notifications.length = 1000;
-  return n;
-}
-
-function listFor(role) {
-  return notifications.filter(n => n.role === role || n.role === 'all');
-}
-
-function markRead(id, role) {
-  const n = notifications.find(x => x.id === id && (x.role === role || x.role === 'all'));
-  if (!n) return null;
-  n.read = true;
-  return n;
-}
-
-function markAllRead(role) {
-  listFor(role).forEach(n => { n.read = true; });
-}
-
-module.exports = { notifications, notify, listFor, markRead, markAllRead };
+const records=require('../db/records');
+const {nextId}=require('../utils/ids');
+records.register('notifications');
+async function notify(role,{type,title,body,relatedId,ownerId}) { return records.insert('notifications',{id:nextId('notification','NTF-'),role,type,title,body:body || '',relatedId:relatedId || '',ownerId:ownerId || null,read:false,createdAt:new Date()}); }
+async function listFor(role,userId) { return (await records.list('notifications',{limit:200,...(role==='dentist'?{ownerId:userId}:{})})).filter(n=>n.role===role || n.role==='all'); }
+async function markRead(id,role,userId) { return records.update('notifications',id,n=>{ if((n.role!==role && n.role!=='all') || (role==='dentist' && n.ownerId!==userId))return null; n.read=true; }); }
+async function markAllRead(role,userId) { for(const n of await listFor(role,userId))await markRead(n.id,role,userId); }
+module.exports={notify,listFor,markRead,markAllRead};

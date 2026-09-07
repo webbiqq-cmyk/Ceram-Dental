@@ -14,7 +14,10 @@ const { WorkflowError } = require('../utils/errors');
 function guarded(fn) {
   return asyncHandler(async (req, res) => {
     try {
-      await fn(req, res);
+      await wf.runAs(req.user, req.params.id, req.method !== 'GET', async id => {
+        if (id) req.params.id = id;
+        await fn(req, res);
+      });
     } catch (err) {
       if (err instanceof WorkflowError) return bad(res, err.message);
       throw err;
@@ -33,8 +36,8 @@ async function create(req, res) {
 }
 
 async function list(req, res) {
-  const orders = await wf.listOrders(req.user.role, req.user.sub);
-  ok(res, { orders });
+  const orders = await wf.listOrders(req.user.role, req.user.sub, {limit:201, offset:Math.max(0,(Math.floor(Number(req.query.page)||1)-1)*200)});
+  ok(res, { orders:orders.slice(0,200), hasMore:orders.length>200 });
 }
 
 async function detail(req, res) {
@@ -99,14 +102,14 @@ async function listMessages(req, res) {
 async function recordFile(req, res) {
   const b = req.body || {};
   const file = await wf.recordFile(req.params.id, {
-    stageType: b.stageType, category: b.category, url: b.url, publicId: b.publicId, uploaderRole: req.user.role
+    stageType: b.stageType, category: b.category, url: b.url, publicId: b.publicId, version:b.version, signature:b.signature, uploaderRole: req.user.role
   });
   ok(res, { file });
 }
 
 async function listFiles(req, res) {
   const files = await repo.listFiles(req.params.id);
-  ok(res, { files });
+  ok(res, { files: files.map(require('../utils/filePolicy').downloadLink) });
 }
 
 async function listStaff(req, res) {
@@ -125,3 +128,5 @@ module.exports = {
   postMessage: guarded(postMessage), listMessages: guarded(listMessages),
   recordFile: guarded(recordFile), listFiles: guarded(listFiles), listStaff: guarded(listStaff)
 };
+
+for (const [name, handler] of Object.entries(module.exports)) module.exports[name] = require('../utils/asyncHandler').asyncHandler(handler);

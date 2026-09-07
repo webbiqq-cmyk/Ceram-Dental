@@ -12,7 +12,7 @@ import { initNotifBell, updateNotifUI } from './components/notifications.js';
 // this is the in-app substitute for OS push (see README for why, and what
 // real push would need). 25s keeps a phone/tablet/desktop screen feeling
 // current without hammering the server.
-const NOTIFICATION_POLL_MS = 25000;
+const NOTIFICATION_POLL_MS = 120000;
 
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadge();

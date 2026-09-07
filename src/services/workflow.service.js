@@ -11,16 +11,32 @@ const { WorkflowError } = require('../utils/errors');
 const IMPLANT_TYPES = ['implant_crown', 'implant_bridge'];
 function requiresImplantFields(jobType) { return IMPLANT_TYPES.includes(jobType); }
 
-// Under the current shared/open-auth model (see src/middleware/auth.js —
-// login is disabled site-wide right now) there is one seeded identity per
-// single-person role backing every action against these tables; see
-// migration 005. Once real per-account login is wired to this schema,
-// this is the one function that changes — everywhere else already just
-// takes an actorId/role and doesn't care where it came from.
-async function resolveActorId(role) {
-  const u = await repo.getUserByRole(role);
-  if (!u) throw new WorkflowError('No seeded "' + role + '" account found — see src/db/migrations/005_seed_workflow_users.sql.');
-  return u.id;
+const { AsyncLocalStorage } = require('node:async_hooks');
+const actors = new AsyncLocalStorage();
+async function resolveActorId() {
+  const actor = actors.getStore();
+  if (!actor) throw new WorkflowError('Authenticated actor is required.');
+  return actor.sub;
+}
+function canAccess(order, actor) {
+  if (['admin','lab','receptionist'].includes(actor.role)) return true;
+  const key = {dentist:'dentist_user_id',designer:'assigned_designer_id',technician:'assigned_technician_id',qc:'assigned_qc_id'}[actor.role];
+  return !!key && order[key] === actor.sub;
+}
+async function runAs(actor, id, mutation, fn) {
+  if (!actor) throw new WorkflowError('Sign in required.');
+  return repo.transaction(async () => {
+    if (id) {
+      const order = await repo.getOrder(id, mutation);
+      if (!order || !canAccess(order, actor)) throw Object.assign(new Error('Order not found.'),{status:404,expose:true});
+      id = order.id;
+    }
+    return actors.run(actor, () => fn(id));
+  });
+}
+async function checkAssignee(id, role) {
+  const user = await require('../models/user.model').findById(id);
+  if (!user || !user.active || user.role !== role) throw new WorkflowError('Choose an active '+role+' account.');
 }
 
 async function getOrderDetail(orderId) {
@@ -29,28 +45,21 @@ async function getOrderDetail(orderId) {
   const [history, files, messages] = await Promise.all([
     repo.listStageHistory(order.id), repo.listFiles(order.id), repo.listMessages(order.id)
   ]);
-  return { order, history, files, messages };
+  return { order, history, files:files.map(require('../utils/filePolicy').downloadLink), messages };
 }
 
-async function listOrders(role, userId) {
-  // A dentist request's userId is req.user.sub — under the current open-
-  // auth bypass that's a synthetic placeholder ("no-auth-dentist"), not a
-  // real row id, so it's never trusted here; it always resolves to the
-  // one seeded dentist identity every order was actually created under
-  // (see createOrder above). This is the same simplification throughout
-  // this file: real per-doctor filtering needs real per-doctor login,
-  // which doesn't exist yet.
-  const effectiveUserId = role === 'dentist' ? await resolveActorId('dentist') : userId;
-  return repo.listOrders(role, effectiveUserId);
-}
+async function listOrders(role, userId, options) { return repo.listOrders(role, userId, options); }
 
 async function createOrder(input) {
   if (!input.patientRef || !String(input.patientRef).trim()) throw new WorkflowError('Patient reference is required.');
-  if (!input.jobType) throw new WorkflowError('Job type is required.');
+  if (!['veneers','crowns','bridges','implant_crown','implant_bridge','ortho_work','night_guard','bleaching_tray','essix_retainer','surgical_guide','functional_mockup','other'].includes(input.jobType)) throw new WorkflowError('Unknown job type.');
+  if (input.deliveryMethod && !['pickup','delivery'].includes(input.deliveryMethod)) throw new WorkflowError('Unknown delivery method.');
   if (requiresImplantFields(input.jobType) && (!input.scanBody || !input.implantSystem || !input.abutmentSize)) {
     throw new WorkflowError('Scan body, implant system and abutment size are required for implant cases.');
   }
-  const dentistUserId = input.dentistUserId || await resolveActorId('dentist');
+  const dentistUserId = await resolveActorId();
+  const dentist = await require('../models/user.model').findById(dentistUserId);
+  input.clinicId = dentist?.clinic_id || null;
   // Veneers are the one job that starts life in the demo/mockup stage;
   // everything else only ever has a "final" stage_type (see doctorDecision
   // below for the one place a veneer flips from demo to final).
@@ -79,7 +88,7 @@ async function receptionReview(orderId, { decision, note, designerId }) {
     return getOrderDetail(orderId);
   }
   if (decision === 'accept') {
-    if (!designerId) throw new WorkflowError('Choose a designer to assign this order to.');
+    await checkAssignee(designerId, 'designer');
     await repo.updateOrder(orderId, { status: 'accepted_by_reception' });
     await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'accepted_by_reception', actorId });
     await repo.addApproval(orderId, { stageType: order.stage_type, decisionType: 'reception_review', outcome: 'accepted', decidedBy: actorId, note });
@@ -104,8 +113,8 @@ async function designDone(orderId, technicianId) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
   if (order.status !== 'in_design') throw new WorkflowError('This order is not currently in design.');
-  if (!technicianId) throw new WorkflowError('Choose a technician to send this to.');
-  const actorId = order.assigned_designer_id;
+  await checkAssignee(technicianId, 'technician');
+  const actorId = await resolveActorId();
   await repo.updateOrder(orderId, { status: 'design_done' });
   await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'design_done', actorId });
   await repo.addAssignment(orderId, 'technician', technicianId, actorId);
@@ -119,8 +128,8 @@ async function productionDone(orderId, qcId) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
   if (order.status !== 'in_production') throw new WorkflowError('This order is not currently in production.');
-  if (!qcId) throw new WorkflowError('Choose a QC reviewer.');
-  const actorId = order.assigned_technician_id;
+  await checkAssignee(qcId, 'qc');
+  const actorId = await resolveActorId();
   await repo.updateOrder(orderId, { status: 'production_done' });
   await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'production_done', actorId });
   await repo.addAssignment(orderId, 'qc', qcId, actorId);
@@ -133,7 +142,7 @@ async function qcDecision(orderId, { decision, note }) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
   if (order.status !== 'qc_pending') throw new WorkflowError('This order is not awaiting QC.');
-  const actorId = order.assigned_qc_id || await resolveActorId('qc');
+  const actorId = await resolveActorId();
 
   if (decision === 'reject') {
     if (!note || !note.trim()) throw new WorkflowError('A note is required to send this back.');
@@ -165,7 +174,7 @@ async function doctorDecision(orderId, { decision, note }) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
   if (order.status !== 'waiting_doctor_approval') throw new WorkflowError('This order is not awaiting doctor approval.');
-  const actorId = order.dentist_user_id;
+  const actorId = await resolveActorId();
 
   if (decision === 'reject') {
     if (!note || !note.trim()) throw new WorkflowError('A note is required to request changes.');
@@ -244,14 +253,15 @@ async function postMessage(orderId, senderRole, body) {
   return repo.addMessage(orderId, senderId, body.trim());
 }
 
-async function recordFile(orderId, { stageType, category, url, publicId, uploaderRole }) {
-  if (!url || !publicId) throw new WorkflowError('Missing upload result.');
+async function recordFile(orderId, { stageType, category, url, publicId, version, signature, uploaderRole }) {
+  const {validateFile} = require('../utils/filePolicy');
+  validateFile(orderId, {url, publicId, version, signature, stageType, category});
   const uploadedBy = uploaderRole ? await resolveActorId(uploaderRole) : null;
   return repo.addFile(orderId, { stageType: stageType || 'final', category: category || 'other', url, publicId, uploadedBy });
 }
 
 module.exports = {
-  requiresImplantFields, resolveActorId, getOrderDetail, listOrders, createOrder,
+  runAs, canAccess, requiresImplantFields, resolveActorId, getOrderDetail, listOrders, createOrder,
   receptionReview, assignDesigner, designDone, productionDone, qcDecision, doctorDecision,
   confirmCompletion, markDelivered, markCompleted, postMessage, recordFile
 };

@@ -1,20 +1,3 @@
-// Tiny migration runner — no framework, matching the rest of this
-// codebase's no-build-step, hand-rolled style. Applies every .sql file in
-// migrations/ in filename order that hasn't already run, tracked in a
-// schema_migrations table.
-//
-// Exposed two ways:
-//   1. CLI: `npm run migrate` — for running it yourself against a DB this
-//      machine can actually reach.
-//   2. runMigrations(), called once from src/app.js on boot — because
-//      this project's own sandbox tooling sits behind an egress proxy
-//      that can't reach an external Postgres host on port 5432 at all
-//      (confirmed directly: even a raw TCP connect times out), and the
-//      managed query tool available here hit a persistent SSL handshake
-//      error against this database. A deployed Node process (Vercel,
-//      Render, your own machine) has normal outbound network access and
-//      applies these the first time it boots with DATABASE_URL set —
-//      idempotent and cheap to no-op on every boot after that.
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('./pool');
@@ -39,6 +22,7 @@ async function runMigrations() {
   if (!pool) throw new Error('DATABASE_URL is not set — nothing to migrate against.');
   const client = await pool.connect();
   try {
+    await client.query('SELECT pg_advisory_lock(71320408)');
     await ensureMigrationsTable(client);
     const applied = await appliedMigrations(client);
     const files = fs.readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort();
@@ -62,6 +46,7 @@ async function runMigrations() {
     console.log(ran ? `[migrate] applied ${ran} migration(s).` : '[migrate] already up to date.');
     return ran;
   } finally {
+    await client.query('SELECT pg_advisory_unlock(71320408)').catch(() => {});
     client.release();
   }
 }

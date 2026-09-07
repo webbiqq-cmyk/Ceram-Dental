@@ -12,9 +12,9 @@ function requestLog(req, res, next) {
   const start = process.hrtime.bigint();
   res.on('finish', () => {
     const isApi = req.path.startsWith('/api');
-    if (!isApi && res.statusCode < 400) return;
+    if (res.statusCode < 400 && process.env.LOG_REQUESTS !== 'true') return;
     const ms = Number(process.hrtime.bigint() - start) / 1e6;
-    console.log('[req]', req.method, req.originalUrl, res.statusCode, ms.toFixed(1) + 'ms');
+    console.log('[req]', req.method, req.path, res.statusCode, ms.toFixed(1) + 'ms');
   });
   next();
 }

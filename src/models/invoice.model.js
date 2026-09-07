@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 const { daysAgo } = require('../utils/dates');
 
@@ -22,7 +23,7 @@ function seedFromCases(cases) {
     const paid = c.stage === 'ready' || i % 3 === 0;
     invoices.push({
       id: nextId('invoice', 'INV-'),
-      caseId: c.id,
+      caseId: c.id, ownerId: c.ownerId || null,
       clinic: c.clinic,
       service: c.service,
       amount,
@@ -31,12 +32,13 @@ function seedFromCases(cases) {
       paidAt: paid ? daysAgo(i % 6) : null
     });
   });
+  records.register('invoices', invoices);
 }
 
-function createInvoiceForCase(c) {
+async function createInvoiceForCase(c) {
   const inv = {
     id: nextId('invoice', 'INV-'),
-    caseId: c.id,
+    caseId: c.id, ownerId: c.ownerId || null,
     clinic: c.clinic,
     service: c.service,
     amount: SERVICE_FEES[c.service] || 100,
@@ -44,16 +46,14 @@ function createInvoiceForCase(c) {
     issuedAt: new Date(),
     paidAt: null
   };
-  invoices.unshift(inv);
+  await records.insert('invoices', inv);
   return inv;
 }
 
-function payInvoice(id) {
-  const inv = invoices.find(x => x.id === id);
-  if (!inv) return null;
-  inv.status = 'paid';
-  inv.paidAt = new Date();
-  return inv;
+async function payInvoice(id) {
+  return records.update('invoices', id, row => { if (row.status !== 'paid') { row.status = 'paid'; row.paidAt = new Date(); } });
 }
 
-module.exports = { SERVICE_FEES, invoices, seedFromCases, createInvoiceForCase, payInvoice };
+records.register('invoices', invoices);
+async function list(options) { return records.list('invoices', options); }
+module.exports = { list, SERVICE_FEES, invoices, seedFromCases, createInvoiceForCase, payInvoice };

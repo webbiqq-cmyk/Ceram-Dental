@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 const { daysAgo } = require('../utils/dates');
 
@@ -14,18 +15,16 @@ const enquiries = [
   { id: nextId('enquiry', 'ENQ-'), name: 'Ali Mansoor', handle: '@ali.mnsr', channel: 'Instagram DM', service: '', stage: 'closed', message: 'Just asking about whitening prices.', createdAt: daysAgo(5) }
 ];
 
-function setEnquiryStage(id, stage) {
-  const e = enquiries.find(x => x.id === id);
-  if (!e || !ENQUIRY_STAGES.includes(stage)) return null;
-  e.stage = stage;
-  return e;
+async function setEnquiryStage(id, stage) {
+  if (!ENQUIRY_STAGES.includes(stage)) return null;
+  return records.update('enquiries', id, row => { row.stage = stage; });
 }
 
 // Logs a lead staff received somewhere this app can't see directly — an
 // Instagram DM, a WhatsApp message, a phone call — so it enters the same
 // acceptance pipeline as everything else instead of living only in
 // someone's head or a separate notebook.
-function addEnquiry({ name, handle, channel, service, message }) {
+async function addEnquiry({ name, handle, channel, service, message }) {
   const e = {
     id: nextId('enquiry', 'ENQ-'),
     name: String(name || '').trim(), handle: String(handle || '').trim(),
@@ -33,8 +32,10 @@ function addEnquiry({ name, handle, channel, service, message }) {
     stage: 'new', message: String(message || '').trim(), createdAt: new Date()
   };
   if (!e.name) return null;
-  enquiries.unshift(e);
+  await records.insert('enquiries', e);
   return e;
 }
 
-module.exports = { ENQUIRY_STAGES, enquiries, setEnquiryStage, addEnquiry };
+records.register('enquiries', enquiries);
+async function list(options) { return records.list('enquiries', options); }
+module.exports = { list, ENQUIRY_STAGES, enquiries, setEnquiryStage, addEnquiry };

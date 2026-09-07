@@ -1,5 +1,8 @@
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const {pool} = require('../db/pool');
+const {SharedRateStore} = require('./sharedRateStore');
+const shared = prefix => pool ? {store:new SharedRateStore(prefix)} : {};
 
 // CSP note: the rendered HTML uses inline `style="..."` attributes
 // extensively (e.g. animation stagger, background-image tiles) — rewriting
@@ -15,8 +18,8 @@ const helmetMiddleware = helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:'],
-      connectSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+      connectSrc: ["'self'", 'https://api.cloudinary.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -32,6 +35,7 @@ const helmetMiddleware = helmet({
 // (or just legitimately using) one shouldn't burn through another's
 // allowance from the same office IP.
 const loginLimiter = rateLimit({
+  ...shared('login'),
   windowMs: 15 * 60 * 1000,
   limit: 8,
   standardHeaders: true,
@@ -50,4 +54,7 @@ const apiLimiter = rateLimit({
   message: { ok: false, error: 'Too many requests. Please slow down.' }
 });
 
-module.exports = { helmetMiddleware, loginLimiter, apiLimiter };
+const submissionLimiter = rateLimit({...shared('submission'),windowMs:3600000,limit:30,standardHeaders:true,legacyHeaders:false,message:{ok:false,error:'Submission limit reached. Please try again later.'}});
+const uploadLimiter = rateLimit({...shared('upload'),windowMs:3600000,limit:60,standardHeaders:true,legacyHeaders:false,message:{ok:false,error:'Upload limit reached. Please try again later.'}});
+const exportLimiter = rateLimit({...shared('export'),windowMs:60000,limit:10,standardHeaders:true,legacyHeaders:false,message:{ok:false,error:'Please wait before exporting again.'}});
+module.exports = { helmetMiddleware, loginLimiter, apiLimiter, submissionLimiter, uploadLimiter, exportLimiter };

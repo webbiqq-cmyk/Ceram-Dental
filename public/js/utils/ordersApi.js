@@ -5,7 +5,7 @@
 // acting as while login stays disabled. The moment real per-role login
 // exists this parameter becomes unnecessary (a real cookie disambiguates
 // on its own) and every call site here is the only place that changes.
-import { api } from '../state.js';
+import { api, UI } from '../state.js';
 
 function withRole(path, role, params) {
   const usp = new URLSearchParams(Object.assign({}, params));
@@ -14,7 +14,7 @@ function withRole(path, role, params) {
   return path + (qs ? (path.includes('?') ? '&' : '?') + qs : '');
 }
 
-export function listOrders(role) { return api(withRole('/api/orders', role)); }
+export async function listOrders(role) { const result=await api(withRole('/api/orders',role,{page:UI.dataPage || 1}));UI.workflowHasMore=!!result.hasMore;return result; }
 export function getOrder(role, id) { return api(withRole('/api/orders/' + id, role)); }
 export function listStaff(role, staffRole) { return api(withRole('/api/staff', role, { role: staffRole })); }
 

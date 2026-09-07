@@ -6,7 +6,7 @@ import { esc, fmtDateTime } from '../../utils/format.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
 
-const ROLE_LABEL = { admin: 'Admin', dentist: 'Dentist Portal', lab: 'Lab Studio' };
+const ROLE_LABEL = { admin: 'Admin', dentist: 'Dentist Portal', lab: 'Lab Studio', receptionist:'Reception', designer:'Designer', technician:'Technician', qc:'Quality Control' };
 
 function roleOptions() {
   return Object.keys(ROLE_LABEL).map(r => '<option value="' + r + '">' + ROLE_LABEL[r] + '</option>').join('');

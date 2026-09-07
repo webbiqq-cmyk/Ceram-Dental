@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 const { daysAgo } = require('../utils/dates');
 
@@ -9,10 +10,12 @@ const expenses = [
   { id: nextId('expense', 'EXP-'), category: 'Facilities', description: 'Utilities & internet', amount: 85, date: daysAgo(9) }
 ];
 
-function addExpense({ category, description, amount }) {
+async function addExpense({ category, description, amount }) {
   const exp = { id: nextId('expense', 'EXP-'), category, description: description || '', amount: Number(amount), date: new Date() };
-  expenses.unshift(exp);
+  await records.insert('expenses', exp);
   return exp;
 }
 
-module.exports = { expenses, addExpense };
+records.register('expenses', expenses);
+async function list(options) { return records.list('expenses', options); }
+module.exports = { list, expenses, addExpense };

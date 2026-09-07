@@ -18,20 +18,6 @@ const crypto = require('crypto');
 function uuid() { return crypto.randomUUID(); }
 function now() { return new Date(); }
 
-// ---- seed data, mirroring src/db/migrations/005_seed_workflow_users.sql ----
-const CLINIC_ID = '00000000-0000-0000-0000-000000000001';
-const clinics = [{ id: CLINIC_ID, name: 'Bright Smile Clinic', phone: '+973 3900 1122', email: 'hello@brightsmile.example', address: 'Manama, Bahrain' }];
-
-const users = [
-  { id: '00000000-0000-0000-0000-000000000010', username: 'dentist', role: 'dentist', name: 'Dr. R. Haddad', clinic_id: CLINIC_ID, active: true, created_at: now() },
-  { id: '00000000-0000-0000-0000-000000000011', username: 'receptionist', role: 'receptionist', name: 'Reception Desk', active: true, created_at: now() },
-  { id: '00000000-0000-0000-0000-000000000012', username: 'qc', role: 'qc', name: 'Quality Desk', active: true, created_at: now() },
-  { id: '00000000-0000-0000-0000-000000000020', username: 'rana', role: 'designer', name: 'Rana', active: true, created_at: now() },
-  { id: '00000000-0000-0000-0000-000000000021', username: 'omar', role: 'designer', name: 'Omar', active: true, created_at: now() },
-  { id: '00000000-0000-0000-0000-000000000030', username: 'malvin', role: 'technician', name: 'Malvin', active: true, created_at: now() },
-  { id: '00000000-0000-0000-0000-000000000031', username: 'layla', role: 'technician', name: 'Layla', active: true, created_at: now() }
-];
-
 const jobOrders = [];
 const jobStageHistory = [];
 const assignments = [];
@@ -40,9 +26,10 @@ const caseMessages = [];
 const approvals = [];
 let orderSeq = 1000;
 
-function userById(id) { return users.find(u => u.id === id) || null; }
+function userById(id) { return require('../models/user.model').users.find(u => u.id === id) || null; }
 
 async function createOrder(fields) {
+  if(jobOrders.length>=10000)throw Object.assign(new Error('Development storage is full.'),{status:503});
   orderSeq += 1;
   const row = {
     id: uuid(), order_number: 'JO-' + orderSeq,
@@ -64,13 +51,9 @@ async function getOrder(id) {
   return jobOrders.find(o => o.id === id || o.order_number === id) || null;
 }
 
-async function listOrders(role, userId) {
-  if (role === 'dentist') return jobOrders.filter(o => o.dentist_user_id === userId);
-  if (role === 'designer') return jobOrders.filter(o => ['assigned_to_designer', 'in_design', 'design_done'].includes(o.status));
-  if (role === 'technician') return jobOrders.filter(o => ['assigned_to_technician', 'in_production', 'production_done'].includes(o.status));
-  if (role === 'qc') return jobOrders.filter(o => ['qc_pending', 'qc_rejected', 'qc_approved'].includes(o.status));
-  if (role === 'doctor_approval') return jobOrders.filter(o => o.status === 'waiting_doctor_approval');
-  return jobOrders.slice(); // receptionist / admin / lab: unfiltered, same as the SQL version
+async function listOrders(role,userId,{limit=200,offset=0}={}) {
+  const key={dentist:'dentist_user_id',designer:'assigned_designer_id',technician:'assigned_technician_id',qc:'assigned_qc_id'}[role];
+  return jobOrders.filter(o=>!key || o[key]===userId).slice(offset,offset+limit);
 }
 
 async function updateOrder(id, fields) {
@@ -121,17 +104,18 @@ async function listMessages(orderId) {
     .map(m => { const u = userById(m.sender_id) || {}; return Object.assign({}, m, { sender_name: u.name || null, sender_role: u.role || null }); });
 }
 
-async function listStaff(role) {
-  return users.filter(u => u.role === role && u.active).map(u => ({ id: u.id, username: u.username, name: u.name })).sort((a, b) => a.name.localeCompare(b.name));
-}
-
-async function getUserByRole(role) {
-  const u = users.filter(x => x.role === role && x.active).sort((a, b) => a.created_at - b.created_at)[0];
-  return u ? { id: u.id, username: u.username, name: u.name } : null;
+async function listStaff(role) { return (await require('../models/user.model').list()).filter(u=>u.active && u.role===role); }
+async function getUserByRole(role) { return (await listStaff(role))[0] || null; }
+async function transaction(fn) {
+  return require('./records').transaction(async()=>{
+    const arrays=[jobOrders,jobStageHistory,assignments,caseFiles,caseMessages,approvals];
+    const snapshots=arrays.map(a=>structuredClone(a));
+    try { return await fn(); } catch(e) { arrays.forEach((a,i)=>a.splice(0,a.length,...snapshots[i])); throw e; }
+  });
 }
 
 module.exports = {
-  createOrder, getOrder, listOrders, updateOrder,
+  transaction, createOrder, getOrder, listOrders, updateOrder,
   addStageHistory, listStageHistory, addAssignment, addApproval,
   addFile, listFiles, addMessage, listMessages, listStaff, getUserByRole
 };

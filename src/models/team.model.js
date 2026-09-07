@@ -1,3 +1,4 @@
+const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 
 const team = [
@@ -89,11 +90,13 @@ const team = [
   }
 ];
 
-function addTeamMember({ name, role }) {
+async function addTeamMember({ name, role }) {
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '—';
   const member = { id: nextId('team', 'STF-'), name, role: role || '', initials, nameAr: '', years: 0, credentials: [], photo: '' };
-  team.push(member);
+  await records.insert('team', member);
   return member;
 }
 
-module.exports = { team, addTeamMember };
+records.register('team', team);
+async function list(options) { return records.list('team', options); }
+module.exports = { list, team, addTeamMember };

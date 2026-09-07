@@ -1,10 +1,3 @@
-// Sample data for the four new lab-role dashboards (Receptionist,
-// Designer, Technician, Quality Inspector) — these pages are a visual
-// preview ahead of the real backend (job_orders, assignments, messages —
-// see src/db/migrations/), not wired to it yet, so every dashboard reads
-// from this one shared, coherent set of orders instead of inventing its
-// own unrelated numbers. Swapping this for a real /api/orders fetch is
-// the only change needed once that backend lands.
 export const JOB_TYPES = [
   { key: 'veneers', label: 'Veneers' }, { key: 'crowns', label: 'Crowns' }, { key: 'bridges', label: 'Bridges' },
   { key: 'implant_crown', label: 'Implant Crown' }, { key: 'implant_bridge', label: 'Implant Bridge' },
@@ -72,14 +65,3 @@ export function stageTrackerHtml(order) {
   '</div>';
 }
 
-export const MOCK_ORDERS = [
-  { id: 'JO-1001', patient: 'Patient #4471', clinic: 'Dr. R. Haddad — Bright Smile Clinic', jobType: 'crowns', stageType: 'final', status: 'pending_reception_review', shade: 'A2', designer: null, technician: null, submittedAt: '2026-09-07T08:10:00Z' },
-  { id: 'JO-1000', patient: 'Patient #2290', clinic: 'Dr. L. Farouk — City Dental', jobType: 'bridges', stageType: 'final', status: 'rejected_by_reception', shade: 'B1', designer: null, technician: null, rejectionNote: 'Scan is missing the opposing arch — please re-upload and resubmit.', submittedAt: '2026-09-06T14:20:00Z' },
-  { id: 'JO-0998', patient: 'Patient #1187', clinic: 'Dr. N. Saleh — OrthoPlus', jobType: 'implant_crown', stageType: 'final', status: 'in_design', shade: 'A3', designer: 'Rana', technician: null, scanBody: 'Straumann BLX', implantSystem: 'Straumann', abutmentSize: 'RC, 3.5mm', submittedAt: '2026-09-05T09:00:00Z' },
-  { id: 'JO-0996', patient: 'Patient #3350', clinic: 'Dr. A. Nasser — Pearl Dental', jobType: 'night_guard', stageType: 'final', status: 'in_production', shade: '—', designer: 'Rana', technician: 'Malvin', submittedAt: '2026-09-04T09:00:00Z' },
-  { id: 'JO-0993', patient: 'Patient #2201', clinic: 'Dr. L. Farouk — City Dental', jobType: 'surgical_guide', stageType: 'final', status: 'qc_pending', shade: '—', designer: 'Omar', technician: 'Malvin', submittedAt: '2026-09-03T09:00:00Z' },
-  { id: 'JO-0990', patient: 'Patient #1090', clinic: 'Dr. N. Saleh — OrthoPlus', jobType: 'veneers', stageType: 'demo', status: 'waiting_doctor_approval', shade: 'B2', designer: 'Rana', technician: 'Malvin', submittedAt: '2026-09-02T09:00:00Z' },
-  { id: 'JO-0985', patient: 'Patient #3299', clinic: 'Dr. A. Nasser — Pearl Dental', jobType: 'veneers', stageType: 'final', status: 'in_design', shade: 'C2', designer: 'Omar', technician: null, note: 'Demo approved by doctor on Sep 5 — final restoration now in progress.', submittedAt: '2026-08-29T09:00:00Z' },
-  { id: 'JO-0980', patient: 'Patient #4102', clinic: 'Dr. R. Haddad — Bright Smile Clinic', jobType: 'essix_retainer', stageType: 'final', status: 'ready_for_pickup', shade: '—', designer: 'Rana', technician: 'Omar', submittedAt: '2026-08-27T09:00:00Z' },
-  { id: 'JO-0977', patient: 'Patient #2050', clinic: 'Dr. N. Saleh — OrthoPlus', jobType: 'implant_bridge', stageType: 'final', status: 'completed', shade: 'A2', designer: 'Omar', technician: 'Malvin', submittedAt: '2026-08-20T09:00:00Z' }
-];

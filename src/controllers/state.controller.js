@@ -1,78 +1,33 @@
-const caseModel = require('../models/case.model');
-const invoiceModel = require('../models/invoice.model');
-const expenseModel = require('../models/expense.model');
-const productModel = require('../models/product.model');
-const jobModel = require('../models/job.model');
-const applicationModel = require('../models/application.model');
-const messageModel = require('../models/message.model');
-const orderModel = require('../models/order.model');
-const teamModel = require('../models/team.model');
-const appointmentModel = require('../models/appointment.model');
-const enquiryModel = require('../models/enquiry.model');
-const settingsModel = require('../models/settings.model');
+const records = require('../db/records');
 const userModel = require('../models/user.model');
 const sessionModel = require('../models/session.model');
-const activityLog = require('../models/activityLog.model');
-const summaryService = require('../services/summary.service');
-const { readSession } = require('../middleware/auth');
-const { isConfigured: cloudinaryConfigured } = require('../config/cloudinary');
-
-// One consolidated read the client re-fetches after every mutation — but
-// unlike before, what comes back now depends on who's asking. Every caller
-// (including a signed-out visitor on the public site) gets the safe public
-// baseline; each portal's private data is included only when that portal's
-// own session cookie is valid, checked independently per role so a dentist
-// session can never pull admin/lab data and vice versa.
-function getState(req, res) {
-  const isAdmin = !!readSession(req, 'admin');
-  const isDentist = !!readSession(req, 'dentist');
-  const isLab = !!readSession(req, 'lab');
-
-  const payload = {
-    // Public baseline — what the marketing site (home/about/services/shop/
-    // contact/careers) needs, safe for any anonymous visitor.
-    team: teamModel.team,
-    jobs: jobModel.jobs,
-    products: isAdmin ? productModel.products : productModel.products.filter(p => p.active !== false),
-    settings: settingsModel.settings,
-    auth: { admin: isAdmin, dentist: isDentist, lab: isLab },
-    // Not sensitive — just "is image upload configured at all" — needed
-    // by the lab-workflow file upload UI too, not admin-only like the
-    // product/team image uploader that originally introduced this flag.
-    cloudinaryConfigured,
-    // Private — empty unless that portal's own session is valid.
-    cases: [],
-    invoices: [],
-    expenses: [],
-    applications: [],
-    messages: [],
-    orders: [],
-    appointments: [],
-    enquiries: [],
-    summary: {},
-    users: [],
-    activeSessions: [],
-    activity: []
-  };
-
-  const needsCases = isAdmin || isDentist || isLab;
-  if (needsCases) payload.cases = caseModel.cases;
-  if (isAdmin || isDentist) payload.invoices = invoiceModel.invoices;
-
-  if (isAdmin) {
-    payload.expenses = expenseModel.expenses;
-    payload.applications = applicationModel.applications;
-    payload.messages = messageModel.messages;
-    payload.orders = orderModel.orders;
-    payload.appointments = appointmentModel.appointments;
-    payload.enquiries = enquiryModel.enquiries;
-    payload.summary = summaryService.summary();
-    payload.users = userModel.list();
-    payload.activeSessions = sessionModel.listAll();
-    payload.activity = activityLog.list({ limit: 100 });
+const settingsModel = require('../models/settings.model');
+const activity = require('../models/activityLog.model');
+const {readSession} = require('../middleware/auth');
+const {isConfigured:cloudinaryConfigured} = require('../config/cloudinary');
+// Load catalog fixtures for development only; production is initialized explicitly.
+for(const model of ['case','invoice','expense','product','application','message','order','team','appointment','enquiry'])require('../models/'+model+'.model');
+const jobs = require('../models/job.model').jobs;
+async function getState(req,res) {
+  const roles = userModel.ROLES;
+  const sessions = await Promise.all(roles.map(r=>readSession(req,r)));
+  const auth = Object.fromEntries(roles.map((r,i)=>[r,!!sessions[i]]));
+  const dentist=sessions[roles.indexOf('dentist')];
+  const page=Math.max(1,Math.min(100000,Math.floor(Number(req.query.page)||1)));
+  const limit=200, offset=(page-1)*limit;
+  const payload={jobs,auth,cloudinaryConfigured,settings:await settingsModel.get(),summary:{},users:[],activeSessions:[],activity:[],page,hasMore:false};
+  await Promise.all(['team','products','cases','invoices','expenses','applications','messages','orders','appointments','enquiries'].map(async name=>{
+    const isPublic=['team','products'].includes(name);
+    const canRead=isPublic || auth.admin || (name==='cases' && (auth.dentist || auth.lab)) || (name==='invoices' && auth.dentist);
+    if(!canRead){payload[name]=[];return;}
+    const onlyOwner=!auth.admin && !(name==='cases' && auth.lab) && ['cases','invoices'].includes(name);
+    let rows=await records.list(name,{limit:isPublic?1000:limit+1,offset:isPublic?0:offset,...(onlyOwner?{ownerId:dentist.sub}:{})});
+    if(!isPublic && rows.length>limit){payload.hasMore=true;rows=rows.slice(0,limit);}
+    payload[name]=name==='products' && !auth.admin ? rows.filter(p=>p.active!==false) : rows;
+  }));
+  if(auth.admin){
+    [payload.users,payload.activeSessions,payload.activity,payload.summary]=await Promise.all([userModel.list(),sessionModel.listAll(),activity.list({limit:100}),require('../services/summary.service').summary()]);
   }
-
   res.json(payload);
 }
-
-module.exports = { getState };
+module.exports={getState:require('../utils/asyncHandler').asyncHandler(getState)};

@@ -1,43 +1,38 @@
-// Single shared connection pool for the workflow system's tables
-// (job_orders and everything under src/db/migrations/). The rest of the
-// app (team bios, shop, the existing simple case pipeline) stays on the
-// in-memory models in src/models/ for now — this pool is scoped to the
-// new Postgres-backed workflow feature, not a wholesale replacement.
 const { Pool } = require('pg');
-
+const { AsyncLocalStorage } = require('node:async_hooks');
+const { integer } = require('../config/env');
+const context = new AsyncLocalStorage();
 const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  // Loud and specific on purpose (same pattern as JWT_SECRET in
-  // src/config/env.js) — a silent fallback here would mean job orders
-  // quietly go nowhere instead of failing the request that needed them.
-  console.warn('[db] DATABASE_URL is not set — the lab workflow system (job orders, assignments, chat, files) cannot function until it is.');
+let pool = null;
+if (connectionString) {
+  const url = new URL(connectionString);
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  // URL SSL flags must not silently override certificate verification.
+  for (const key of ['sslmode', 'sslcert', 'sslkey', 'sslrootcert']) url.searchParams.delete(key);
+  pool = new Pool({ connectionString: url.toString(),
+    ssl: local ? false : { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT } : {}) },
+    max: integer('DB_POOL_MAX', 5, 1, 50), connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 10000, statement_timeout: 10000, idle_in_transaction_session_timeout: 15000,
+    application_name: 'ceram-dental', allowExitOnIdle: true });
+  pool.on('error', err => console.error('[db] idle connection error:', err.code || 'unknown'));
 }
-
-// A local Postgres (docker, or installed directly — this is a normal dev
-// setup, not just a test hack) isn't configured for TLS by default and
-// will refuse an SSL negotiation outright, so only force it for a real
-// remote host. Render's external endpoint uses a Render-managed cert
-// chain Node's default CA bundle doesn't carry, so full chain
-// verification fails even though the connection is genuinely encrypted —
-// the relaxed check is the trust model Render's own docs recommend for
-// external connections.
-const isLocalHost = /^(postgres(ql)?:\/\/[^@]*@)?(localhost|127\.0\.0\.1)/i.test(connectionString || '');
-const pool = connectionString
-  ? new Pool({ connectionString, ssl: isLocalHost ? false : { rejectUnauthorized: false } })
-  : null;
-
 function query(text, params) {
-  if (!pool) return Promise.reject(new Error('DATABASE_URL is not set — see src/db/pool.js'));
-  return pool.query(text, params);
+  const client = context.getStore() || pool;
+  if (!client) return Promise.reject(new Error('DATABASE_URL is not configured.'));
+  return client.query(text, params);
 }
-
-// For multi-statement transactions (e.g. advancing a job order's status
-// AND appending its job_stage_history row atomically) — checks a client
-// out of the pool for the caller to COMMIT/ROLLBACK explicitly.
-function getClient() {
-  if (!pool) return Promise.reject(new Error('DATABASE_URL is not set — see src/db/pool.js'));
-  return pool.connect();
+function getClient() { return pool ? pool.connect() : Promise.reject(new Error('DATABASE_URL is not configured.')); }
+async function transaction(fn) {
+  if (context.getStore()) return fn();
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    const result = await context.run(client, fn);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally { client.release(); }
 }
-
-module.exports = { pool, query, getClient };
+module.exports = { pool, query, getClient, transaction };

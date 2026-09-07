@@ -2,10 +2,9 @@ const { ok, bad } = require('../utils/respond');
 const userModel = require('../models/user.model');
 const authService = require('../services/auth.service');
 const { logAction } = require('../utils/audit');
-const { asyncHandler } = require('../utils/asyncHandler');
 
-function list(req, res) {
-  ok(res, { users: userModel.list() });
+async function list(req, res) {
+  ok(res, { users: await userModel.list() });
 }
 
 async function create(req, res) {
@@ -14,43 +13,45 @@ async function create(req, res) {
   if (!userModel.ROLES.includes(role)) return bad(res, 'Unknown role.');
   if (String(password).length < 10) return bad(res, 'Password must be at least 10 characters.');
   const passwordHash = await authService.hashPassword(password);
-  const user = userModel.createUser({ username, passwordHash, role, name });
+  const user = await userModel.createUser({ username, passwordHash, role, name });
   if (!user) return bad(res, 'That username already exists for this role.');
-  logAction(req, 'user:create', user.username + ' (' + user.role + ')');
+  await logAction(req, 'user:create', user.username + ' (' + user.role + ')');
   ok(res, { user });
 }
 
-function update(req, res) {
+async function update(req, res) {
   const { name, active } = req.body || {};
-  let user = userModel.findById(req.params.id);
+  let user = await userModel.findById(req.params.id);
   if (!user) return bad(res, 'Unknown account.');
-  if (name !== undefined) userModel.updateName(req.params.id, name);
+  if (name !== undefined) await userModel.updateName(req.params.id, name);
   if (active !== undefined) {
-    const result = userModel.setActive(req.params.id, !!active);
+    const result = await userModel.setActive(req.params.id, !!active);
     if (result.error) return bad(res, result.error);
   }
-  logAction(req, 'user:update', userModel.findById(req.params.id).username);
-  ok(res, { user: userModel.publicView(userModel.findById(req.params.id)) });
+  await logAction(req, 'user:update', (await userModel.findById(req.params.id)).username);
+  ok(res, { user: userModel.publicView(await userModel.findById(req.params.id)) });
 }
 
 async function resetPassword(req, res) {
   const { newPassword } = req.body || {};
   if (!newPassword || String(newPassword).length < 10) return bad(res, 'New password must be at least 10 characters.');
-  const user = userModel.findById(req.params.id);
+  const user = await userModel.findById(req.params.id);
   if (!user) return bad(res, 'Unknown account.');
   const hash = await authService.hashPassword(newPassword);
-  userModel.setPasswordHash(user.id, hash);
-  logAction(req, 'user:reset-password', user.username);
+  await userModel.setPasswordHash(user.id, hash);
+  await logAction(req, 'user:reset-password', user.username);
   ok(res);
 }
 
-function remove(req, res) {
-  const user = userModel.findById(req.params.id);
+async function remove(req, res) {
+  const user = await userModel.findById(req.params.id);
   if (!user) return bad(res, 'Unknown account.');
-  const result = userModel.removeUser(req.params.id);
+  const result = await userModel.removeUser(req.params.id);
   if (result.error) return bad(res, result.error);
-  logAction(req, 'user:delete', user.username + ' (' + user.role + ')');
+  await logAction(req, 'user:delete', user.username + ' (' + user.role + ')');
   ok(res);
 }
 
-module.exports = { list, create: asyncHandler(create), update, resetPassword: asyncHandler(resetPassword), remove };
+module.exports = { list, create: create, update, resetPassword: resetPassword, remove };
+
+for (const [name, handler] of Object.entries(module.exports)) module.exports[name] = require('../utils/asyncHandler').asyncHandler(handler);

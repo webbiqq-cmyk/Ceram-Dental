@@ -1,7 +1,7 @@
 // Quality Inspector dashboard — wired to the real workflow backend.
 import { UI } from '../state.js';
 import { esc } from '../utils/format.js';
-import { jobTypeLabel, statusPill } from '../utils/mockWorkflow.js';
+import { jobTypeLabel, statusPill } from '../utils/workflow.js';
 import { listOrders, qcDecision } from '../utils/ordersApi.js';
 import { uploadZoneHtml, attachUploadZone } from '../components/caseUpload.js';
 import { toast } from '../toast.js';

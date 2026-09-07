@@ -2,17 +2,22 @@
 // (current tab, cart, open wizard/drawer). Everything else imports this
 // module and reads/mutates these same objects directly.
 
-export async function api(path, opts) {
-  // Merge headers rather than letting a plain Object.assign clobber the
-  // whole headers object — a caller passing its own headers (e.g. an
-  // Idempotency-Key) would otherwise silently lose Content-Type and the
-  // server would never parse the JSON body at all.
-  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers);
-  const res = await fetch(path, Object.assign({}, opts, { headers }));
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || json.ok === false) throw new Error(json.error || 'Something went wrong.');
-  return json;
+let stateRequest=null, stateLoadedAt=0, loadedPage=0;
+export async function api(path, opts={}) {
+  const method=(opts.method || 'GET').toUpperCase();
+  const mutation=!['GET','HEAD'].includes(method);
+  const headers={...(opts.body ? {'Content-Type':'application/json'} : {}),...(mutation?{'Idempotency-Key':crypto.randomUUID()}:{}),...opts.headers};
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),20000);
+  try {
+    const res=await fetch(path,{...opts,headers,signal:opts.signal || controller.signal});
+    const json=await res.json().catch(()=>({}));
+    if(!res.ok || json.ok===false)throw new Error(json.error || 'Request failed. Please try again.');
+    if(mutation)stateLoadedAt=0;
+    return json;
+  } finally {clearTimeout(timer);}
 }
+function readCart(){try{const rows=JSON.parse(localStorage.getItem('ceram_cart') || '[]');return Array.isArray(rows)?rows.filter(r=>r && typeof r.id==='string' && Number.isInteger(r.qty) && r.qty>0 && r.qty<=100).slice(0,50):[];}catch{return [];}}
 
 export const DATA = {
   cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [],
@@ -23,7 +28,8 @@ export const DATA = {
 };
 
 export const UI = {
-  cart: JSON.parse(localStorage.getItem('ceram_cart') || '[]'),
+  cart: readCart(),
+  dataPage:1,workflowHasMore:false,
   wizard: null,
   drawer: null,
   adminTab: 'overview',
@@ -41,20 +47,24 @@ export const UI = {
 };
 
 export function saveCart() {
-  localStorage.setItem('ceram_cart', JSON.stringify(UI.cart));
+  try { localStorage.setItem('ceram_cart', JSON.stringify(UI.cart)); } catch {}
   updateCartBadge();
 }
 
 export function updateCartBadge() {
   const n = UI.cart.reduce((s, i) => s + i.qty, 0);
   const el = document.getElementById('cartCount');
+  if (!el) return;
   el.textContent = n; el.hidden = n === 0;
 }
 
 export async function loadState() {
-  const s = await api('/api/state');
-  delete s.ok;
-  Object.assign(DATA, s);
+  const page=UI.dataPage || 1;
+  if(loadedPage===page && Date.now()-stateLoadedAt<30000)return;
+  if(stateRequest && loadedPage===page)return stateRequest;
+  loadedPage=page;
+  stateRequest=api('/api/state?page='+page).then(s=>{delete s.ok;Object.assign(DATA,s);stateLoadedAt=Date.now();}).finally(()=>{stateRequest=null;});
+  return stateRequest;
 }
 
 // Notifications are fetched on their own, lighter cycle (see app.js's

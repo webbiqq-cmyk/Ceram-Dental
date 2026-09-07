@@ -2,7 +2,7 @@
 // (src/routes/orders.routes.js). Was a mock-data preview; now reads and
 // writes real job_orders rows.
 import { esc, fmtDateTime } from '../utils/format.js';
-import { jobTypeLabel, statusPill } from '../utils/mockWorkflow.js';
+import { jobTypeLabel, statusPill } from '../utils/workflow.js';
 import { listOrders, listStaff, receptionReview, confirmCompletion, markDelivered, markCompleted } from '../utils/ordersApi.js';
 import { toast } from '../toast.js';
 import { renderCurrent } from '../router.js';
