@@ -69,6 +69,8 @@ The working tree is intentionally uncommitted. Do not reset or discard these edi
 - Home FAQs now cover consultation length, payment options, nervous patients, crown replacement and children’s visits.
 - Careers now includes dental assistant, sterilisation/clinical support and patient experience roles, plus an introduction/perks panel. Existing Apply buttons open the working application form for every role.
 - Footer background and public-page supporting panels received a light visual refinement.
+- Restored the original no-login demo behavior for local/non-production mode so the Admin, Dentist Portal and Lab Studio pages are visible again. Production still requires authentication by default; set `REQUIRE_LOGIN=true` for protected previews as needed.
+- Fixed the companion state endpoint so local demo mode marks all portal roles as available and returns the seeded cases/orders instead of presenting empty signed-out dashboards.
 
 ## Commands / environment
 

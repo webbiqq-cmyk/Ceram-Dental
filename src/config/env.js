@@ -1,7 +1,10 @@
 const crypto = require('crypto');
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
-const LOGIN_REQUIRED = process.env.REQUIRE_LOGIN !== 'false';
+// Keep the local/test demo usable without provisioning accounts. Production
+// remains locked by default; deployments can explicitly enable login in any
+// non-production preview with REQUIRE_LOGIN=true.
+const LOGIN_REQUIRED = IS_PRODUCTION ? process.env.REQUIRE_LOGIN !== 'false' : process.env.REQUIRE_LOGIN === 'true';
 if (IS_PRODUCTION && !LOGIN_REQUIRED) throw new Error('Production requires authentication. Remove REQUIRE_LOGIN=false.');
 if (IS_PRODUCTION && !process.env.DATABASE_URL) throw new Error('Production requires DATABASE_URL; memory storage is development-only.');
 let JWT_SECRET = process.env.JWT_SECRET;
