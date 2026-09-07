@@ -3,6 +3,7 @@
 // so the three portals are isolated at the cookie level, not just by a
 // role field inside one shared token.
 const { verifyToken } = require('../services/auth.service');
+const { LOGIN_REQUIRED } = require('../config/env');
 
 const COOKIE_NAMES = { admin: 'admin_session', dentist: 'dentist_session', lab: 'lab_session' };
 
@@ -29,8 +30,8 @@ function verifyRawToken(token) { return verifyToken(token); }
 // checks already go through, so there's no risk of some routes staying
 // locked while others open up. The real login/session/JWT machinery below
 // is untouched: set REQUIRE_LOGIN=true to turn it back on exactly as it
-// worked before.
-const LOGIN_REQUIRED = process.env.REQUIRE_LOGIN === 'true';
+// worked before. (LOGIN_REQUIRED itself lives in config/env.js — it's also
+// what decides whether JWT_SECRET is required to boot at all.)
 function openSession(role) {
   return { sub: 'no-auth-' + role, username: 'no-auth-' + role, role, name: role[0].toUpperCase() + role.slice(1), jti: 'no-auth-' + role, remembered: false };
 }

@@ -6,9 +6,16 @@ const crypto = require('crypto');
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
 
+// Login is off by default right now (see src/middleware/auth.js) — every
+// portal is open with no sign-in, so nothing actually signs or verifies a
+// JWT yet. The hard JWT_SECRET requirement below only matters once real
+// login is switched back on (REQUIRE_LOGIN=true), so it's scoped to that
+// instead of blocking a deployment that isn't using auth at all.
+const LOGIN_REQUIRED = process.env.REQUIRE_LOGIN === 'true';
+
 let JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  if (IS_PRODUCTION) {
+  if (IS_PRODUCTION && LOGIN_REQUIRED) {
     // Never run production auth on a secret nobody chose — fail loudly
     // instead of silently issuing tokens a redeploy would invalidate
     // anyway (or worse, a predictable one).
@@ -28,6 +35,7 @@ if (!JWT_SECRET) {
 module.exports = {
   NODE_ENV,
   IS_PRODUCTION,
+  LOGIN_REQUIRED,
   JWT_SECRET,
   SESSION_TTL_HOURS: Number(process.env.SESSION_TTL_HOURS) || 12,
   // "Remember this device" sessions — opt-in at login, still fully

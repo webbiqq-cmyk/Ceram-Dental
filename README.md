@@ -38,10 +38,14 @@ unrate-limited endpoint for uptime monitoring.
 
 ## Deploying — required environment variable
 
-**`JWT_SECRET` must be set before deploying to production**, or every
-`/api/*` request will fail (the server deliberately refuses to start
-signing sessions on a secret nobody chose, rather than silently using a
-predictable or per-instance-random one). Generate one with:
+**`JWT_SECRET` is required once `REQUIRE_LOGIN=true` is set** (see
+Authentication above) — the server refuses to start signing real sessions
+on a secret nobody chose, rather than silently using a predictable or
+per-instance-random one. While login is disabled (the current default),
+this doesn't apply: nothing signs or verifies a JWT, so a missing
+`JWT_SECRET` no longer blocks the deploy — it just falls back to a
+throwaway per-invocation secret like local dev does, with a console
+warning. Generate a real one with:
 
 ```
 node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
@@ -49,10 +53,11 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 
 Set it in the hosting platform's environment variables (on Vercel: Project
 → Settings → Environment Variables → add `JWT_SECRET` for **both
-Production and Preview**) before the first deploy that includes the auth
-system. Locally, it's optional — a throwaway one is generated per process
-start with a console warning, which is fine for development but means
-every restart invalidates existing sessions.
+Production and Preview**) before setting `REQUIRE_LOGIN=true` there.
+Locally, or in production while login stays disabled, it's optional — a
+throwaway one is generated per process start with a console warning, which
+means every restart (or, on Vercel, every cold start) invalidates existing
+sessions — harmless right now since no real sessions are being issued.
 
 Optional: `SESSION_TTL_HOURS` (default `12`) controls how long a login
 session lasts before needing to sign in again. `REMEMBER_TTL_DAYS`
