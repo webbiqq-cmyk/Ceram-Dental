@@ -1,5 +1,5 @@
 import { DATA } from '../state.js';
-import { esc } from '../utils/format.js';
+import { esc, money } from '../utils/format.js';
 import { SERVICE_GROUPS, SVC } from '../constants.js';
 import { doctorTile } from '../components/doctor.js';
 import { footer } from '../components/footer.js';
