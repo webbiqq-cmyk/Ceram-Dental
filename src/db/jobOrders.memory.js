@@ -52,8 +52,23 @@ async function getOrder(id) {
 }
 
 async function listOrders(role,userId,{limit=200,offset=0}={}) {
-  const key={dentist:'dentist_user_id',designer:'assigned_designer_id',technician:'assigned_technician_id',qc:'assigned_qc_id'}[role];
-  return jobOrders.filter(o=>!key || o[key]===userId).slice(offset,offset+limit);
+  // Demo/in-memory semantics: each lab-role dashboard shows every order at
+  // its stage, not only ones assigned to the caller. Login is disabled
+  // here (src/middleware/auth.js), so the caller is a shared placeholder
+  // identity — filtering by assigned_*_id would hide everything. The
+  // Postgres-backed repo keeps the stricter per-assignee filter for real
+  // logins; this mirrors the pre-hardening behaviour for the offline demo.
+  const byStatus = {
+    designer: ['assigned_to_designer', 'in_design', 'design_done'],
+    technician: ['assigned_to_technician', 'in_production', 'production_done'],
+    qc: ['qc_pending', 'qc_rejected', 'qc_approved'],
+    doctor_approval: ['waiting_doctor_approval']
+  }[role];
+  let rows;
+  if (byStatus) rows = jobOrders.filter(o => byStatus.includes(o.status));
+  else if (role === 'dentist') rows = jobOrders.filter(o => o.dentist_user_id === userId);
+  else rows = jobOrders.slice(); // receptionist / admin / lab — unfiltered
+  return rows.slice(offset, offset + limit);
 }
 
 async function updateOrder(id, fields) {

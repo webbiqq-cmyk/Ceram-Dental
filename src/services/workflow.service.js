@@ -7,6 +7,7 @@
 // is decided in this file.
 const repo = require('../db/jobOrders.store');
 const { WorkflowError } = require('../utils/errors');
+const { LOGIN_REQUIRED } = require('../config/env');
 
 const IMPLANT_TYPES = ['implant_crown', 'implant_bridge'];
 function requiresImplantFields(jobType) { return IMPLANT_TYPES.includes(jobType); }
@@ -19,6 +20,11 @@ async function resolveActorId() {
   return actor.sub;
 }
 function canAccess(order, actor) {
+  // Login disabled (demo / open auth): every workflow role resolves to a
+  // shared placeholder identity, so per-assignee ownership can't be
+  // enforced — any workflow role may open any order, matching what the
+  // dashboards already list.
+  if (!LOGIN_REQUIRED) return true;
   if (['admin','lab','receptionist'].includes(actor.role)) return true;
   const key = {dentist:'dentist_user_id',designer:'assigned_designer_id',technician:'assigned_technician_id',qc:'assigned_qc_id'}[actor.role];
   return !!key && order[key] === actor.sub;

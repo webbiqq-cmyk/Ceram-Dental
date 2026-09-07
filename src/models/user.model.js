@@ -2,7 +2,28 @@ const crypto = require('node:crypto');
 const db = require('../db/pool');
 const { transaction } = require('../db/records');
 const ROLES = ['admin', 'dentist', 'lab', 'receptionist', 'designer', 'technician', 'qc'];
-const users = [];
+
+// In-memory seed — used only when DATABASE_URL isn't set (demo / zero-setup
+// dev). Production runs off Postgres, seeded by migrations 001/005, and
+// this array stays empty there. Without these rows the lab workflow can't
+// function offline: reception's assignment roster (GET /api/staff) comes
+// from user.model.list(), and workflow.service.checkAssignee() validates
+// the chosen designer/technician/qc against user.model.findById(). The
+// three portal logins (admin/dentist/lab) are here too so Admin → Accounts
+// isn't blank. The workflow-role ids/hashes mirror 005_seed_workflow_users.
+const now = () => new Date();
+const users = db.pool ? [] : [
+  { id: 'usr-admin-1', username: 'admin', passwordHash: '$2a$12$bTO9nkvBdN9p8TsZy3k1.OANN4S8lhNWxJ5sXluEC9bRkauOYq.hO', role: 'admin', name: 'Practice Admin', active: true, createdAt: now() },
+  { id: 'usr-dentist-1', username: 'dentist', passwordHash: '$2a$12$L1KLx/A7iCRRovP9rM1mrOc0iajq64fTgbENc17lh04tX7IjQovaq', role: 'dentist', name: 'Dentist Portal', active: true, createdAt: now() },
+  { id: 'usr-lab-1', username: 'lab', passwordHash: '$2a$12$rShw6/ZK4Bl8qNRVL0SPwe1/EpihClvryCO/H.KnBuwKqpA0gl.UC', role: 'lab', name: 'Lab Studio', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000010', username: 'dentist-haddad', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'dentist', name: 'Dr. R. Haddad', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000011', username: 'receptionist', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'receptionist', name: 'Reception Desk', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000012', username: 'qc', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'qc', name: 'Quality Desk', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000020', username: 'rana', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'designer', name: 'Rana', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000021', username: 'omar', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'designer', name: 'Omar', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000030', username: 'malvin', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'technician', name: 'Malvin', active: true, createdAt: now() },
+  { id: '00000000-0000-0000-0000-000000000031', username: 'layla', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'technician', name: 'Layla', active: true, createdAt: now() }
+];
 function publicView(u) { return u && { id:u.id, username:u.username, role:u.role, name:u.name, active:u.active, createdAt:u.createdAt }; }
 function decode(u) { return u && { ...u, passwordHash:u.password_hash, createdAt:u.created_at }; }
 async function findById(id) {
