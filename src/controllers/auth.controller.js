@@ -24,6 +24,19 @@ async function login(req, res) {
   ok(res, { user: publicUser(user), remembered: !!remember });
 }
 
+async function registerDentist(req, res) {
+  const { username, password, name, phone, email, accountType, company } = req.body || {};
+  if (!username || !password || !name || !phone || !email || !['clinic','individual'].includes(accountType)) return bad(res, 'Name, username, password, phone, email and account type are required.');
+  if (accountType === 'clinic' && !String(company || '').trim()) return bad(res, 'Clinic or company name is required.');
+  if (String(password).length < 10) return bad(res, 'Password must be at least 10 characters.');
+  const passwordHash = await authService.hashPassword(password);
+  const user = await userModel.createUser({ username, passwordHash, role:'dentist', name, phone, email, accountType, company:accountType === 'clinic' ? company : 'Individual use' });
+  if (!user) return bad(res, 'That username already exists.');
+  const { token, maxAgeMs } = await authService.issueToken(user);
+  res.cookie(COOKIE_NAMES.dentist, token, Object.assign({}, COOKIE_OPTIONS, { maxAge:maxAgeMs }));
+  ok(res, { user: publicUser(user) });
+}
+
 async function logout(req, res) {
   const role = req.params.role;
   if (!isValidRole(role)) return bad(res, 'Unknown login.');
@@ -74,6 +87,6 @@ async function mySessions(req, res) {
   ok(res, { sessions });
 }
 
-module.exports = { login: login, logout, me, changePassword: changePassword, mySessions };
+module.exports = { login: login, registerDentist, logout, me, changePassword: changePassword, mySessions };
 
 for (const [name, handler] of Object.entries(module.exports)) module.exports[name] = require('../utils/asyncHandler').asyncHandler(handler);

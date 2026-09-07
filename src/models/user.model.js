@@ -14,6 +14,7 @@ const ROLES = ['admin', 'dentist', 'lab', 'receptionist', 'designer', 'technicia
 const now = () => new Date();
 const users = db.pool ? [] : [
   { id: 'usr-admin-1', username: 'admin', passwordHash: '$2a$12$bTO9nkvBdN9p8TsZy3k1.OANN4S8lhNWxJ5sXluEC9bRkauOYq.hO', role: 'admin', name: 'Practice Admin', active: true, createdAt: now() },
+  { id: 'usr-admin-ceram', username: 'ceram', passwordHash: '$2a$12$QKGAleewP5/TYO2Ik2mY/uSMK9uu52/2TE9xkqnG6O0gnwqOXtpg.', role: 'admin', name: 'Ceram Demo Admin', active: true, createdAt: now() },
   { id: 'usr-dentist-1', username: 'dentist', passwordHash: '$2a$12$L1KLx/A7iCRRovP9rM1mrOc0iajq64fTgbENc17lh04tX7IjQovaq', role: 'dentist', name: 'Dentist Portal', active: true, createdAt: now() },
   { id: 'usr-lab-1', username: 'lab', passwordHash: '$2a$12$rShw6/ZK4Bl8qNRVL0SPwe1/EpihClvryCO/H.KnBuwKqpA0gl.UC', role: 'lab', name: 'Lab Studio', active: true, createdAt: now() },
   { id: '00000000-0000-0000-0000-000000000010', username: 'dentist-haddad', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'dentist', name: 'Dr. R. Haddad', active: true, createdAt: now() },
@@ -25,7 +26,7 @@ const users = db.pool ? [] : [
   { id: '00000000-0000-0000-0000-000000000031', username: 'layla', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'technician', name: 'Layla', active: true, createdAt: now() }
 ];
 function publicView(u) { return u && { id:u.id, username:u.username, role:u.role, name:u.name, active:u.active, createdAt:u.createdAt }; }
-function decode(u) { return u && { ...u, passwordHash:u.password_hash, createdAt:u.created_at }; }
+function decode(u) { return u && { ...u, passwordHash:u.password_hash, createdAt:u.created_at, phone:u.phone, email:u.email, accountType:u.account_type, company:u.company }; }
 async function findById(id) {
   if (!db.pool) return users.find(u=>u.id===id) || null;
   if (!/^[0-9a-f-]{36}$/i.test(id || '')) return null;
@@ -36,12 +37,12 @@ async function findByUsernameAndRole(username,role) {
   return decode((await db.query('SELECT * FROM users WHERE lower(username)=lower($1) AND role=$2 AND active',[username,role])).rows[0]);
 }
 async function list() { return db.pool ? (await db.query('SELECT id,username,role,name,active,created_at FROM users ORDER BY name LIMIT 1000')).rows.map(decode).map(publicView) : users.map(publicView); }
-async function createUser({username,passwordHash,role,name}) {
+async function createUser({username,passwordHash,role,name,phone,email,accountType,company}) {
   username=String(username || '').trim();
   if (!username || !ROLES.includes(role) || !passwordHash) return null;
-  const u={id:crypto.randomUUID(),username,passwordHash,role,name:name || username,active:true,createdAt:new Date()};
+  const u={id:crypto.randomUUID(),username,passwordHash,role,name:name || username,phone:phone||'',email:email||'',accountType:accountType||'',company:company||'',active:true,createdAt:new Date()};
   if (!db.pool) { if(users.some(x=>x.role===role && x.username.toLowerCase()===username.toLowerCase())) return null; users.push(u); return publicView(u); }
-  const {rows}=await db.query('INSERT INTO users(id,username,password_hash,role,name) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING RETURNING *',[u.id,username,passwordHash,role,u.name]);
+  const {rows}=await db.query('INSERT INTO users(id,username,password_hash,role,name,phone,email,account_type,company) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING RETURNING *',[u.id,username,passwordHash,role,u.name,u.phone,u.email,u.accountType,u.company]);
   return publicView(decode(rows[0])) || null;
 }
 async function revokeSessions(id) { await require('./session.model').revokeForUser(id); }

@@ -6,6 +6,7 @@ const { loginLimiter } = require('../middleware/security');
 const router = express.Router();
 
 router.post('/auth/:role/login', loginLimiter, auth.login);
+router.post('/auth/dentist/register', loginLimiter, auth.registerDentist);
 router.post('/auth/:role/logout', auth.logout);
 router.get('/auth/:role/me', requireRoleParam, auth.me);
 router.post('/auth/:role/change-password', requireRoleParam, auth.changePassword);
