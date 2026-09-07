@@ -1,5 +1,6 @@
 import { DATA } from '../state.js';
 import { esc } from '../utils/format.js';
+import { brandLogoCompact } from './brand.js';
 
 const NETWORKS = [
   { label: 'Instagram', url: 'https://instagram.com/ceramdental',
@@ -25,14 +26,14 @@ export function socialIcons() {
 
 export function footer() {
   const s = DATA.settings || {};
-  return (
-    '<footer class="site-footer"><div class="u"><div class="footer-grid">' +
-      '<div><div class="footer-brand"><img class="brand-logo" src="/images/logo-white.png" alt="' + esc(s.clinicName || 'Ceram Dental') + '"></div>' +
-        '<p class="about-copy">A dental clinic with its own in-house ceramics lab — from your consultation to a restoration made and checked under one roof.</p>' +
-        '<div class="social-row" style="margin-top:16px;">' + socialIcons() + '</div></div>' +
-      '<div><h4>Explore</h4><a href="#/about">About</a><a href="#/services">Services</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
-      '<div><h4>For Dentists</h4><a href="#/new-case">Refer a Case</a><a href="#/portal">Dentist Portal</a><a href="#/studio">Lab Studio</a><a href="#/admin">Accounts &amp; Admin</a></div>' +
-      '<div><h4>Visit</h4><a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><a href="#/contact">' + esc(s.address) + '</a></div>' +
-    '</div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '. Click-through demo.</span><span>Imagery generated for this demo.</span></div></div></footer>'
-  );
+  const phone = s.phone || '+973 1713 1123';
+  const email = s.email || '';
+  return '<footer class="site-footer"><div class="u">' +
+    '<div class="footer-invitation"><div><span class="eyebrow">Ceram Specialist Dental Center</span><h2 class="serif">Care worth making time for.</h2></div><a class="btn btn-white" href="#/contact">Arrange your visit &rarr;</a></div>' +
+    '<div class="footer-grid"><div class="footer-identity"><a class="footer-brand" href="#/" aria-label="Ceram Dental home">' + brandLogoCompact({ cls: 'brand-logo' }) + '</a><p class="about-copy">Specialist dentistry.<br>In-house craftsmanship.<br>A personal approach to your smile.</p><div class="social-row">' + socialIcons() + '</div></div>' +
+    '<div><h4>Discover</h4><a href="#/about">Our doctors</a><a href="#/services">Treatments</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
+    '<div><h4>Professional access</h4><a href="#/portal">Dentist Portal</a><a href="#/studio">Lab Studio</a><a href="#/admin">Accounts &amp; Admin</a></div>' +
+    '<div class="footer-contact"><h4>Visit Ceram</h4><p>' + esc(s.address || 'New Zinj, Manama, Bahrain') + '</p><p>' + esc(s.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '</p><a href="tel:' + esc(phone.replace(/[^+0-9]/g, '')) + '">' + esc(phone) + '</a>' +
+    (email ? '<a href="mailto:' + esc(email) + '">' + esc(email) + '</a>' : '') + '</div></div>' +
+    '<div class="footer-bottom"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '</span><span>Clinic imagery is illustrative. Review examples are not patient testimonials.</span></div></div></footer>';
 }

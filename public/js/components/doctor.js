@@ -8,14 +8,14 @@ export function doctorAvatar(d) {
 }
 
 export function doctorCard(d, i) {
-  const creds = (d.credentials || []).slice(0, 4).map(c => '<li>' + esc(c) + '</li>').join('');
+  const creds = (d.credentials || []).map(c => '<li>' + esc(c) + '</li>').join('');
   return '<button type="button" class="doctor-card reveal" data-doctor="' + esc(d.id) + '" style="--i:' + (i || 0) + '">' +
     doctorAvatar(d) +
     '<div class="doc-body">' +
       '<div class="doc-head"><h3>' + esc(d.name) + '</h3>' + (d.nameAr ? '<span class="doc-ar" dir="rtl">' + esc(d.nameAr) + '</span>' : '') + '</div>' +
       '<span class="doc-role">' + esc(d.role) + '</span>' +
       (d.years ? '<span class="doc-years">' + d.years + '+ years&rsquo; experience</span>' : '') +
-      (creds ? '<ul class="doc-creds">' + creds + '</ul>' : '') +
+      (creds ? '<span class="doc-credentials-label">Expertise &amp; qualifications</span><ul class="doc-creds">' + creds + '</ul>' : '') +
       '<span class="doc-more">Full profile &rarr;</span>' +
     '</div>' +
   '</button>';

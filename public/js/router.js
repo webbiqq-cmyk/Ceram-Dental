@@ -61,6 +61,9 @@ export async function router() {
   const html = await fn();
   if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
   app.innerHTML = html;
+  document.body.classList.toggle('public-site', !!PUBLIC_ROUTES[route]);
+  document.body.classList.toggle('workplace', !PUBLIC_ROUTES[route]);
+  document.body.dataset.page = route || 'home';
   window.scrollTo(0, 0);
   attachPageHandlers(route);
   initReveal();

@@ -4,6 +4,7 @@ import { productMediaHtml } from '../utils/productMedia.js';
 import { footer } from '../components/footer.js';
 import { addToCart } from '../components/cart.js';
 import { renderCurrent } from '../router.js';
+import { editorialImage } from '../components/editorialImage.js';
 
 export function renderShop() {
   return (
@@ -11,6 +12,7 @@ export function renderShop() {
     '<div class="page-head reveal"><span class="eyebrow-accent">Shop</span>' +
       '<h1 class="serif">Care that continues at home.</h1>' +
       '<p class="lede">Patient retail for after your visit, and chairside essentials for the practices we work with.</p></div>' +
+    editorialImage('shop-care', { wide: true, cls: 'collection-banner' }) +
     '<div class="dash-tabs">' +
       '<button class="dash-tab' + (UI.shopTab === 'patients' ? ' active' : '') + '" data-shop-tab="patients">For Patients</button>' +
       '<button class="dash-tab' + (UI.shopTab === 'practices' ? ' active' : '') + '" data-shop-tab="practices">For Practices</button>' +

@@ -13,9 +13,15 @@ const revealObserver = (!prefersReduced && 'IntersectionObserver' in window) ? n
 }, { threshold: 0, rootMargin: '0px 0px 10% 0px' }) : null;
 
 export function initReveal() {
+  // Release detached page nodes before observing the next route.
+  if (revealObserver) revealObserver.disconnect();
   const els = document.querySelectorAll('#app .reveal');
   els.forEach((el, i) => {
-    if (!el.style.getPropertyValue('--i')) el.style.setProperty('--i', i % 6);
-    if (revealObserver) revealObserver.observe(el); else el.classList.add('visible');
+    el.style.setProperty('--i', i % 3);
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      el.classList.add('visible');
+    } else if (revealObserver) revealObserver.observe(el);
+    else el.classList.add('visible');
   });
 }

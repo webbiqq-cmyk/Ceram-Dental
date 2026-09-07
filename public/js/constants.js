@@ -27,6 +27,18 @@ export const SERVICES = [
 export const SVC = {};
 SERVICES.forEach(s => { SVC[s.key] = s; });
 
+export const SERVICE_GROUPS = [
+  { key: 'cosmetic', label: 'Cosmetic Dentistry', desc: 'Personalized care for the appearance and alignment of your smile.', services: ['veneers', 'aligners'] },
+  { key: 'restorative', label: 'Restorative Dentistry', desc: 'Custom ceramic restorations for damaged or missing teeth.', services: ['crowns', 'bridges'] },
+  { key: 'digital', label: 'Digital & Implant Technology', desc: 'Digital planning, guided workflows and implant-supported restorations.', services: ['dsd', 'implants', 'surgical_guide'] }
+];
+
+export const CLINICAL_SERVICES = [
+  { label: 'Periodontics', desc: 'Specialist assessment and care for the gums and supporting tissues.' },
+  { label: 'Endodontics', desc: 'Assessment of tooth pain and root canal treatment needs.' },
+  { label: 'Oral Surgery', desc: 'Consultation for extractions and other surgical dental needs.' }
+];
+
 export const PROTOCOL = [
   { key: 'photos', label: 'Clinical Photos' },
   { key: 'scan', label: 'Digital Scan / Impression' },

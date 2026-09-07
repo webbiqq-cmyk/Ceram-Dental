@@ -3,6 +3,7 @@ import { esc, field } from '../utils/format.js';
 import { SERVICES } from '../constants.js';
 import { footer, socialIcons } from '../components/footer.js';
 import { toast } from '../toast.js';
+import { editorialImage } from '../components/editorialImage.js';
 
 function infoRow(path, label, valueHtml) {
   return '<div class="info-row"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="' + path + '"/></svg></span><div><span class="eyebrow" style="margin-bottom:2px;">' + label + '</span>' + valueHtml + '</div></div>';
@@ -14,6 +15,7 @@ export function renderContact() {
     '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">Contact</span><h1 class="serif">Book a consultation.</h1>' +
       '<p class="lede">Tell us what you need and a preferred day — we\'ll call to confirm a time. For anything urgent, phone or WhatsApp us directly.</p></div>' +
+    editorialImage('contact-consultation', { wide: true, cls: 'contact-scene' }) +
     '<div class="section grid-2">' +
       '<div class="card reveal info-card">' +
         infoRow('M2.5 6.5A2 2 0 0 1 4.5 4.5h1.7a1 1 0 0 1 .95.69l1 3a1 1 0 0 1-.27 1.04L6.6 10.5a11 11 0 0 0 5 5l1.27-1.28a1 1 0 0 1 1.04-.27l3 1a1 1 0 0 1 .69.95v1.7a2 2 0 0 1-2 2A15.5 15.5 0 0 1 2.5 6.5Z', 'Phone &amp; WhatsApp', '<a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a>') +

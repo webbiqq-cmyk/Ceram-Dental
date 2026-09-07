@@ -4,6 +4,7 @@
 // handful of bindings that apply on every route (opening the case drawer /
 // doctor modal from a data-open / data-doctor element).
 import { attachNewCaseHandlers } from './pages/newCase.js';
+import { attachAboutHandlers } from './pages/about.js';
 import { attachShopHandlers } from './pages/shop.js';
 import { attachServicesHandlers } from './pages/services.js';
 import { attachContactHandlers } from './pages/contact.js';
@@ -20,6 +21,7 @@ import { openDrawer } from './components/drawer.js';
 import { openDoctorModal } from './components/doctor.js';
 
 const ROUTE_HANDLERS = {
+  about: attachAboutHandlers,
   'new-case': attachNewCaseHandlers,
   shop: attachShopHandlers,
   services: attachServicesHandlers,
@@ -38,6 +40,13 @@ const ROUTE_HANDLERS = {
 export function attachPageHandlers(route) {
   const attach = ROUTE_HANDLERS[route];
   if (attach) attach();
+  document.querySelectorAll('[data-review-step]').forEach(button => button.addEventListener('click', () => {
+    const track = document.getElementById('storiesTrack');
+    if (!track) return;
+    const index = Math.round(track.scrollLeft / track.clientWidth);
+    const next = (index + Number(button.dataset.reviewStep) + track.children.length) % track.children.length;
+    track.scrollTo({ left: next * track.clientWidth, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  }));
 
   // case cards / rows (portal + studio) and doctor tiles/cards (home + about)
   document.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openDrawer(el.dataset.open, el.dataset.from)));

@@ -1,8 +1,12 @@
 import { DATA } from '../state.js';
 import { esc } from '../utils/format.js';
-import { SERVICES } from '../constants.js';
+import { SERVICE_GROUPS, SVC } from '../constants.js';
 import { doctorTile } from '../components/doctor.js';
 import { footer } from '../components/footer.js';
+import { visitSection } from '../components/visit.js';
+import { reviewSection } from '../components/reviews.js';
+import { brandLogoStack } from '../components/brand.js';
+import { editorialImage } from '../components/editorialImage.js';
 
 function step(n, t, d) {
   return '<div class="step reveal"><span class="num">' + n + '</span><h3>' + t + '</h3><p>' + d + '</p></div>';
@@ -11,20 +15,27 @@ function step(n, t, d) {
 export function renderHome() {
   const st = DATA.settings || {};
   const phone = st.phone || '+973 1713 1123';
+  const faqs = [
+    ['Do you make crowns and veneers in-house?', 'Yes. Ceram has its own CAD-CAM ceramics lab, so many restorations are designed, milled, layered and checked under the same roof as the clinic.'],
+    ['Can I book a cosmetic consultation first?', 'Yes. Start with a consultation, photos and a digital plan before deciding on veneers, crowns, whitening, aligners or a larger smile design.'],
+    ['Where is Ceram Dental located?', (st.address || 'Highway 35, New Zinj, Manama, Bahrain') + '. The clinic is open ' + (st.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '.']
+  ];
   return (
     '<div class="page page-flush">' +
     '<section class="home-hero">' +
       '<div class="hero-copy reveal">' +
-        '<span class="hero-loc">Ceram Dental &middot; New Zinj, Manama</span>' +
-        '<h1 class="serif">Your smile, in careful hands.</h1>' +
-        '<p class="welcome">Come in for a routine check-up or a full smile makeover — either way you&rsquo;re looked after by doctors who take the time to explain, and a ceramics lab one floor up that shapes your crowns and veneers by hand. No rush, no pressure. Just a clear plan, a comfortable visit, and a result that looks like it was always yours.</p>' +
+        '<span class="hero-loc">Specialist dental center &middot; New Zinj, Manama</span>' +
+        brandLogoStack({ dark: true, id: 'hero', cls: 'hero-wordmark' }) +
+        '<h1 class="serif">Ceram Dental</h1>' +
+        '<p class="hero-tagline serif">The art of a considered smile.</p>' +
+        '<p class="welcome">Specialist dentistry and an in-house ceramics lab. Thoughtful care, from your first conversation to the finishing touches.</p>' +
         '<div class="cta-row">' +
-          '<a class="btn btn-primary btn-lg" href="#/contact">Book a consultation</a>' +
-          '<a class="btn btn-ghost btn-lg" href="#/about">Learn more about us</a>' +
+          '<a class="btn btn-gold btn-lg" href="#/contact">Book a consultation</a>' +
+          '<a class="btn btn-onphoto btn-lg" href="#/services">Explore treatments</a>' +
         '</div>' +
       '</div>' +
-      '<div class="hero-photo reveal">' +
-        '<img src="/images/clinic-front.jpg" alt="The front of the Ceram Dental clinic at night, New Zinj, Manama" fetchpriority="high" decoding="async">' +
+      '<div class="hero-photo">' +
+        editorialImage('home-hero', { hero: true }) +
       '</div>' +
     '</section>' +
 
@@ -32,78 +43,80 @@ export function renderHome() {
 
     '<div class="stat-strip reveal">' +
       '<div class="chipstat"><b>In-house</b><span>CAD-CAM ceramics lab</span></div>' +
-      '<div class="chipstat"><b>' + SERVICES.length + '</b><span>Dental specialties</span></div>' +
-      '<div class="chipstat"><b>Sat&ndash;Thu</b><span>9:00 AM &ndash; 7:00 PM</span></div>' +
-      '<div class="chipstat"><b>' + DATA.team.length + '</b><span>Doctors on our team</span></div>' +
+      '<div class="chipstat"><b>5-point</b><span>restoration quality check</span></div>' +
+      '<div class="chipstat"><b>' + DATA.team.length + '</b><span>doctors and specialists</span></div>' +
+      '<div class="chipstat"><b>Sat-Thu</b><span>9:00 AM - 7:00 PM</span></div>' +
     '</div>' +
 
-    '<div class="section home-split reveal">' +
-      '<div class="split-text">' +
-        '<span class="eyebrow">Why Ceram Dental</span>' +
-        '<h2>A clinic and a ceramics lab, under one roof.</h2>' +
-        '<p>Most practices send your case to an outside lab you never see. Ours is upstairs. Your dentist and the technician shaping your crown work from the same plan, the same scan and the same shade — so what reaches your mouth is what was designed for it.</p>' +
-        '<ul class="lead-bullets">' +
-          '<li>Treatment planned digitally before any work begins</li>' +
-          '<li>Crowns, veneers and guides milled and finished on site</li>' +
-          '<li>Every restoration checked twice against a five-point protocol</li>' +
-        '</ul>' +
-        '<a class="btn btn-primary" href="#/about">Learn more about us →</a>' +
+    '<section class="section signature-section reveal">' +
+      '<div class="signature-panel">' +
+        '<span class="eyebrow-accent">The Ceram Difference</span>' +
+        '<h2 class="serif">A boutique patient experience with lab-grade control.</h2>' +
+        '<p>Most dental clinics separate the appointment from the restoration. Ceram keeps the planning, smile design, ceramic work and quality control close, so the final result can be adjusted with real clinical context.</p>' +
+        '<div class="signature-points">' +
+          '<span>Digital smile planning</span><span>On-site milling</span><span>Hand-finished ceramics</span><span>Doctor-led approvals</span>' +
+        '</div>' +
       '</div>' +
-      '<div class="split-media">' +
-        '<img src="/images/clinic-care.jpg" alt="A Ceram Dental dentist treating a patient in the clinic" loading="lazy" decoding="async">' +
-        '<div class="split-badge"><b>5-point QC</b><span>on every case, before pickup</span></div>' +
+      '<div class="signature-media">' +
+        editorialImage('home-care') +
+        editorialImage('home-lounge') +
       '</div>' +
-    '</div>' +
+    '</section>' +
 
-    '<div class="section">' +
-      '<div class="section-head"><div><span class="eyebrow">Treatments</span><h2>Services we\'re known for</h2></div>' +
-        '<a class="btn btn-ghost btn-sm" href="#/services">All services →</a></div>' +
-      '<div class="services-grid">' + SERVICES.map((s, i) =>
+    '<section class="section">' +
+      '<div class="section-head luxe-head"><div><span class="eyebrow">Comprehensive care tailored to you</span><h2 class="serif">Services we offer</h2></div>' +
+        '<a class="btn btn-ghost btn-sm" href="#/services">Explore services →</a></div>' +
+      '<div class="services-grid luxe-services">' + SERVICE_GROUPS.map((s, i) =>
         '<a href="#/services" class="svc-card reveal" style="--i:' + i + '">' +
-          '<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="' + s.icon + '"/></svg></div>' +
-          '<h3>' + s.label + '</h3><p>' + s.desc + '</p>' +
-          '<span class="svc-more">Learn more →</span></a>'
+          '<h3>' + esc(s.label) + '</h3><p>' + esc(s.desc) + '</p>' +
+          '<ul class="service-category-list">' + s.services.map(key => '<li>' + esc(SVC[key].label) + '</li>').join('') + '</ul>' +
+          '<span class="svc-more">Explore services →</span></a>'
       ).join('') + '</div>' +
-    '</div>' +
+      '<a class="clinical-services-link" href="#/services">Other Clinical Dental Procedures →</a>' +
+    '</section>' +
 
-    '<div class="section">' +
-      '<div class="section-head"><div><span class="eyebrow">How it works</span><h2>From first visit to final fit</h2></div></div>' +
+    '<section class="section experience-band">' +
+      '<div class="experience-copy reveal">' +
+        '<span class="eyebrow">Your visit</span>' +
+        '<h2 class="serif">Precise dentistry should still feel soft.</h2>' +
+        '<p>From the first greeting to the final fit, the experience is designed to feel composed: private conversations, digital scans, transparent costs, and enough time for the doctor to explain the why behind each step.</p>' +
+      '</div>' +
       '<div class="steps-grid">' +
         step('01', 'Consultation & plan', 'We listen, examine and photograph, then map out the treatment and the cost with you before anything starts.') +
         step('02', 'Digital scan', 'A quick intraoral scan replaces the putty tray and gives the lab an exact model to work from.') +
         step('03', 'Made in our lab', 'Your restoration is designed, milled and layered upstairs — not shipped to a lab you never meet.') +
         step('04', 'Fitted & checked', 'We seat it, check the bite and the margins, and only finish once it looks and feels right.') +
       '</div>' +
-    '</div>' +
+    '</section>' +
 
-    '<div class="section">' +
-      '<div class="section-head"><div><span class="eyebrow">Our doctors</span><h2>Meet the clinicians</h2>' +
-        '<p class="lede" style="margin-top:8px;">Tap any doctor to see their training and experience.</p></div>' +
+    '<section class="section">' +
+      '<div class="section-head luxe-head"><div><span class="eyebrow">Our doctors</span><h2 class="serif">Meet the clinicians</h2>' +
+        '</div>' +
         '<a class="btn btn-ghost btn-sm" href="#/about">Meet the team →</a></div>' +
       '<div class="doctor-tiles">' + DATA.team.map((d, i) => doctorTile(d, i)).join('') + '</div>' +
-    '</div>' +
+    '</section>' +
 
-    '<div class="section">' +
-      '<div class="section-head"><div><span class="eyebrow">Step inside</span><h2>Visit the clinic</h2></div></div>' +
-      '<div class="visit-grid">' +
-        '<div class="space-card reveal" style="background-image:url(/images/clinic-front.jpg)"><span class="tag">Ceram Dental, New Zinj</span></div>' +
-        '<div class="space-card reveal" style="background-image:url(/images/clinic-reception.jpg)"><span class="tag">Reception</span></div>' +
-        '<div class="space-card reveal" style="background-image:url(/images/clinic-lounge.jpg)"><span class="tag">Patient lounge</span></div>' +
-        '<div class="space-card reveal" style="background-image:url(/images/clinic-care.jpg)"><span class="tag">In the chair</span></div>' +
-      '</div>' +
-    '</div>' +
+    visitSection() + reviewSection() +
 
-    '<div class="section shop-strip reveal">' +
+    '<section class="section faq-section reveal">' +
+      '<div class="section-head luxe-head"><div><span class="eyebrow">FAQs</span><h2 class="serif">Before you book</h2></div></div>' +
+      '<div class="faq-grid">' + faqs.map((f, i) =>
+        '<details class="faq-card reveal" style="--i:' + i + '"' + (i === 0 ? ' open' : '') + '><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>'
+      ).join('') + '</div>' +
+    '</section>' +
+
+    '<section class="section shop-strip reveal">' +
       '<div><span class="eyebrow">Ceram Dental Shop</span><h3>Take-home care &amp; chairside essentials</h3>' +
         '<p>Whitening kits, retainer cases and the products your dentist recommends — ready to collect at your next visit.</p></div>' +
       '<a class="btn btn-ghost" href="#/shop">Visit the shop →</a>' +
-    '</div>' +
+    '</section>' +
 
-    '<div class="section cta-banner reveal">' +
-      '<h2>Ready for your best smile?</h2>' +
-      '<p>Book a consultation and our team will help you find the right treatment — no pressure, just a plan.</p>' +
+    '<section class="section cta-banner reveal">' +
+      '<span class="eyebrow-accent">Ceram Specialist Dental Center</span>' +
+      '<h2 class="serif">Ready for a smile plan that feels considered?</h2>' +
+      '<p>Book a consultation and our team will help you find the right treatment — no pressure, just a clear plan.</p>' +
       '<div class="cta-row"><a class="btn btn-white" href="#/contact">Book a consultation</a><a class="btn btn-ghost" href="tel:+97317131123">Call ' + esc(phone) + '</a></div>' +
-    '</div>' +
+    '</section>' +
 
     '</div></div>' + footer()
   );
