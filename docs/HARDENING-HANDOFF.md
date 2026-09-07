@@ -1,12 +1,12 @@
 # Backend hardening handoff
 
-Updated: 2026-09-08. **Hardening pass is locally verified; Claude should review the diff, configure production secrets/database, then commit and deploy through the normal release checks.**
+Updated: 2026-09-08. **Hardening pass is locally verified; review the diff, configure production secrets/database, then commit and deploy through the normal release checks.**
 
 ## User instructions
 
 - Harden the whole backend, security, reliability, database, workload handling and performance; remove unnecessary code/assets where safe.
 - Keep credit usage low: focused work, no repeated audits or extra agents.
-- Leave committing/pushing to the user/Claude. Earlier visual/photo work is in local commit `c0d9aea`; GitHub push failed with 403 as HasannShd. Do not retry unless asked.
+- Leave final release review and deployment to the repository owner. Earlier visual/photo work is in commit `c0d9aea`.
 - Maintain this note so another agent can continue.
 
 ## Baseline
@@ -60,7 +60,7 @@ Updated: 2026-09-08. **Hardening pass is locally verified; Claude should review 
 - Native syntax checks pass for the changed modules and server entry point.
 - `npm audit --omit=dev --audit-level=high` could not reach registry.npmjs.org in this environment (DNS/network failure); rerun it in CI or a networked shell.
 
-The working tree is intentionally uncommitted. Do not reset or discard these edits; Claude/user owns the final review, commit, and push.
+The working tree should remain reviewable. Do not reset or discard user edits; the repository owner owns the final release review and deployment.
 
 ## Latest public-site UI work
 
