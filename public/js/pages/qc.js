@@ -43,15 +43,15 @@ export async function renderQC() {
   let orders = [];
   try { orders = (await listOrders('qc')).orders; }
   catch (e) {
-    return '<div class="page"><div class="u"><div class="page-head reveal"><span class="eyebrow-accent">Lab · Quality Inspector</span><h1 style="font-size:1.9rem;">QC review</h1></div>' +
+    return '<div class="page"><div class="u"><div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Quality Inspector</span><h1>QC review</h1></div></div>' +
       '<div class="empty-note">Couldn\'t reach the workflow backend (' + esc(e.message) + ').</div></div></div>';
   }
   const pending = orders.filter(o => o.status === 'qc_pending');
   const openId = UI.qcOpenId && pending.some(c => c.id === UI.qcOpenId) ? UI.qcOpenId : null;
 
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Lab · Quality Inspector</span><h1 style="font-size:1.9rem;">QC review</h1>' +
-      '<p class="lede">Record QC findings, upload photos/scans where required, and confirm packing for reception.</p></div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Quality Inspector</span><h1>QC review</h1>' +
+      '<p class="lede">Record QC findings, upload photos/scans where required, and confirm packing for reception.</p></div></div>' +
     '<div class="stat-row reveal"><div class="stat-card"><div class="n">' + pending.length + '</div><div class="l">Pending QC</div></div></div>' +
     (pending.length ? '<div class="case-list reveal">' + pending.map(o =>
       '<div class="case-card"><div class="cc-top"><div><div class="cc-id">' + o.order_number + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + '</div></div>' + statusPill(o.status) + '</div>' +

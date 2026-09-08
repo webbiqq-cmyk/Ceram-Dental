@@ -43,7 +43,7 @@ export async function renderReception() {
       listStaff('receptionist', 'technician').then(r => r.staff)
     ]);
   } catch (e) {
-    return '<div class="page"><div class="u"><div class="page-head reveal"><span class="eyebrow-accent">Lab · Reception</span><h1 style="font-size:1.9rem;">Order intake</h1></div>' +
+    return '<div class="page"><div class="u"><div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Reception</span><h1>Order intake</h1></div></div>' +
       '<div class="empty-note">Couldn\'t reach the workflow backend (' + esc(e.message) + ').</div></div></div>';
   }
   designerOptions = staff; technicianOptions = technicians;
@@ -58,8 +58,8 @@ export async function renderReception() {
     '<option value="">Assign designer…</option>' + designerOptions.map(d => '<option value="' + d.id + '">' + esc(d.name) + '</option>').join('') + '</select>';
 
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Lab · Reception</span><h1 style="font-size:1.9rem;">Order intake</h1>' +
-      '<p class="lede">Check payment and case details on every new order before it goes to design.</p></div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Reception</span><h1>Order intake</h1>' +
+      '<p class="lede">Check payment and case details on every new order before it goes to design.</p></div></div>' +
     '<div class="stat-row reveal">' +
       '<div class="stat-card"><div class="n">' + pending.length + '</div><div class="l">Pending review</div></div>' +
       '<div class="stat-card tone-danger"><div class="n">' + rejected.length + '</div><div class="l">Rejected, awaiting doctor</div></div>' +

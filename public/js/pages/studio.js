@@ -107,9 +107,10 @@ function rolePicker() {
   return '<div class="page"><div class="u">' +
     '<div class="page-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>Choose your station</h1>' +
       '<p class="lede">Pick your role, then sign in with the credentials your administrator assigned you.</p></div></div>' +
-    '<div class="workspace-role-grid">' + LAB_ROLES.map((r,i) =>
-      '<button type="button" class="workspace-role-card" data-lab-role-pick="' + r[0] + '">' +
-        '<span>0' + (i+1) + ' / STATION</span><h3>' + esc(r[2]) + '</h3><p>' + esc(r[3]) + '</p><span>Continue &rarr;</span></button>').join('') +
+    '<div class="role-pick-grid">' + LAB_ROLES.map((r,i) =>
+      '<button type="button" class="role-pick" data-lab-role-pick="' + r[0] + '">' +
+        '<span class="rp-num">0' + (i+1) + '</span><span class="rp-body"><b>' + esc(r[2]) + '</b><small>' + esc(r[3]) + '</small></span>' +
+        '<span class="rp-go">&rarr;</span></button>').join('') +
     '</div></div></div>';
 }
 

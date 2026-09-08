@@ -9,7 +9,7 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .workspace-nav-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:12px 12px -12px;color:var(--ink-soft)}
 .workspace-sidebar nav{display:grid;gap:5px}.workspace-sidebar nav :is(a,button){display:block;text-align:left;text-decoration:none;font:inherit;font-size:14px;font-weight:500;color:#66596d;padding:13px 15px;border:0;border-radius:9px;background:transparent;cursor:pointer}
 .workspace-sidebar nav [aria-current=page]{background:#f0eaf4;color:#2d1142;font-weight:700;border-left:3px solid #2d1142}
-.workspace-sidebar nav :is(a,button):hover{background:#f6f2f8}.workspace-support{margin-top:auto;font-size:12px;color:var(--ink-soft);line-height:1.7;padding:14px}.workspace-support a{color:#6c491d}
+.workspace-sidebar nav :is(a,button):hover{background:#f6f2f8}.workspace-support{margin-top:auto;padding:16px 12px 2px;display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--ink-soft);line-height:1.6}.workspace-support strong{color:#2d1142}.workspace-support .ws-support-role{margin:0;font-weight:700;color:#2d1142}.workspace-support .ws-support-role span{display:block;font-weight:400;color:var(--ink-soft);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}.workspace-support .ws-switch{width:100%;min-height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#2d1142;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}.workspace-support .ws-switch:hover{background:#f6f2f8}.workspace-support a{color:#6c491d;font-size:11.5px}
 .workspace-content{min-width:0;padding:34px 38px 60px;outline:none}.workspace-content .u{width:100%;max-width:none;margin:0;padding:0}.workspace-content .page{padding:0}
 .workplace .page-head,.workplace .welcome-card{border:0;background:none;box-shadow:none;padding:0;margin-bottom:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
 .workplace .page-head h1,.workplace .welcome-card h1{font:500 clamp(25px,3vw,34px)/1.2 var(--font-accent)!important;letter-spacing:-.025em;margin:8px 0}
@@ -48,3 +48,14 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .workspace-role-card{text-align:left;font:inherit;display:block}
 .workspace-role-card h3{color:#2d1142}
 .workspace-role-card>span:last-child{display:inline-block;margin-top:12px}
+
+/* Lab Studio role picker — compact rows, not full-bleed cards */
+.role-pick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;max-width:760px}
+.role-pick{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#2d1142;font:inherit;cursor:pointer;transition:border-color .18s ease,transform .18s ease}
+.role-pick:hover{border-color:#b8945f;transform:translateY(-1px)}
+.role-pick .rp-num{font:600 13px/1 var(--font-mono,ui-monospace,monospace);color:#b8945f;flex-shrink:0}
+.role-pick .rp-body{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.role-pick .rp-body b{font-size:15px;font-weight:600}
+.role-pick .rp-body small{font-size:12px;color:var(--ink-soft);line-height:1.5}
+.role-pick .rp-go{color:#6c491d;font-size:16px;flex-shrink:0}
+.workplace #labSigninForm{margin:0}

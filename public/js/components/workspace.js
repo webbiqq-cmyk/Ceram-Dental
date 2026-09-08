@@ -45,7 +45,8 @@ export function workspaceShell(route, html) {
     ? nav('studio','Lab overview',route === 'studio') + STAFF.map(([,path,label]) => nav(path,label,path===route)).join('')
     : (station ? nav(station[1], station[2], true) : '');
   const brandLabel = manager ? 'Lab workspace' : (station ? station[2] : 'Lab workspace');
-  const support = '<strong>Signed in — ' + brandLabel + '</strong><p>Testing mode. Switch role to sign in as someone else.</p><button type="button" data-lab-signout>Switch role</button>';
+  const support = '<p class="ws-support-role">Signed in &middot; ' + brandLabel + '<span>Testing mode</span></p>' +
+    '<button type="button" class="ws-switch" data-lab-signout>Switch role</button>';
   return shell('studio', brandLabel, 'Your workspace', links, html, support);
 }
 

@@ -62,7 +62,7 @@ export async function renderTechnician() {
     const [ordersRes, qcRes] = await Promise.all([listOrders('technician'), listStaff('technician', 'qc')]);
     orders = ordersRes.orders.filter(o => o.status === 'in_production'); qcOptions = qcRes.staff;
   } catch (e) {
-    return '<div class="page"><div class="u"><div class="page-head reveal"><span class="eyebrow-accent">Lab · Technician</span><h1 style="font-size:1.9rem;">Production queue</h1></div>' +
+    return '<div class="page"><div class="u"><div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Technician</span><h1>Production queue</h1></div></div>' +
       '<div class="empty-note">Couldn\'t reach the workflow backend (' + esc(e.message) + ').</div></div></div>';
   }
 
@@ -70,8 +70,8 @@ export async function renderTechnician() {
   const inProduction = orders.filter(c => c.status === 'in_production').length;
 
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Lab · Technician</span><h1 style="font-size:1.9rem;">Production queue</h1>' +
-      '<p class="lede">What needs to be made, step by step, for every case in your hands.</p></div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Technician</span><h1>Production queue</h1>' +
+      '<p class="lede">What needs to be made, step by step, for every case in your hands.</p></div></div>' +
     '<div class="stat-row reveal">' +
       '<div class="stat-card"><div class="n">' + orders.length + '</div><div class="l">In your queue</div></div>' +
       '<div class="stat-card"><div class="n">' + inProduction + '</div><div class="l">In production</div></div>' +

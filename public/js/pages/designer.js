@@ -59,7 +59,7 @@ export async function renderDesigner() {
     const [ordersRes, techRes] = await Promise.all([listOrders('designer'), listStaff('designer', 'technician')]);
     orders = ordersRes.orders; technicianOptions = techRes.staff;
   } catch (e) {
-    return '<div class="page"><div class="u"><div class="page-head reveal"><span class="eyebrow-accent">Lab · Design</span><h1 style="font-size:1.9rem;">My design queue</h1></div>' +
+    return '<div class="page"><div class="u"><div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Design</span><h1>My design queue</h1></div></div>' +
       '<div class="empty-note">Couldn\'t reach the workflow backend (' + esc(e.message) + ').</div></div></div>';
   }
 
@@ -73,8 +73,8 @@ export async function renderDesigner() {
   const done = orders.filter(o => o.status === 'doctor_approved').length;
 
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Lab · Design</span><h1 style="font-size:1.9rem;">My design queue</h1>' +
-      '<p class="lede">Cases assigned to you, with everything the doctor sent and a direct line to ask them anything.</p></div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">Lab · Design</span><h1>My design queue</h1>' +
+      '<p class="lede">Cases assigned to you, with everything the doctor sent and a direct line to ask them anything.</p></div></div>' +
     '<div class="stat-row reveal">' +
       '<div class="stat-card"><div class="n">' + orders.length + '</div><div class="l">Assigned to you</div></div>' +
       '<div class="stat-card"><div class="n">' + inProgress + '</div><div class="l">In progress</div></div>' +
