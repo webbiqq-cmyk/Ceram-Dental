@@ -104,6 +104,11 @@ async function recordFile(req, res) {
   const file = await wf.recordFile(req.params.id, {
     stageType: b.stageType, category: b.category, url: b.url, publicId: b.publicId, version:b.version, signature:b.signature, uploaderRole: req.user.role
   });
+  await require('../models/fileReference.model').record({
+    resourceType: 'job_order', resourceId: req.params.id, cloudinaryPublicId: b.publicId,
+    category: b.category, stageType: b.stageType, uploadedBy: req.user.sub
+  });
+  await require('../utils/audit').logAction(req, 'file:upload', { detail: b.category || 'file', resourceType: 'job_order', resourceId: req.params.id });
   ok(res, { file });
 }
 

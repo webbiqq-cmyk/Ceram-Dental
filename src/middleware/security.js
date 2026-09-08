@@ -2,7 +2,11 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const {pool} = require('../db/pool');
 const {SharedRateStore} = require('./sharedRateStore');
+const { API_URL, CORS_ORIGINS } = require('../config/production');
 const shared = prefix => pool ? {store:new SharedRateStore(prefix)} : {};
+// When the API is on its own origin, the SPA must be allowed to talk to it.
+const apiOrigin = (() => { try { return API_URL ? new URL(API_URL).origin : null; } catch { return null; } })();
+const extraConnect = [apiOrigin, ...CORS_ORIGINS].filter(Boolean);
 
 // CSP note: the rendered HTML uses inline `style="..."` attributes
 // extensively (e.g. animation stagger, background-image tiles) — rewriting
@@ -19,7 +23,7 @@ const helmetMiddleware = helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
-      connectSrc: ["'self'", 'https://api.cloudinary.com'],
+      connectSrc: ["'self'", 'https://api.cloudinary.com', ...extraConnect],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],

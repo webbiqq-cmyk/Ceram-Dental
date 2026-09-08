@@ -3,6 +3,12 @@
 // module and reads/mutates these same objects directly.
 
 let stateRequest=null, stateLoadedAt=0, loadedPage=0, stateGeneration=0, stateRequestToken=0;
+// API base. Empty = same origin (current single-domain setup). When the API
+// moves to its own host (api.domain.com on Render), set it once via
+// <meta name="ceram-api" content="https://api.domain.com"> in index.html —
+// no other change needed. Cross-origin requests send credentials so the
+// session cookie (shared via COOKIE_DOMAIN=.domain.com) still travels.
+export const API_BASE=(document.querySelector('meta[name="ceram-api"]')?.content || '').replace(/\/$/,'');
 export async function api(path, opts={}) {
   const method=(opts.method || 'GET').toUpperCase();
   const mutation=!['GET','HEAD'].includes(method);
@@ -10,7 +16,8 @@ export async function api(path, opts={}) {
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),20000);
   try {
-    const res=await fetch(path,{...opts,headers,signal:opts.signal || controller.signal});
+    const url=API_BASE && path.startsWith('/') ? API_BASE+path : path;
+    const res=await fetch(url,{credentials:'include',...opts,headers,signal:opts.signal || controller.signal});
     const json=await res.json().catch(()=>({}));
     if(!res.ok || json.ok===false){ const err=new Error(json.error || 'Request failed. Please try again.'); err.status=res.status; throw err; }
     if(mutation){stateLoadedAt=0; stateGeneration++;}

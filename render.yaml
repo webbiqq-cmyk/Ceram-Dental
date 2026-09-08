@@ -1,0 +1,76 @@
+# Render Blueprint — API service + PostgreSQL. Import via Render Dashboard →
+# "New +" → "Blueprint" pointed at this repo, then fill the values marked
+# sync:false in the Render dashboard (they are never committed).
+services:
+  - type: web
+    name: ceram-dental-api
+    runtime: node
+    plan: starter
+    region: frankfurt            # pick the region nearest the clinic
+    branch: main
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run migrate && node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: REQUIRE_LOGIN
+        value: "true"
+      - key: DEMO_MODE
+        value: "false"
+      - key: TRUST_PROXY
+        value: cloudflare
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ceram-dental-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_TTL_HOURS
+        value: "12"
+      - key: REMEMBER_TTL_DAYS
+        value: "30"
+      # ---- fill these in the Render dashboard (sync:false = not in git) ----
+      - key: COOKIE_DOMAIN
+        sync: false
+      - key: WEB_URL
+        sync: false
+      - key: PORTAL_URL
+        sync: false
+      - key: ADMIN_URL
+        sync: false
+      - key: LAB_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: CLINIC_IP_ALLOWLIST
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_CASE_UPLOAD_PRESET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+databases:
+  - name: ceram-dental-db
+    plan: basic-256mb            # smallest paid tier; free tier expires
+    region: frankfurt
+    postgresMajorVersion: "16"

@@ -8,13 +8,22 @@ const { helmetMiddleware, apiLimiter } = require('./middleware/security');
 const { requestLog } = require('./middleware/requestLog');
 const apiRoutes = require('./routes');
 const {validateBody} = require('./utils/validation');
+const { TRUST_PROXY, CORS_ORIGINS } = require('./config/production');
+const { clientIpMiddleware } = require('./utils/clientIp');
+const { corsMiddleware } = require('./middleware/cors');
+const { resolveSection } = require('./middleware/section');
 
 const app = express();
 
-// Behind Vercel's (or any) reverse proxy, so req.secure / req.ip reflect the
-// real client, not the proxy hop — needed for secure cookies and rate
-// limiting to work correctly in production.
-app.set('trust proxy', process.env.TRUST_PROXY_HOPS ? require('./config/env').integer('TRUST_PROXY_HOPS', 0, 0, 5) : (process.env.VERCEL ? 1 : false));
+// Real client IP behind a proxy / Cloudflare. Never blindly trusts a raw
+// X-Forwarded-For — see src/utils/clientIp.js.
+//   TRUST_PROXY = 'cloudflare'  -> trust only verified Cloudflare edge IPs
+//   TRUST_PROXY = <number>      -> that many proxy hops (Render, Vercel)
+//   TRUST_PROXY = 'false'       -> direct connections only
+if (TRUST_PROXY === 'cloudflare') app.set('trust proxy', require('./config/cloudflareIps'));
+else if (/^\d+$/.test(TRUST_PROXY)) app.set('trust proxy', Number(TRUST_PROXY));
+else if (process.env.TRUST_PROXY_HOPS) app.set('trust proxy', require('./config/env').integer('TRUST_PROXY_HOPS', 0, 0, 5));
+else app.set('trust proxy', process.env.VERCEL ? 1 : false);
 // Express's default query parser (qs) has a known, currently-unpatched-
 // in-our-range prototype-pollution/DoS advisory for deeply nested
 // bracket syntax. Nothing here needs that — every query param we read
@@ -23,6 +32,8 @@ app.set('trust proxy', process.env.TRUST_PROXY_HOPS ? require('./config/env').in
 // rather than just judging it low-risk and moving on.
 app.set('query parser', 'simple');
 
+app.use(clientIpMiddleware);   // req.clientIp — safe real IP, before anything logs or rate-limits
+app.use(resolveSection);       // req.section from hostname (null until subdomains configured)
 app.use(requestLog);
 app.use(helmetMiddleware);
 app.use(compression());
@@ -50,14 +61,17 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
   }
 }));
 app.get('/api/ready', (req,res) => require('./db/readiness').ready().then(()=>res.json({ok:true})).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})));
-app.use('/api', apiLimiter, (req,res,next) => require('./db/readiness').ready().then(()=>next()).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})), (req, res, next) => {
+app.use('/api', corsMiddleware, apiLimiter, (req,res,next) => require('./db/readiness').ready().then(()=>next()).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})), (req, res, next) => {
   res.set('Cache-Control', 'private, no-store');
   next();
 }, (req,res,next) => {
   if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
     const origin=req.get('Origin');
     const expected=process.env.APP_ORIGIN || req.protocol+'://'+req.get('host');
-    if (req.get('Sec-Fetch-Site') === 'cross-site' || (origin && origin !== expected)) return res.status(403).json({ok:false,error:'Cross-site request denied.'});
+    // Same-origin, or an explicitly allowlisted portal/admin/lab origin (CORS_ORIGINS).
+    const allowed = !origin || origin === expected || CORS_ORIGINS.includes(origin.replace(/\/$/, ''));
+    if (req.get('Sec-Fetch-Site') === 'cross-site' && !allowed) return res.status(403).json({ok:false,error:'Cross-site request denied.'});
+    if (origin && !allowed) return res.status(403).json({ok:false,error:'Cross-site request denied.'});
   }
   next();
 }, (req,res,next) => {

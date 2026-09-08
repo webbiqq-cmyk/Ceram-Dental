@@ -2,8 +2,12 @@ const { verifyToken } = require('../services/auth.service');
 const { LOGIN_REQUIRED, IS_PRODUCTION } = require('../config/env');
 const { asyncHandler } = require('../utils/asyncHandler');
 const ROLES = require('../models/user.model').ROLES;
+const { COOKIE_DOMAIN } = require('../config/production');
 const COOKIE_NAMES = Object.fromEntries(ROLES.map(role=>[role,role+'_session']));
-const COOKIE_OPTIONS = {httpOnly:true,secure:IS_PRODUCTION,sameSite:'strict',path:'/'};
+// sameSite:'strict' + Secure + httpOnly. COOKIE_DOMAIN (".domain.com") lets
+// the session cookie work across portal./admin./lab. subdomains; unset =
+// host-only, which is correct for single-domain / local.
+const COOKIE_OPTIONS = {httpOnly:true,secure:IS_PRODUCTION,sameSite:'strict',path:'/', ...(COOKIE_DOMAIN ? {domain:COOKIE_DOMAIN} : {})};
 function cookieNameFor(role) { return COOKIE_NAMES[role]; }
 async function readSession(req,role) {
   if(!COOKIE_NAMES[role])return null;

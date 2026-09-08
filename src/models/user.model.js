@@ -2,7 +2,16 @@ const crypto = require('node:crypto');
 const db = require('../db/pool');
 const records = require('../db/records');
 const { transaction } = records;
-const ROLES = ['admin', 'dentist', 'lab', 'receptionist', 'designer', 'technician', 'qc'];
+const ROLES = ['admin', 'dentist', 'lab', 'receptionist', 'designer', 'technician', 'qc', 'lab_manager', 'dispatch', 'in_house_dentist'];
+// Logical groupings used by access-control middleware. 'lab' is the existing
+// Lab-Studio overview role and is treated as a lab_manager.
+const ROLE_GROUPS = {
+  ADMIN: ['admin'],
+  DENTIST: ['dentist', 'in_house_dentist'],
+  LAB: ['lab', 'lab_manager', 'receptionist', 'designer', 'technician', 'qc', 'dispatch'],
+  LAB_STATION: ['receptionist', 'designer', 'technician', 'qc', 'dispatch'],
+  LAB_MANAGE: ['admin', 'lab', 'lab_manager']
+};
 
 // In-memory seed — used only when DATABASE_URL isn't set (demo / zero-setup
 // dev). Production runs off Postgres, seeded by migrations 001/005, and
@@ -68,6 +77,24 @@ async function setActive(id,active) {
     return {user:publicView({...u,active})};
   });
 }
+// Login tracking / soft lockout (Postgres only; in-memory demo skips it).
+// Locks for 15 min after 8 consecutive failures.
+async function recordLoginResult(id, { success, ip }) {
+  if (!db.pool || !/^[0-9a-f-]{36}$/i.test(id || '')) return;
+  if (success) {
+    await db.query('UPDATE users SET last_login_at=now(), last_login_ip=$2, failed_login_count=0, locked_until=NULL WHERE id=$1', [id, ip || null]);
+  } else {
+    await db.query(
+      `UPDATE users SET failed_login_count = failed_login_count + 1,
+         locked_until = CASE WHEN failed_login_count + 1 >= 8 THEN now() + interval '15 minutes' ELSE locked_until END
+       WHERE id=$1`, [id]);
+  }
+}
+async function isLocked(id) {
+  if (!db.pool || !/^[0-9a-f-]{36}$/i.test(id || '')) return false;
+  const { rows } = await db.query('SELECT locked_until FROM users WHERE id=$1', [id]);
+  return !!(rows[0]?.locked_until && new Date(rows[0].locked_until) > new Date());
+}
 async function updateName(id,name) {
   const u=await findById(id); if(!u)return null;
   if(db.pool)await db.query('UPDATE users SET name=$2 WHERE id=$1',[id,name]); else u.name=name;
@@ -75,4 +102,10 @@ async function updateName(id,name) {
 }
 // Retain referenced identities for clinical audit history; remove access instead.
 async function removeUser(id) { const result=await setActive(id,false); return result.error ? result : {ok:true}; }
-module.exports={ROLES,users,publicView,findById,findByUsernameAndRole,list,createUser,setPasswordHash,setActive,updateName,removeUser};
+async function findByEmailAndRole(email, role) {
+  email = String(email || '').trim().toLowerCase();
+  if (!email) return null;
+  if (!db.pool) return users.find(u => u.active && u.role === role && String(u.email || '').toLowerCase() === email) || null;
+  return decode((await db.query('SELECT * FROM users WHERE lower(email)=$1 AND role=$2 AND active LIMIT 1', [email, role])).rows[0]);
+}
+module.exports={ROLES,ROLE_GROUPS,users,publicView,findById,findByUsernameAndRole,findByEmailAndRole,list,createUser,setPasswordHash,setActive,updateName,removeUser,recordLoginResult,isLocked};

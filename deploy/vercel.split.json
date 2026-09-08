@@ -1,0 +1,25 @@
+{
+  "//": "Frontend-only Vercel config for the split architecture (API on Render). To use: replace the repo's vercel.json with this file, then set the API host in the rewrite below AND in public/index.html <meta name=\"ceram-api\">. Until then keep the default vercel.json (monolith on Vercel).",
+  "version": 2,
+  "builds": [
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com; connect-src 'self' https://api.cerampro.com https://api.cloudinary.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+      },
+      "continue": true
+    },
+    { "src": "/api/(.*)", "dest": "https://api.cerampro.com/api/$1" },
+    { "src": "/$", "dest": "/public/index.html" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/public/index.html" }
+  ]
+}
