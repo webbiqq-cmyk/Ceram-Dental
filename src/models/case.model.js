@@ -90,7 +90,7 @@ async function actOnCase(id, act) {
   const idx = STAGES.indexOf(c.stage);
   const push = (stage, note) => c.history.push({ stage, at: new Date(), note });
 
-  if (act === 'advance') { const next = STAGES[Math.min(idx + 1, STAGES.length - 1)]; c.stage = next; push(next); }
+  if (act === 'advance') { const next = c.stage === 'designer' && c.service !== 'veneers' ? 'cadcam' : STAGES[Math.min(idx + 1, STAGES.length - 1)]; c.stage = next; push(next); }
   else if (act === 'qc-accept') { c.stage = 'designer'; push('designer', 'QC accepted'); }
   else if (act === 'qc-reject') { c.stage = 'reception'; push('reception', 'Returned by QC — incomplete protocol items'); }
   else if (act === 'approve') { c.stage = 'cadcam'; push('cadcam', 'Mockup approved by doctor'); }

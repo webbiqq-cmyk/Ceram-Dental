@@ -4,6 +4,7 @@ import { esc, fmtDateTime } from '../utils/format.js';
 import { jobTypeLabel, statusPill, stageTrackerHtml } from '../utils/workflow.js';
 import { listOrders, listStaff, getOrder, designDone, postMessage } from '../utils/ordersApi.js';
 import { uploadZoneHtml, attachUploadZone } from '../components/caseUpload.js';
+import { attachLiveChat } from '../components/orderDetail.js';
 import { toast } from '../toast.js';
 import { renderCurrent } from '../router.js';
 
@@ -33,7 +34,8 @@ function caseDetail() {
     '<div class="drawer-sec"><h4>Doctor files</h4>' +
       (files.length ? '<div class="upload-grid" style="grid-template-columns:repeat(auto-fill,minmax(84px,1fr));">' + files.map(fileChip).join('') + '</div>' : '<p style="color:var(--ink-soft); font-size:13px;">No files attached yet.</p>') +
     '</div>' +
-    '<div class="drawer-sec"><h4>Attach a design file</h4>' + uploadZoneHtml('des-file', 'Design file', 'STL, screenshot, or design export') + '</div>' +
+    (o.job_type === 'veneers' && o.stage_type === 'final' ? '<p>Approved design locked. Changes require a new job order.</p>' : '<div class="drawer-sec"><h4>Attach a design file</h4>' + uploadZoneHtml('des-file', 'Design file', 'STL, screenshot, or design export') + '</div>') +
+    (o.rejection_note ? '<p>' + esc(o.rejection_note) + '</p>' : '') +
     '<div class="drawer-sec"><h4>Case chat</h4>' +
       '<div class="chat-thread" id="designerChat">' + (messages.length ? messages.map(m =>
         '<div class="chat-msg' + (m.sender_role === 'designer' ? ' mine' : '') + '"><div class="chat-bubble">' + esc(m.body) + '</div><div class="chat-meta">' + esc(m.sender_name) + ' · ' + fmtDateTime(m.created_at) + '</div></div>'
@@ -41,11 +43,11 @@ function caseDetail() {
       '<form class="chat-input-row" id="designerChatForm"><input id="designerChatInput" placeholder="Message the doctor…" autocomplete="off"><button class="btn btn-primary btn-sm" type="submit">Send</button></form>' +
     '</div>' +
     '<div class="drawer-actions" style="margin-top:20px; border-top:1px solid var(--line); padding-top:18px; background:none; flex-wrap:wrap;">' +
-      (o.status === 'design_done'
-        ? '<span class="pill pill-progress">Design marked done — waiting for technician pickup</span>'
-        : ('<select id="techPick" style="font-size:13px; padding:9px 12px; border-radius:9px; border:1px solid var(--line);"><option value="">Choose a technician…</option>' +
-           technicianOptions.map(t => '<option value="' + t.id + '">' + esc(t.name) + '</option>').join('') + '</select>' +
-           '<button class="btn btn-gold" data-designer-done="' + o.id + '">Mark design done → send to technician</button>')) +
+      (o.status === 'in_design' && o.stage_type === 'demo'
+        ? '<button class="btn btn-gold" data-designer-done="' + o.id + '">Send demo/design to doctor</button>'
+        : (o.status === 'in_design' || o.status === 'doctor_approved')
+          ? '<select id="techPick" aria-label="Choose a technician"><option value="">Choose a technician…</option>' + technicianOptions.map(t => '<option value="' + t.id + '">' + esc(t.name) + '</option>').join('') + '</select><button class="btn btn-gold" data-designer-done="' + o.id + '">Send to technician</button>'
+          : '<span>Waiting for the next workflow stage</span>') +
       '<button class="btn btn-ghost" data-designer-close="1">Close</button>' +
     '</div>' +
   '</div>';
@@ -68,7 +70,7 @@ export async function renderDesigner() {
   } else detailCache = null;
 
   const inProgress = orders.filter(o => o.status === 'in_design').length;
-  const done = orders.filter(o => o.status === 'design_done').length;
+  const done = orders.filter(o => o.status === 'doctor_approved').length;
 
   return '<div class="page"><div class="u">' +
     '<div class="page-head reveal"><span class="eyebrow-accent">Lab · Design</span><h1 style="font-size:1.9rem;">My design queue</h1>' +
@@ -76,7 +78,7 @@ export async function renderDesigner() {
     '<div class="stat-row reveal">' +
       '<div class="stat-card"><div class="n">' + orders.length + '</div><div class="l">Assigned to you</div></div>' +
       '<div class="stat-card"><div class="n">' + inProgress + '</div><div class="l">In progress</div></div>' +
-      '<div class="stat-card tone-gold"><div class="n">' + done + '</div><div class="l">Done, awaiting pickup</div></div>' +
+      '<div class="stat-card tone-gold"><div class="n">' + done + '</div><div class="l">Approved for handoff</div></div>' +
     '</div>' +
     (orders.length ? '<div class="case-list reveal">' + orders.map(o =>
       '<div class="case-card"><div class="cc-top"><div><div class="cc-id">' + o.order_number + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + (o.job_type === 'veneers' ? ' · ' + (o.stage_type === 'demo' ? 'Demo' : 'Final') : '') + '</div></div>' + statusPill(o.status) + '</div>' +
@@ -98,14 +100,16 @@ export function attachDesignerHandlers() {
   document.querySelectorAll('[data-designer-done]').forEach(b => b.addEventListener('click', async () => {
     const techPick = document.getElementById('techPick');
     const technicianId = techPick ? techPick.value : '';
-    if (!technicianId) { toast('Choose a technician first.'); return; }
+    if (techPick && !technicianId) { toast('Choose a technician first.'); return; }
     try {
       const res = await designDone(b.dataset.designerDone, technicianId);
-      toast(res.order.order_number + ' marked done — sent to technician.');
+      toast(res.order.order_number + (res.order.status === 'waiting_doctor_approval' ? ' — demo sent to doctor.' : ' — sent to technician.'));
       renderCurrent();
     } catch (e) { toast(e.message); }
   }));
   if (detailCache) attachUploadZone(document, 'des-file', { role: 'designer', orderId: detailCache.order.id, stageType: detailCache.order.stage_type, category: 'design_file' });
+  const thread = document.getElementById('designerChat');
+  if (thread && detailCache) attachLiveChat(thread.parentElement, 'designer', detailCache.order.id, '#designerChat');
   const chatForm = document.getElementById('designerChatForm');
   if (chatForm) chatForm.addEventListener('submit', async e => {
     e.preventDefault();

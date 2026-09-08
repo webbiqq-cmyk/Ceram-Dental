@@ -3,6 +3,7 @@ import { UI } from '../state.js';
 import { esc, fmtDateTime } from '../utils/format.js';
 import { jobTypeLabel, statusPill } from '../utils/workflow.js';
 import { listOrders, listStaff, productionDone } from '../utils/ordersApi.js';
+import { showOrderDetail } from '../components/orderDetail.js';
 import { toast } from '../toast.js';
 import { renderCurrent } from '../router.js';
 
@@ -39,17 +40,17 @@ function detail(o) {
     '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">' +
       '<div><h3 style="margin-bottom:2px;">' + o.order_number + ' · ' + esc(jobTypeLabel(o.job_type)) + '</h3><p>' + esc(o.patient_ref) + (o.shade ? ' · Shade ' + esc(o.shade) : '') + '</p></div>' +
       statusPill(o.status) +
-    '</div>' +
+    '</div><button class="btn btn-ghost" data-order-detail="' + o.id + '">Requirements, files &amp; notes</button>' +
     '<div class="drawer-sec" style="margin-top:20px;"><h4>Production steps</h4><div class="qc-checklist">' +
-      steps.map(s => '<div class="qc-item' + (done[s] ? ' checked' : '') + '" data-tech-step="' + s + '" data-order="' + o.id + '">' +
-        '<span class="qc-chk">' + (done[s] ? '✓' : '') + '</span><span class="lbl">' + s + '</span></div>'
+      steps.map(s => '<button type="button" class="qc-item' + (done[s] ? ' checked' : '') + '" aria-pressed="' + !!done[s] + '" data-tech-step="' + s + '" data-order="' + o.id + '">' +
+        '<span class="qc-chk">' + (done[s] ? '✓' : '') + '</span><span class="lbl">' + s + '</span></button>'
       ).join('') +
     '</div></div>' +
     '<div class="drawer-actions" style="margin-top:20px; border-top:1px solid var(--line); padding-top:18px; background:none; flex-wrap:wrap;">' +
-      '<select id="qcPick" style="font-size:13px; padding:9px 12px; border-radius:9px; border:1px solid var(--line);"><option value="">Choose a QC reviewer…</option>' +
+      '<select aria-label="Choose a quality inspector" id="qcPick" style="font-size:13px; padding:9px 12px; border-radius:9px; border:1px solid var(--line);"><option value="">Choose a QC reviewer…</option>' +
         qcOptions.map(q => '<option value="' + q.id + '">' + esc(q.name) + '</option>').join('') + '</select>' +
       '<button class="btn btn-gold" data-tech-done="' + o.id + '"' + (allDone ? '' : ' disabled') + '>Mark production done → send to QC</button>' +
-      (allDone ? '' : '<span style="font-size:12px; color:var(--ink-soft); align-self:center;">Finish every step to continue</span>') +
+      '<span data-checklist-hint' + (allDone ? ' hidden' : '') + '>Finish every applicable step to continue.</span>' +
       '<button class="btn btn-ghost" data-tech-close="1">Close</button>' +
     '</div>' +
   '</div>';
@@ -59,7 +60,7 @@ export async function renderTechnician() {
   let orders = [];
   try {
     const [ordersRes, qcRes] = await Promise.all([listOrders('technician'), listStaff('technician', 'qc')]);
-    orders = ordersRes.orders; qcOptions = qcRes.staff;
+    orders = ordersRes.orders.filter(o => o.status === 'in_production'); qcOptions = qcRes.staff;
   } catch (e) {
     return '<div class="page"><div class="u"><div class="page-head reveal"><span class="eyebrow-accent">Lab · Technician</span><h1 style="font-size:1.9rem;">Production queue</h1></div>' +
       '<div class="empty-note">Couldn\'t reach the workflow backend (' + esc(e.message) + ').</div></div></div>';
@@ -91,6 +92,7 @@ export async function renderTechnician() {
 }
 
 export function attachTechnicianHandlers() {
+  document.querySelectorAll('[data-order-detail]').forEach(b => b.addEventListener('click', () => showOrderDetail('technician', b.dataset.orderDetail)));
   document.querySelectorAll('[data-tech-open]').forEach(b => b.addEventListener('click', () => {
     UI.technicianOpenId = UI.technicianOpenId === b.dataset.techOpen ? null : b.dataset.techOpen;
     renderCurrent();
@@ -101,7 +103,10 @@ export function attachTechnicianHandlers() {
     const id = b.dataset.order, step = b.dataset.techStep;
     PROGRESS[id] = PROGRESS[id] || {};
     PROGRESS[id][step] = !PROGRESS[id][step];
-    renderCurrent();
+    b.classList.toggle('checked',PROGRESS[id][step]); b.setAttribute('aria-pressed',String(PROGRESS[id][step])); b.querySelector('.qc-chk').textContent=PROGRESS[id][step]?'✓':'';
+    const ready=[...document.querySelectorAll('[data-tech-step]')].every(el=>el.getAttribute('aria-pressed')==='true');
+    document.querySelector('[data-tech-done]').disabled=!ready;
+    document.querySelector('[data-checklist-hint]').hidden=ready;
   }));
   document.querySelectorAll('[data-tech-done]').forEach(b => b.addEventListener('click', async () => {
     const qcPick = document.getElementById('qcPick');

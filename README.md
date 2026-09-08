@@ -183,31 +183,32 @@ Postgres-backed (not in-memory), with five roles instead of two:
 - **`/new-order`** — a doctor creates a job order: job type, case details,
   implant-specific fields when relevant, shade, instructions, delivery/
   pickup preference.
-- **`/reception`** — accepts (assigning a designer in the same step) or
-  rejects incoming orders with a note.
-- **`/designer`** — the assigned queue, doctor files, case chat, and
-  "mark done" (which hands to a chosen technician).
-- **`/technician`** — the production queue with a per-job-type checklist
-  (a night guard is printed and cleaned; a crown is milled and glazed),
-  and "mark done" (hands to a chosen QC reviewer).
-- **`/qc`** — a checklist review, approve (→ the doctor) or reject
-  (→ back to the technician) with a note.
-- Back on **`/portal`**'s "Job Orders" tab, the doctor approves or
-  requests changes; reception then confirms completion and marks it
-  delivered/picked up.
+- **`/reception`** — confirms payment status and required details, accepts
+  and assigns a designer (or technician when no design is required), or
+  rejects with a note. After QC, coordinates pickup/delivery and completion.
+- **`/designer`** — reviews case files, chats with the doctor, and submits
+  veneer demo/design for approval. Approved veneer designs are locked;
+  the designer hands them to a technician without another design cycle.
+  One-step designs go directly to the technician.
+- **`/technician`** — production checklist, requirements/files/notes, and
+  assignment to a QC reviewer when production is complete.
+- **`/qc`** — records findings, uploads photos/scans where required, and
+  confirms packing. Approved cases go to reception; rejected cases return
+  to the technician with notes.
+- **`/portal`**, Job Orders — tracking, case files, history, chat, and
+  veneer demo/design approval or rejection with notes.
+- **`/admin`**, Orders — lab job tracking, history, files and chat alongside
+  shop orders. Account and role management remain in Accounts.
 
-**Veneers are the one two-stage job**: the same order goes through the
-whole pipeline once as a `demo` and, the moment the doctor approves the
-demo, flips to `final` and runs through it again — same order number,
-same file/message thread, same history — rather than becoming a second,
-disconnected order. Every other job type is a single pass.
+**Veneers are the two-stage job**: demo/design → doctor review → locked
+final production → QC/packing → reception → pickup/delivery. The same job
+number, files and history are retained. After demo approval, changes require
+a new job order; only QC evidence can be attached during final inspection.
+All other job types complete without doctor approval.
 
-`src/db/migrations/` (schema + seed data), `src/services/workflow.service.js`
-(the state machine — every status transition in the system in one place),
-`src/routes/orders.routes.js`. Verified end-to-end (every role, both veneer
-stages, rejection paths at every gate) against a real local Postgres
-instance before shipping — see that verification in this project's
-history for the exact scenarios covered.
+Run migrations before deploying these changes. Migration 009 adds trays
+and moves obsolete approval queues to the appropriate review stage. Test
+results and outstanding environment checks are in `docs/WORKFLOW-VERIFICATION.md`.
 
 **Works with or without `DATABASE_URL` set.** `src/db/jobOrders.store.js`
 picks the storage backend once at boot: the real, persistent Postgres repo

@@ -1,4 +1,4 @@
-import { DATA, UI } from '../state.js';
+import { DATA, UI, api } from '../state.js';
 import { esc, money, fmtDate, fmtDateTime, svcLabel, labelFor } from '../utils/format.js';
 import { shadeCombo } from '../utils/design.js';
 import { STAGES, STAGE_INDEX } from '../constants.js';
@@ -7,9 +7,8 @@ import { pillHtml } from '../components/drawer.js';
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
 import { jobTypeLabel, statusPill } from '../utils/workflow.js';
-import { listOrders, doctorDecision } from '../utils/ordersApi.js';
-import { openNoteModal } from '../components/noteModal.js';
-import { toast } from '../toast.js';
+import { listOrders } from '../utils/ordersApi.js';
+import { showOrderDetail } from '../components/orderDetail.js';
 
 function isSignedIn() { return !!(DATA.auth && DATA.auth.dentist); }
 
@@ -73,106 +72,59 @@ function portalBilling() {
 }
 
 let jobOrdersCache = [];
+const needsReview = o => o.job_type === 'veneers' && o.stage_type === 'demo' && o.status === 'waiting_doctor_approval';
+const needsAttention = o => o.status === 'rejected_by_reception' || !!o.rejection_note && o.status === 'in_design';
 
-function portalJobOrders() {
-  const waiting = jobOrdersCache.filter(o => o.status === 'waiting_doctor_approval');
-  const rejected = jobOrdersCache.filter(o => o.status === 'rejected_by_reception' || o.status === 'doctor_rejected');
-  const active = jobOrdersCache.filter(o => !['waiting_doctor_approval', 'rejected_by_reception', 'doctor_rejected', 'completed'].includes(o.status));
-  const completed = jobOrdersCache.filter(o => o.status === 'completed');
-
-  const strip = '<div class="stat-row reveal">' +
-    '<div class="stat-card"><div class="n">' + active.length + '</div><div class="l">Active job orders</div></div>' +
-    '<div class="stat-card' + (waiting.length ? ' tone-gold' : '') + '"><div class="n">' + waiting.length + '</div><div class="l">Awaiting your approval</div></div>' +
-    '<div class="stat-card tone-danger"><div class="n">' + rejected.length + '</div><div class="l">Rejected / needs a look</div></div>' +
-    '<div class="stat-card"><div class="n">' + completed.length + '</div><div class="l">Completed</div></div>' +
-  '</div>';
-
-  const waitBlock = waiting.length ? (
-    '<div class="review-panel reveal"><div class="review-panel-head"><span class="eyebrow" style="color:var(--amber);">Action needed</span>' +
-      '<h3 style="font-size:16px; margin-top:4px;">' + waiting.length + ' job order' + (waiting.length === 1 ? '' : 's') + ' waiting on your approval</h3></div>' +
-    waiting.map(o =>
-      '<div class="review-item"><div><div class="cid-cell" style="font-size:13px;">' + o.order_number + ' · ' + esc(jobTypeLabel(o.job_type)) + (o.job_type === 'veneers' ? ' (' + (o.stage_type === 'demo' ? 'Demo' : 'Final') + ')' : '') + '</div>' +
-        '<div style="font-size:12.5px; color:var(--ink-soft);">' + esc(o.patient_ref) + (o.shade ? ' · shade ' + esc(o.shade) : '') + '</div></div>' +
-        '<div class="review-item-actions"><button class="btn btn-primary btn-sm" data-jo-approve="' + o.id + '">Approve</button>' +
-        '<button class="btn btn-danger-ghost btn-sm" data-jo-reject="' + o.id + '">Request change</button></div></div>'
-    ).join('') + '</div>'
-  ) : '';
-
-  const rows = jobOrdersCache.map(o =>
-    '<tr><td class="cid-cell">' + o.order_number + '</td><td>' + esc(jobTypeLabel(o.job_type)) + (o.job_type === 'veneers' ? '<br><span style="color:var(--ink-soft); font-size:11px;">' + (o.stage_type === 'demo' ? 'Demo' : 'Final') + '</span>' : '') + '</td>' +
-      '<td>' + esc(o.patient_ref) + '</td><td>' + esc(o.shade || '—') + '</td>' +
-      '<td>' + statusPill(o.status) + (o.rejection_note ? '<div style="font-size:11px; color:var(--critical); margin-top:4px;">' + esc(o.rejection_note) + '</div>' : '') + '</td>' +
-      '<td>' + fmtDateTime(o.created_at) + '</td></tr>'
-  ).join('');
-
-  return strip + waitBlock +
-    (jobOrdersCache.length
-      ? '<div class="table-wrap reveal"><table class="cases-table"><thead><tr><th>Order</th><th>Job type</th><th>Patient</th><th>Shade</th><th>Status</th><th>Submitted</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-      : '<div class="empty-note">No job orders yet — create one to send it to the lab.</div>');
+function orderCard(o) {
+  return '<article class="case-card" data-case-search="' + esc((o.order_number + ' ' + o.patient_ref + ' ' + jobTypeLabel(o.job_type)).toLowerCase()) + '"><div class="cc-top"><div><div class="cc-id">' + esc(o.order_number) + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + '</div></div>' + statusPill(o.status) + '</div><h3 class="cc-title">' + esc(o.patient_ref) + '</h3><p class="cc-sub">' + (o.job_type === 'veneers' ? (o.stage_type === 'demo' ? 'Step 1 · Demo / design' : 'Step 2 · Final production') : 'One-step case') + ' · ' + esc(o.delivery_method === 'delivery' ? 'Delivery' : 'In-house pickup') + '</p>' +
+    (o.rejection_note ? '<p class="workspace-notice">' + esc(o.rejection_note) + '</p>' : '') +
+    '<div class="cc-foot"><time>' + fmtDate(o.updated_at || o.created_at) + '</time><button class="btn ' + (needsReview(o) ? 'btn-gold' : 'btn-ghost') + '" data-order-detail="' + o.id + '">' + (needsReview(o) ? 'Review demo / design' : needsAttention(o) ? 'Read notes & next steps' : 'Open case') + '</button></div></article>';
 }
-
+function ordersSection(rows, empty) {
+  return rows.length ? '<div class="case-list">' + rows.map(orderCard).join('') + '</div>' : '<div class="empty-note">' + empty + '</div>';
+}
+function overview() {
+  const active = jobOrdersCache.filter(o => !['completed','delivered','rejected_by_reception'].includes(o.status));
+  const waiting = jobOrdersCache.filter(needsReview);
+  const rejected = jobOrdersCache.filter(needsAttention);
+  const completed = jobOrdersCache.filter(o => ['completed','delivered'].includes(o.status));
+  const metric = (count,label,filter) => '<button class="stat-card" data-portal-filter="' + filter + '"><div class="n">' + count + '</div><div class="l">' + label + ' →</div></button>';
+  return '<div class="stat-row">' + metric(active.length,'Active cases','active') + metric(waiting.length,'Demo approvals','approval') + metric(rejected.length,'Needs attention','attention') + metric(completed.length,'Completed cases','completed') + '</div>' +
+    (UI.workflowHasMore || UI.dataPage > 1 ? '<p class="cc-sub">Summary of cases on this page. Use the page controls for earlier cases.</p>' : '') +
+    '<div class="section-head"><h2>' + (waiting.length ? 'Ready for your review' : 'Your current cases') + '</h2><button class="btn btn-ghost" data-portal-tab="orders">View case history</button></div>' + ordersSection((waiting.length ? waiting : active).slice(0,4),'Your workspace is ready. Create a new case to send an order to the lab.') +
+    '<div class="workspace-two-col" style="margin-top:28px"><section class="card"><h3>Recent activity</h3><ul class="workspace-list">' + [...jobOrdersCache].sort((a,b)=>new Date(b.updated_at || b.created_at)-new Date(a.updated_at || a.created_at)).slice(0,5).map(o => '<li><button class="link-btn" data-order-detail="' + o.id + '">' + esc(o.order_number) + ' · ' + esc(o.patient_ref) + '</button><p>' + statusPill(o.status) + '</p><time>' + fmtDateTime(o.updated_at || o.created_at) + '</time></li>').join('') + (jobOrdersCache.length ? '' : '<li>Case updates will appear here.</li>') + '</ul></section><section class="card"><span class="eyebrow-accent">A clear path to completion</span><h3>One case. Every detail.</h3><p class="lede">Keep instructions, files and conversations together. Open any case to contact your lab team.</p><div class="workspace-notice"><strong>Veneer approval is final.</strong><br>Review the demo/design carefully. After approval, changes require a new job order.</div></section></div>';
+}
+function history(attentionOnly) {
+  const filter = attentionOnly ? 'attention' : UI.portalFilter || 'all';
+  const rows = jobOrdersCache.filter(o => filter === 'all' || filter === 'approval' && needsReview(o) || filter === 'attention' && needsAttention(o) || filter === 'completed' && ['completed','delivered'].includes(o.status) || filter === 'active' && !['completed','delivered','rejected_by_reception'].includes(o.status));
+  return '<div class="workspace-toolbar"><input type="search" id="orderSearch" aria-label="Search cases on this page" placeholder="Search case number, patient or job type…">' + (attentionOnly ? '' : '<div class="workspace-tabs" aria-label="Filter cases">' + [['all','All'],['active','Active'],['approval','Approvals'],['completed','Completed']].map(([key,label])=>'<button data-portal-filter="' + key + '" aria-pressed="' + (filter===key) + '">' + label + '</button>').join('') + '</div>') + '</div>' + ordersSection(rows,attentionOnly ? 'No cases need your attention right now.' : 'No cases in this view.') + '<p class="empty-note" id="orderNoMatch" hidden>No cases match your search on this page.</p>';
+}
 export async function renderPortal() {
-  if (!isSignedIn()) {
-    return renderLoginGate({ role: 'dentist', title: 'Dentist portal', subtitle: 'Sign in to track your cases and approve mockups.' });
-  }
-  const tab = UI.portalTab || 'cases';
+  if (!isSignedIn()) return renderLoginGate({role:'dentist',title:'Welcome to your workspace',subtitle:'Sign in to manage cases and stay in touch with your lab.'});
+  const tab = UI.portalTab || 'overview';
   let body;
-  if (tab === 'orders') {
-    try { jobOrdersCache = (await listOrders('dentist')).orders; }
-    catch (e) { jobOrdersCache = []; }
-    body = portalJobOrders();
-  } else {
-    body = tab === 'billing' ? portalBilling() : portalCases();
-  }
-  return '<div class="page"><div class="u">' +
-    '<div class="welcome-card reveal">' +
-      '<div><span class="eyebrow-accent">Dentist portal</span><h1 style="font-size:1.9rem;">Welcome back.</h1>' +
-        '<p class="lede" style="margin-top:8px;">Track every case you\'ve sent us, and approve mockups the moment they\'re ready.</p>' +
-        (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="portalLogoutBtn" style="margin-top:14px;">Sign out</button>' : '') + '</div>' +
-      '<a class="btn btn-gold btn-lg" href="#/new-case">+ Start a Case</a>' +
-      '<a class="btn btn-ghost" href="#/new-order">Create job order</a>' +
-    '</div>' +
-    '<div class="dash-tabs">' +
-      '<button class="dash-tab' + (tab === 'cases' ? ' active' : '') + '" data-portal-tab="cases">Cases</button>' +
-      '<button class="dash-tab' + (tab === 'orders' ? ' active' : '') + '" data-portal-tab="orders">Job Orders</button>' +
-      '<button class="dash-tab' + (tab === 'billing' ? ' active' : '') + '" data-portal-tab="billing">Billing</button>' +
-    '</div>' + body +
-  '</div></div>' + footer();
+  if (tab === 'billing') body=portalBilling();
+  else if (tab === 'cases') body=portalCases();
+  else if (tab === 'profile') {
+    const {user} = await api('/api/auth/dentist/me');
+    body='<section class="card"><h3>My profile</h3><dl class="workspace-facts"><div><dt>Name</dt><dd>' + esc(user?.name || 'Dentist') + '</dd></div><div><dt>Username</dt><dd>' + esc(user?.username || '—') + '</dd></div><div><dt>Role</dt><dd>Dentist</dd></div></dl><p class="lede">Contact your lab administrator to update account details or access.</p></section>';
+  } else { jobOrdersCache=(await listOrders('dentist')).orders; body=tab==='overview' ? overview() : history(tab==='rejected'); }
+  const titles={overview:'Your cases, at a glance.',orders:'Case history',rejected:'Cases needing attention',billing:'Billing',profile:'Your profile',cases:'Earlier cases'};
+  return '<div class="page"><div class="u"><div class="page-head"><div><span class="eyebrow-accent">Dentist workspace</span><h1>' + titles[tab] + '</h1><p class="lede">' + (tab==='rejected' ? 'Read the lab notes and choose the next step for each case.' : 'A clear view of your cases, from first details to final delivery.') + '</p></div><a class="btn btn-primary" href="#/new-order">+ New case</a></div>' + body + '<div class="workspace-toolbar" style="margin-top:28px"><button class="link-btn" data-portal-tab="cases">View earlier case records</button>' + (DATA.loginRequired ? '<button class="btn btn-ghost" id="portalLogoutBtn">Sign out</button>' : '') + '</div></div></div>';
 }
-
 export function attachPortalHandlers() {
   if (!isSignedIn()) { attachAuthGateHandlers(); return; }
-  document.querySelectorAll('[data-portal-tab]').forEach(b => b.addEventListener('click', () => { UI.portalTab = b.dataset.portalTab; renderCurrent(); }));
-  const ps = document.getElementById('portalSearch');
-  if (ps) ps.addEventListener('input', () => {
-    const q = ps.value.trim().toLowerCase();
-    let shown = 0;
-    document.querySelectorAll('#portalTable tbody tr').forEach(tr => {
-      const hit = !q || (tr.dataset.hay || '').indexOf(q) !== -1;
-      tr.hidden = !hit; if (hit) shown++;
-    });
-    const nm = document.getElementById('portalNoMatch'); if (nm) nm.hidden = shown !== 0;
+  document.querySelectorAll('[data-portal-tab]').forEach(b => b.addEventListener('click', () => { UI.portalTab=b.dataset.portalTab; UI.dataPage=1; renderCurrent(); }));
+  document.querySelectorAll('[data-portal-filter]').forEach(b => b.addEventListener('click', () => { UI.portalFilter=b.dataset.portalFilter; UI.portalTab=UI.portalFilter==='attention' ? 'rejected' : 'orders'; renderCurrent(); }));
+  document.querySelectorAll('[data-order-detail]').forEach(b => b.addEventListener('click', () => showOrderDetail('dentist',b.dataset.orderDetail)));
+  document.getElementById('orderSearch')?.addEventListener('input', e => {
+    const q=e.target.value.trim().toLowerCase(); let shown=0;
+    document.querySelectorAll('[data-case-search]').forEach(card => { card.hidden=!card.dataset.caseSearch.includes(q); if(!card.hidden)shown++; });
+    document.getElementById('orderNoMatch').hidden=shown>0;
   });
-  const logoutBtn = document.getElementById('portalLogoutBtn');
-  if (logoutBtn) logoutBtn.addEventListener('click', () => logout('dentist'));
-
-  document.querySelectorAll('[data-jo-approve]').forEach(b => b.addEventListener('click', async () => {
-    try {
-      const res = await doctorDecision(b.dataset.joApprove, { decision: 'approve' });
-      toast(res.order.job_type === 'veneers' && res.order.stage_type === 'final' && res.order.status === 'in_design'
-        ? res.order.order_number + ' demo approved — final restoration started.'
-        : res.order.order_number + ' approved.');
-      renderCurrent();
-    } catch (e) { toast(e.message); }
-  }));
-  document.querySelectorAll('[data-jo-reject]').forEach(b => b.addEventListener('click', () => {
-    const id = b.dataset.joReject;
-    openNoteModal({ title: 'Request changes', label: 'What needs to change?', confirmLabel: 'Send back to the lab', danger: true }, async note => {
-      try {
-        const res = await doctorDecision(id, { decision: 'reject', note });
-        toast(res.order.order_number + ' sent back for changes.');
-        renderCurrent();
-      } catch (e) { toast(e.message); }
-    });
-  }));
+  document.getElementById('portalSearch')?.addEventListener('input', e => {
+    let shown=0; document.querySelectorAll('#portalTable tbody tr').forEach(tr=>{ tr.hidden=!(tr.dataset.hay || '').includes(e.target.value.trim().toLowerCase());if(!tr.hidden)shown++; });
+    document.getElementById('portalNoMatch').hidden=shown>0;
+  });
+  document.getElementById('portalLogoutBtn')?.addEventListener('click',()=>logout('dentist'));
 }

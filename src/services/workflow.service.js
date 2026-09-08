@@ -58,7 +58,7 @@ async function listOrders(role, userId, options) { return repo.listOrders(role, 
 
 async function createOrder(input) {
   if (!input.patientRef || !String(input.patientRef).trim()) throw new WorkflowError('Patient reference is required.');
-  if (!['veneers','crowns','bridges','implant_crown','implant_bridge','ortho_work','night_guard','bleaching_tray','essix_retainer','surgical_guide','functional_mockup','other'].includes(input.jobType)) throw new WorkflowError('Unknown job type.');
+  if (!['veneers','crowns','bridges','implant_crown','implant_bridge','ortho_work','trays','night_guard','bleaching_tray','essix_retainer','surgical_guide','functional_mockup','other'].includes(input.jobType)) throw new WorkflowError('Unknown job type.');
   if (input.deliveryMethod && !['pickup','delivery'].includes(input.deliveryMethod)) throw new WorkflowError('Unknown delivery method.');
   if (requiresImplantFields(input.jobType) && (!input.scanBody || !input.implantSystem || !input.abutmentSize)) {
     throw new WorkflowError('Scan body, implant system and abutment size are required for implant cases.');
@@ -80,7 +80,7 @@ async function createOrder(input) {
 // Reception's accept/reject. Accepting requires a designer to hand the
 // order to in the same call — leaving an order "accepted but assigned to
 // no one" is a state nobody's dashboard would ever surface again.
-async function receptionReview(orderId, { decision, note, designerId }) {
+async function receptionReview(orderId, { decision, note, designerId, technicianId, paymentChecked, detailsChecked }) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
   if (order.status !== 'pending_reception_review') throw new WorkflowError('This order is not awaiting reception review.');
@@ -94,11 +94,19 @@ async function receptionReview(orderId, { decision, note, designerId }) {
     return getOrderDetail(orderId);
   }
   if (decision === 'accept') {
-    await checkAssignee(designerId, 'designer');
+    if (paymentChecked !== true || detailsChecked !== true) throw new WorkflowError('Confirm payment status and required details before accepting.');
+    note = ['Payment status checked; required details complete.', note].filter(Boolean).join(' ');
+    if (technicianId && order.job_type === 'veneers') throw new WorkflowError('Veneers require demo/design review.');
+    if (technicianId) await checkAssignee(technicianId, 'technician');
+    else await checkAssignee(designerId, 'designer');
     await repo.updateOrder(orderId, { status: 'accepted_by_reception' });
-    await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'accepted_by_reception', actorId });
+    await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'accepted_by_reception', actorId, note });
     await repo.addApproval(orderId, { stageType: order.stage_type, decisionType: 'reception_review', outcome: 'accepted', decidedBy: actorId, note });
-    await assignDesigner(orderId, designerId, actorId);
+    if (technicianId) {
+      await repo.addAssignment(orderId, 'technician', technicianId, actorId);
+      await repo.updateOrder(orderId, { assigned_technician_id: technicianId, status: 'in_production' });
+      await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'in_production', actorId, note: 'No design required; sent directly to production' });
+    } else await assignDesigner(orderId, designerId, actorId);
     return getOrderDetail(orderId);
   }
   throw new WorkflowError('Unknown decision — expected "accept" or "reject".');
@@ -118,7 +126,13 @@ async function assignDesigner(orderId, designerId, actorId) {
 async function designDone(orderId, technicianId) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
-  if (order.status !== 'in_design') throw new WorkflowError('This order is not currently in design.');
+  if (!(order.status === 'in_design' || (order.status === 'doctor_approved' && order.job_type === 'veneers' && order.stage_type === 'final'))) throw new WorkflowError('This order is not currently in design.');
+  if (order.job_type === 'veneers' && order.stage_type === 'demo') {
+    const actorId = await resolveActorId();
+    await repo.updateOrder(orderId, { status: 'waiting_doctor_approval' });
+    await repo.addStageHistory(orderId, { stageType: 'demo', status: 'waiting_doctor_approval', actorId, note: 'Demo/design ready for doctor review' });
+    return getOrderDetail(orderId);
+  }
   await checkAssignee(technicianId, 'technician');
   const actorId = await resolveActorId();
   await repo.updateOrder(orderId, { status: 'design_done' });
@@ -133,7 +147,7 @@ async function designDone(orderId, technicianId) {
 async function productionDone(orderId, qcId) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
-  if (order.status !== 'in_production') throw new WorkflowError('This order is not currently in production.');
+  if (order.stage_type !== 'final' || order.status !== 'in_production') throw new WorkflowError('This order is not currently in production.');
   await checkAssignee(qcId, 'qc');
   const actorId = await resolveActorId();
   await repo.updateOrder(orderId, { status: 'production_done' });
@@ -144,10 +158,10 @@ async function productionDone(orderId, qcId) {
   return getOrderDetail(orderId);
 }
 
-async function qcDecision(orderId, { decision, note }) {
+async function qcDecision(orderId, { decision, note, packed }) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
-  if (order.status !== 'qc_pending') throw new WorkflowError('This order is not awaiting QC.');
+  if (order.stage_type !== 'final' || order.status !== 'qc_pending') throw new WorkflowError('This order is not awaiting QC.');
   const actorId = await resolveActorId();
 
   if (decision === 'reject') {
@@ -162,24 +176,21 @@ async function qcDecision(orderId, { decision, note }) {
     return getOrderDetail(orderId);
   }
   if (decision === 'approve') {
+    if (packed !== true || typeof note !== 'string' || !note.trim()) throw new WorkflowError('Record QC findings and confirm packing before approval.');
+    note = note.trim() + '\nPacking confirmed.';
     await repo.addApproval(orderId, { stageType: order.stage_type, decisionType: 'qc_review', outcome: 'approved', decidedBy: actorId, note });
     await repo.updateOrder(orderId, { status: 'qc_approved' });
-    await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'qc_approved', actorId });
-    await repo.updateOrder(orderId, { status: 'waiting_doctor_approval' });
-    await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'waiting_doctor_approval', actorId });
+    await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'qc_approved', actorId, note });
     return getOrderDetail(orderId);
   }
   throw new WorkflowError('Unknown decision — expected "approve" or "reject".');
 }
 
-// The doctor's approve/reject — and the one place the veneer demo->final
-// restart happens. Everything else in this file treats a veneer exactly
-// like any other job; this function is where the two-step rule actually
-// lives, deliberately isolated so it can't leak into the other transitions.
+// Only veneer demo/design requires doctor approval.
 async function doctorDecision(orderId, { decision, note }) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
-  if (order.status !== 'waiting_doctor_approval') throw new WorkflowError('This order is not awaiting doctor approval.');
+  if (order.job_type !== 'veneers' || order.stage_type !== 'demo' || order.status !== 'waiting_doctor_approval') throw new WorkflowError('This order is not awaiting doctor approval.');
   const actorId = await resolveActorId();
 
   if (decision === 'reject') {
@@ -198,34 +209,16 @@ async function doctorDecision(orderId, { decision, note }) {
   if (decision !== 'approve') throw new WorkflowError('Unknown decision — expected "approve" or "reject".');
   await repo.addApproval(orderId, { stageType: order.stage_type, decisionType: 'doctor_approval', outcome: 'approved', decidedBy: actorId, note });
 
-  if (order.job_type === 'veneers' && order.stage_type === 'demo') {
-    // The restart: same order row, same order number, same file/message
-    // thread — flip to the final stage and re-enter the pipeline at
-    // design instead of opening a second, disconnected order.
-    await repo.updateOrder(orderId, { status: 'doctor_approved' });
-    await repo.addStageHistory(orderId, { stageType: 'demo', status: 'doctor_approved', actorId, note: 'Demo approved — starting the final restoration' });
-    await repo.updateOrder(orderId, { stage_type: 'final' });
-    if (order.assigned_designer_id) {
-      await assignDesigner(orderId, order.assigned_designer_id, actorId);
-    } else {
-      await repo.updateOrder(orderId, { status: 'accepted_by_reception' });
-      await repo.addStageHistory(orderId, { stageType: 'final', status: 'accepted_by_reception', actorId });
-    }
-    return getOrderDetail(orderId);
-  }
-
-  await repo.updateOrder(orderId, { status: 'doctor_approved' });
-  await repo.addStageHistory(orderId, { stageType: order.stage_type, status: 'doctor_approved', actorId });
+  await repo.addStageHistory(orderId, { stageType: 'demo', status: 'doctor_approved', actorId, note: 'Demo approved. Requirements and design locked; changes require a new job order.' });
+  await repo.updateOrder(orderId, { stage_type: 'final', status: 'doctor_approved', rejection_note: null });
   return getOrderDetail(orderId);
 }
 
-// Reception's final step — only reachable once the doctor has approved
-// (and, for a veneer, only its *final* stage; a demo approval never
-// reaches 'doctor_approved' — see doctorDecision above).
+// Reception coordinates pickup or delivery after QC confirms packing.
 async function confirmCompletion(orderId) {
   const order = await repo.getOrder(orderId);
   if (!order) throw new WorkflowError('Order not found.');
-  if (order.status !== 'doctor_approved') throw new WorkflowError('This order has not been approved by the doctor yet.');
+  if (order.stage_type !== 'final' || order.status !== 'qc_approved') throw new WorkflowError('QC must approve and confirm packing first.');
   const actorId = await resolveActorId('receptionist');
   const nextStatus = order.delivery_method === 'pickup' ? 'ready_for_pickup' : 'ready_for_delivery';
   await repo.updateOrder(orderId, { status: nextStatus });
@@ -259,7 +252,15 @@ async function postMessage(orderId, senderRole, body) {
   return repo.addMessage(orderId, senderId, body.trim());
 }
 
+function assertFileAllowed(order, role, stageType, category) {
+  if (order.job_type === 'veneers' && order.stage_type === 'final' && !(role === 'qc' && order.status === 'qc_pending' && stageType === 'final' && category === 'qc_photo')) {
+    throw new WorkflowError('The approved veneer design is locked. Changes require a new job order. Only QC evidence may be added during inspection.');
+  }
+}
+
 async function recordFile(orderId, { stageType, category, url, publicId, version, signature, uploaderRole }) {
+  const order = await repo.getOrder(orderId);
+  assertFileAllowed(order, actors.getStore()?.role, stageType, category);
   const {validateFile} = require('../utils/filePolicy');
   validateFile(orderId, {url, publicId, version, signature, stageType, category});
   const uploadedBy = uploaderRole ? await resolveActorId(uploaderRole) : null;
@@ -267,7 +268,7 @@ async function recordFile(orderId, { stageType, category, url, publicId, version
 }
 
 module.exports = {
-  runAs, canAccess, requiresImplantFields, resolveActorId, getOrderDetail, listOrders, createOrder,
+  assertFileAllowed, runAs, canAccess, requiresImplantFields, resolveActorId, getOrderDetail, listOrders, createOrder,
   receptionReview, assignDesigner, designDone, productionDone, qcDecision, doctorDecision,
   confirmCompletion, markDelivered, markCompleted, postMessage, recordFile
 };
