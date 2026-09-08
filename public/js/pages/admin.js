@@ -11,7 +11,7 @@ import { adminAppointments, attachAppointmentsHandlers } from './admin/appointme
 import { adminInvoices, attachInvoicesHandlers } from './admin/invoices.js';
 import { adminExpenses, attachExpensesHandlers } from './admin/expenses.js';
 import { adminProducts, attachProductsHandlers } from './admin/products.js';
-import { adminOrders } from './admin/orders.js';
+import { adminOrders, attachOrderHandlers } from './admin/orders.js';
 import { adminTeam, attachTeamHandlers } from './admin/team.js';
 import { adminApplications } from './admin/applications.js';
 import { adminMessages } from './admin/messages.js';
@@ -38,6 +38,7 @@ const TAB_BODY = {
 };
 
 const TAB_HANDLERS = {
+  orders: attachOrderHandlers,
   enquiries: attachEnquiriesHandlers,
   appointments: attachAppointmentsHandlers,
   invoices: attachInvoicesHandlers,
@@ -51,16 +52,16 @@ const TAB_HANDLERS = {
 
 function isSignedIn() { return !!(DATA.auth && DATA.auth.admin); }
 
-export function renderAdmin() {
+export async function renderAdmin() {
   if (!isSignedIn()) {
-    return renderLoginGate({ role: 'admin', title: 'Accounts & Admin', subtitle: 'Sign in with the admin account to manage billing, expenses, team and settings.' });
+    return renderLoginGate({ role: 'admin', title: 'Administration', subtitle: 'Sign in with the admin account to manage billing, expenses, team and settings.' });
   }
   const tab = UI.adminTab;
   const badges = { enquiries: DATA.summary.newEnquiries, appointments: DATA.summary.newAppointments, applications: DATA.applications.length, messages: DATA.messages.length };
   const render = TAB_BODY[tab] || adminOverview;
-  const body = render();
+  const body = await render();
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1>Overview</h1>' +
+    '<div class="page-head reveal"><span class="eyebrow-accent">Administration</span><h1>Overview</h1>' +
       (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Sign out</button>' : '') + '</div>' +
     '<div class="dash-shell">' +
       '<nav class="dash-sidebar">' + ADMIN_TABS.map(t => {

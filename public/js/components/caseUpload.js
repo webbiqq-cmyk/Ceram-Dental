@@ -14,8 +14,8 @@ import { recordFile } from '../utils/ordersApi.js';
 // on Cloudinary and recorded against the order, so the caller can just
 // re-render its file list.
 export function uploadZoneHtml(id, label, hint) {
-  return '<div class="upload-zone" data-upload-zone="' + id + '">' +
-    '<input type="file" accept="image/*,application/pdf" data-upload-input="' + id + '" style="display:none;">' +
+  return '<div class="upload-zone" role="button" tabindex="0" aria-label="' + label + '" data-upload-zone="' + id + '">' +
+    '<input type="file" accept="image/*,application/pdf,.stl,.obj,.ply" data-upload-input="' + id + '" style="display:none;">' +
     '<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14"/></svg></div>' +
     '<div class="t">' + label + '</div><div class="d" data-upload-status="' + id + '">' + (hint || 'Click to choose a file') + '</div>' +
   '</div>';
@@ -29,14 +29,15 @@ export function attachUploadZone(root, id, { role, orderId, stageType, category 
   if (!zone) return;
   const input = zone.querySelector('[data-upload-input="' + id + '"]');
   const status = zone.querySelector('[data-upload-status="' + id + '"]');
-  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('click', e => { if(e.target!==input) input.click(); });
+  zone.addEventListener('keydown', e => { if(e.key==='Enter' || e.key===' ') { e.preventDefault(); input.click(); } });
   input.addEventListener('change', async () => {
     const file = input.files[0];
     if (!file) return;
     if(file.size>10*1024*1024){toast('Choose a file under 10 MB.');return;}
     status.textContent = 'Uploading…';
     try {
-      const { signature, params, cloudName, apiKey } = await api('/api/orders/uploads/sign?asRole=' + role, { method: 'POST', body: JSON.stringify({ folder: 'cases', orderId }) });
+      const { signature, params, cloudName, apiKey } = await api('/api/orders/uploads/sign?asRole=' + role, { method: 'POST', body: JSON.stringify({ folder: 'cases', orderId, stageType, category }) });
       const form = new FormData();
       form.append('file', file);
       form.append('api_key', apiKey);

@@ -48,7 +48,7 @@ async function detail(req, res) {
 
 async function receptionReview(req, res) {
   const b = req.body || {};
-  const result = await wf.receptionReview(req.params.id, { decision: b.decision, note: b.note, designerId: b.designerId });
+  const result = await wf.receptionReview(req.params.id, { decision: b.decision, note: b.note, designerId: b.designerId, technicianId: b.technicianId, paymentChecked: b.paymentChecked, detailsChecked: b.detailsChecked });
   ok(res, result);
 }
 
@@ -64,7 +64,7 @@ async function productionDone(req, res) {
 
 async function qcDecision(req, res) {
   const b = req.body || {};
-  const result = await wf.qcDecision(req.params.id, { decision: b.decision, note: b.note });
+  const result = await wf.qcDecision(req.params.id, { decision: b.decision, note: b.note, packed: b.packed });
   ok(res, result);
 }
 

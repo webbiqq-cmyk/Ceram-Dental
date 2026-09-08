@@ -59,7 +59,7 @@ async function listOrders(role,userId,{limit=200,offset=0}={}) {
   // Postgres-backed repo keeps the stricter per-assignee filter for real
   // logins; this mirrors the pre-hardening behaviour for the offline demo.
   const byStatus = {
-    designer: ['assigned_to_designer', 'in_design', 'design_done'],
+    designer: ['assigned_to_designer', 'in_design', 'design_done', 'doctor_approved', 'waiting_doctor_approval'],
     technician: ['assigned_to_technician', 'in_production', 'production_done'],
     qc: ['qc_pending', 'qc_rejected', 'qc_approved'],
     doctor_approval: ['waiting_doctor_approval']
@@ -68,6 +68,10 @@ async function listOrders(role,userId,{limit=200,offset=0}={}) {
   if (byStatus) rows = jobOrders.filter(o => byStatus.includes(o.status));
   else if (role === 'dentist') rows = jobOrders.filter(o => o.dentist_user_id === userId);
   else rows = jobOrders.slice(); // receptionist / admin / lab — unfiltered
+  if (require('../config/env').LOGIN_REQUIRED) {
+    const key = { dentist: 'dentist_user_id', designer: 'assigned_designer_id', technician: 'assigned_technician_id', qc: 'assigned_qc_id' }[role];
+    if (key) rows = rows.filter(o => o[key] === userId);
+  }
   return rows.slice(offset, offset + limit);
 }
 

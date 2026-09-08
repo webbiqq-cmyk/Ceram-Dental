@@ -1,3 +1,4 @@
+import { workspaceShell, attachWorkspaceHandlers } from './components/workspace.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from './components/authGate.js';
 import { esc } from './utils/format.js';
 // Hash-based router — maps '#/route' to a render function, re-fetches
@@ -69,7 +70,10 @@ export async function router() {
   try { html = role && !DATA.auth[role] ? renderLoginGate({role,title:'Staff sign in',subtitle:'Sign in with your assigned account to continue.'}) : await fn(); }
   catch(e){html='<div class="page"><p>'+esc(e.message || 'Unable to load this page.')+'</p><button class="btn" id="retryPage">Retry</button></div>';} 
   if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
-  app.innerHTML = html;
+  document.getElementById('orderDetail')?.close();
+  document.getElementById('orderDetail')?.remove();
+  app.innerHTML = PUBLIC_ROUTES[route] ? html : workspaceShell(route, html);
+  attachWorkspaceHandlers();
   document.body.classList.toggle('public-site', !!PUBLIC_ROUTES[route]);
   document.body.classList.toggle('workplace', !PUBLIC_ROUTES[route]);
   document.body.dataset.page = route || 'home';
@@ -78,11 +82,11 @@ export async function router() {
   if(role && !DATA.auth[role]) attachAuthGateHandlers();
   else attachPageHandlers(route);
   document.getElementById('retryPage')?.addEventListener('click',()=>router());
-  if(role && DATA.auth[role]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.append(button);}
+  if(role && DATA.auth[role]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.querySelector('.workspace-content').append(button);}
   if(!PUBLIC_ROUTES[route] && (DATA.hasMore || UI.workflowHasMore || UI.dataPage>1)){
     const nav=document.createElement('nav');nav.className='u';nav.setAttribute('aria-label','Record pages');
     nav.innerHTML='<button class="btn btn-ghost" data-page-step="-1" '+(UI.dataPage<=1?'disabled':'')+'>Previous</button> <span>Page '+UI.dataPage+'</span> <button class="btn btn-ghost" data-page-step="1" '+(!(DATA.hasMore || UI.workflowHasMore)?'disabled':'')+'>Next</button>';
-    nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{UI.dataPage+=Number(b.dataset.pageStep);router();}));app.append(nav);
+    nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{UI.dataPage+=Number(b.dataset.pageStep);router();}));(app.querySelector('.workspace-content') || app).append(nav);
   }
   initReveal();
   loadNotifications().then(updateNotifUI);
@@ -105,7 +109,10 @@ export async function repaintCurrent() {
   const html = await fn();
   if (myToken !== navToken) return;
   const app = document.getElementById('app');
-  app.innerHTML = html;
+  document.getElementById('orderDetail')?.close();
+  document.getElementById('orderDetail')?.remove();
+  app.innerHTML = PUBLIC_ROUTES[route] ? html : workspaceShell(route, html);
+  attachWorkspaceHandlers();
   attachPageHandlers(route);
   // No reveal-on-scroll choreography here — this is a repaint of content
   // that's already on screen (an optimistic update or its rollback), not

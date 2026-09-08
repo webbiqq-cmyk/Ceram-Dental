@@ -35,7 +35,7 @@ export const UI = {
   adminTab: 'overview',
   shopTab: 'patients',
   labStage: 'all',
-  portalTab: 'cases',
+  portalTab: 'overview',
   cartOpen: false,
   notifOpen: false,
   // Which case is expanded on each of the (preview) lab-role dashboards —

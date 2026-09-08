@@ -25,6 +25,8 @@ async function sign(req, res) {
     const order=await require('../db/jobOrders.store').getOrder(req.body?.orderId);
     if(!order || !require('../services/workflow.service').canAccess(order,req.user))return res.status(404).json({ok:false,error:'Order not found.'});
     if(req.body.folder!=='cases')return res.status(403).json({ok:false,error:'Use case uploads for this account.'});
+    try { require('../services/workflow.service').assertFileAllowed(order, req.user.role, req.body.stageType, req.body.category); }
+    catch (error) { return bad(res, error.message); }
     req.body.orderId=order.id;
   }
   const requested = req.body && req.body.folder;
