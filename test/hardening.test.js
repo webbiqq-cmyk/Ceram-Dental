@@ -66,13 +66,14 @@ test('security and business integrity',async t=>{
     const otherState=(await request('/state',{role:'other'})).body;
     assert.ok(!otherState.cases.some(c=>c.id===id));assert.ok(!otherState.invoices.some(i=>i.caseId===id));
   });
-  await t.test('checkout cannot oversell or accept formulas/invalid quantities',async()=>{
+  await t.test('checkout needs an account and cannot oversell or accept formulas/invalid quantities',async()=>{
     const id='stock-'+crypto.randomUUID();await records.insert('products',{id,name:'Test product',price:1.125,stock:1,active:true});
     const body={items:[{id,qty:1}],customer:{name:'Buyer'}};
-    const results=await Promise.all([request('/checkout',{body}),request('/checkout',{body})]);assert.deepEqual(results.map(r=>r.status).sort(),[200,400]);
+    assert.equal((await request('/checkout',{body})).status,401); // anonymous cannot place an order
+    const results=await Promise.all([request('/checkout',{role:'dentist',body}),request('/checkout',{role:'dentist',body})]);assert.deepEqual(results.map(r=>r.status).sort(),[200,400]);
     assert.equal((await records.get('products',id)).stock,0);assert.equal(results.find(r=>r.status===200).body.order.total,1.125);
-    assert.equal((await request('/checkout',{body:{...body,customer:{name:{formula:'1+1'}}}})).status,400);
-    assert.equal((await request('/checkout',{body:{...body,items:[{id,qty:1.5}]}})).status,400);
+    assert.equal((await request('/checkout',{role:'dentist',body:{...body,customer:{name:{formula:'1+1'}}}})).status,400);
+    assert.equal((await request('/checkout',{role:'dentist',body:{...body,items:[{id,qty:1.5}]}})).status,400);
   });
   await t.test('idempotency binds input and target; concurrent retries return one case',async()=>{
     const key=crypto.randomUUID(),body={service:'crowns'};

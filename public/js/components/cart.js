@@ -25,13 +25,17 @@ export function renderCartDrawer() {
     total += p.price * item.qty;
     return '<div class="cart-line"><div><div>' + p.name + '</div><div class="qty"><button data-cart-dec="' + p.id + '">−</button><span class="mono">' + item.qty + '</span><button data-cart-inc="' + p.id + '">+</button></div></div><div>' + money(p.price * item.qty) + '</div></div>';
   }).join('');
-  host.innerHTML = cartHead() +
-    '<div class="cart-body">' + lines + '</div>' +
-    '<div class="checkout-form">' +
-      field('full', 'text', 'co-name', 'Clinic / your name', true) +
-      field('full', 'text', 'co-address', 'Delivery address', false) +
-    '</div>' +
-    '<div class="cart-foot"><div class="total"><span>Total</span><span>' + money(total) + '</span></div><button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button></div>';
+  const canOrder = DATA.auth && (DATA.auth.dentist || DATA.auth.admin);
+  const foot = canOrder
+    ? '<div class="checkout-form">' +
+        field('full', 'text', 'co-name', 'Clinic / your name', true) +
+        field('full', 'text', 'co-address', 'Delivery address', false) +
+      '</div>' +
+      '<div class="cart-foot"><div class="total"><span>Total</span><span>' + money(total) + '</span></div><button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button></div>'
+    : '<div class="cart-foot"><div class="total"><span>Total</span><span>' + money(total) + '</span></div>' +
+      '<p class="empty-note" style="margin:0 0 12px;">Orders are placed on account — sign in or create a clinic account to check out.</p>' +
+      '<a class="btn btn-primary btn-block" href="#/portal" id="cartSignInBtn">Sign in to place your order</a></div>';
+  host.innerHTML = cartHead() + '<div class="cart-body">' + lines + '</div>' + foot;
 }
 
 export function openCart() {

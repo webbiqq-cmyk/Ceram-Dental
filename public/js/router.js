@@ -2,7 +2,7 @@ import { renderLoginGate, attachAuthGateHandlers, logout } from './components/au
 import { esc } from './utils/format.js';
 // Hash-based router — maps '#/route' to a render function, re-fetches
 // server state on every navigation, then wires up that page's interactions.
-import { DATA, UI, loadState, loadNotifications } from './state.js';
+import { DATA, UI, loadState, loadNotifications, updateCartBadge } from './state.js';
 import { initReveal } from './reveal.js';
 import { closeDrawer } from './components/drawer.js';
 import { closeCart } from './components/cart.js';
@@ -73,6 +73,7 @@ export async function router() {
   document.body.classList.toggle('public-site', !!PUBLIC_ROUTES[route]);
   document.body.classList.toggle('workplace', !PUBLIC_ROUTES[route]);
   document.body.dataset.page = route || 'home';
+  updateCartBadge(); // show/hide the cart button for this route
   window.scrollTo(0, 0);
   if(role && !DATA.auth[role]) attachAuthGateHandlers();
   else attachPageHandlers(route);

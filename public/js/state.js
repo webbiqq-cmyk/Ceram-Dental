@@ -54,8 +54,16 @@ export function saveCart() {
 export function updateCartBadge() {
   const n = UI.cart.reduce((s, i) => s + i.qty, 0);
   const el = document.getElementById('cartCount');
-  if (!el) return;
-  el.textContent = n; el.hidden = n === 0;
+  if (el) { el.textContent = n; el.hidden = n === 0; }
+  // The cart button is not part of the default nav — the site reads as a
+  // clinic first. It appears only on the shop page (so the cart is
+  // discoverable there) or once something's actually in the cart (so it
+  // follows the shopper to other pages until they check out or empty it).
+  const btn = document.getElementById('cartBtn');
+  if (btn) {
+    const onShop = (location.hash || '').replace(/^#\//, '').split(/[/?]/)[0] === 'shop';
+    btn.hidden = !(onShop || n > 0);
+  }
 }
 
 export async function loadState() {

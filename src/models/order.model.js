@@ -1,7 +1,7 @@
 const records = require('../db/records');
 const { nextId } = require('../utils/ids');
 records.register('orders');
-async function checkout(items, customer) {
+async function checkout(items, customer, user) {
   return records.transaction(async () => {
     if (!Array.isArray(items) || !items.length || items.length > 50) return null;
     const quantities = new Map();
@@ -20,7 +20,8 @@ async function checkout(items, customer) {
       lines.push({id:p.id,name:p.name,price:p.price,qty});
     }
     for (const {p,qty} of products) if (p.stock != null) { p.stock -= qty; await records.put('products',p); }
-    return records.insert('orders', {id:nextId('order','ORD-'),items:lines,total:total/1000,customer,status:'confirmed',createdAt:new Date()});
+    const orderCustomer = { name: customer.name || user?.name || '', address: customer.address || '' };
+    return records.insert('orders', {id:nextId('order','ORD-'),items:lines,total:total/1000,customer:orderCustomer,userId:user?.sub||null,ownerId:user?.sub||undefined,placedBy:user?.username||null,status:'confirmed',createdAt:new Date()});
   });
 }
 async function list(options) { return records.list('orders',options); }
