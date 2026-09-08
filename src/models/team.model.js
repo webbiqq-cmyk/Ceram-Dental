@@ -90,13 +90,49 @@ const team = [
   }
 ];
 
-async function addTeamMember({ name, role }) {
-  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '—';
-  const member = { id: nextId('team', 'STF-'), name, role: role || '', initials, nameAr: '', years: 0, credentials: [], photo: '' };
+// The client sends a canvas-downscaled avatar (~400px, JPEG), so it stays
+// small enough to ride along in /api/state without bloating it.
+const MAX_PHOTO = 92160; // ~90KB, under the 100kb JSON body ceiling
+const str = (v, n) => String(v == null ? '' : v).slice(0, n).trim();
+const years = v => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n >= 0 && n <= 70 ? n : 0; };
+const initialsFrom = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '—';
+function creds(v) { return Array.isArray(v) ? v.map(c => str(c, 220)).filter(Boolean).slice(0, 16) : null; }
+// Returns '' (clear), the string (ok), or undefined (rejected — bad shape/size).
+function photo(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (s.length > MAX_PHOTO) return undefined;
+  return (/^https?:\/\//i.test(s) || /^\/images\//.test(s) || /^data:image\/(png|jpe?g|webp);base64,/i.test(s)) ? s : undefined;
+}
+
+async function addTeamMember(fields = {}) {
+  const name = str(fields.name, 120);
+  if (!name) return null;
+  const p = photo(fields.photo);
+  const member = {
+    id: nextId('team', 'STF-'), name,
+    role: str(fields.role, 120), nameAr: str(fields.nameAr, 120), years: years(fields.years),
+    initials: str(fields.initials, 3).toUpperCase() || initialsFrom(name),
+    credentials: creds(fields.credentials) || [], photo: p === undefined ? '' : p
+  };
   await records.insert('team', member);
   return member;
 }
 
+async function updateTeamMember(id, fields = {}) {
+  return records.update('team', id, m => {
+    if ('name' in fields) { const n = str(fields.name, 120); if (n) m.name = n; }
+    if ('role' in fields) m.role = str(fields.role, 120);
+    if ('nameAr' in fields) m.nameAr = str(fields.nameAr, 120);
+    if ('years' in fields) m.years = years(fields.years);
+    if ('initials' in fields) m.initials = str(fields.initials, 3).toUpperCase() || initialsFrom(m.name);
+    if ('credentials' in fields) { const c = creds(fields.credentials); if (c) m.credentials = c; }
+    if ('photo' in fields) { const p = photo(fields.photo); if (p === undefined) return null; m.photo = p; }
+  });
+}
+
+async function removeTeamMember(id) { return records.remove('team', id); }
+
 records.register('team', team);
 async function list(options) { return records.list('team', options); }
-module.exports = { list, team, addTeamMember };
+module.exports = { list, team, addTeamMember, updateTeamMember, removeTeamMember };
