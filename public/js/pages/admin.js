@@ -57,20 +57,13 @@ export async function renderAdmin() {
     return renderLoginGate({ role: 'admin', title: 'Administration', subtitle: 'Sign in with the admin account to manage billing, expenses, team and settings.' });
   }
   const tab = UI.adminTab;
-  const badges = { enquiries: DATA.summary.newEnquiries, appointments: DATA.summary.newAppointments, applications: DATA.applications.length, messages: DATA.messages.length };
   const render = TAB_BODY[tab] || adminOverview;
+  const title = (ADMIN_TABS.find(t => t[0] === tab) || ['', 'Overview'])[1];
   const body = await render();
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Administration</span><h1>Overview</h1>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">Administration</span><h1>' + title + '</h1></div>' +
       (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Sign out</button>' : '') + '</div>' +
-    '<div class="dash-shell">' +
-      '<nav class="dash-sidebar">' + ADMIN_TABS.map(t => {
-        const count = badges[t[0]];
-        return '<button class="dash-nav-item' + (tab === t[0] ? ' active' : '') + '" data-admin-tab="' + t[0] + '">' + t[1] +
-          (count ? '<span class="badge">' + count + '</span>' : '') + '</button>';
-      }).join('') + '</nav>' +
-      '<div class="dash-main">' + body + '</div>' +
-    '</div>' +
+    body +
   '</div></div>';
 }
 

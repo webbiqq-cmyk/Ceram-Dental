@@ -36,3 +36,12 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .workplace [hidden]{display:none!important}.workplace [data-checklist-hint]{font-size:12px;color:#66596d;align-self:center}.administration-content{max-width:1400px;margin:auto}.workplace .upload-zone:focus-visible{outline:3px solid #8665a0;outline-offset:3px}
 .workplace .drawer:not(.open),.workplace .cart-drawer:not(.open){visibility:hidden;box-shadow:none}
 .workplace .nav-toggle{display:none}.workspace-list .link-btn{text-align:left;display:inline;padding:0;color:#2d1142}.workspace-dialog textarea{width:100%}.workspace-dialog [data-review-error]{color:#922d45}
+/* Administration — same shell as the lab/portal workspaces, its own nav */
+.workspace-sidebar nav button{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.workspace-sidebar nav button>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-badge{flex-shrink:0;background:#9a2944;color:#fff;font:700 10px/1 var(--font-mono,monospace);border-radius:100px;padding:3px 7px;min-width:18px;text-align:center}
+.workspace-sidebar nav [aria-current=page] .ws-badge{background:#2d1142}
+@media(min-width:1100px){.workspace-sidebar{overflow-y:auto}}
+.workplace .admin-stat-row{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:1200px){.workplace .admin-stat-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.workplace .admin-stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}}

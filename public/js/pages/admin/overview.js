@@ -20,11 +20,11 @@ function sparkline(trend) {
 export function adminOverview() {
   const s = DATA.summary;
   const tiles = [
-    ['Revenue collected', money(s.revenue), 'pos'], ['Outstanding', money(s.outstanding), s.overdue ? 'neg' : ''],
-    ['Expenses (this week)', money(s.totalExpenses), ''], ['Net', money(s.net), s.net >= 0 ? 'pos' : 'neg'],
+    ['Revenue collected', money(s.revenue), ''], ['Outstanding', money(s.outstanding), s.overdue ? 'tone-danger' : ''],
+    ['Expenses (this week)', money(s.totalExpenses), ''], ['Net', money(s.net), s.net >= 0 ? 'tone-gold' : 'tone-danger'],
     ['Active cases', s.activeCases, '']
   ];
-  return '<div class="stat-grid reveal">' + tiles.map(t => '<div class="stat-tile ' + t[2] + '"><div class="lbl">' + t[0] + '</div><div class="val">' + t[1] + '</div></div>').join('') + '</div>' +
+  return '<div class="stat-row admin-stat-row reveal">' + tiles.map(t => '<div class="stat-card ' + t[2] + '"><div class="n">' + t[1] + '</div><div class="l">' + t[0] + '</div></div>').join('') + '</div>' +
     '<div class="card reveal trend-card" style="margin-bottom:24px;">' +
       '<div class="trend-chart"><span class="eyebrow">Revenue, last 7 days</span><div style="margin-top:10px;">' + sparkline(s.trend) + '</div></div>' +
     '</div>' +
