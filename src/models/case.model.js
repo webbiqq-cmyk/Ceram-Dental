@@ -33,27 +33,9 @@ function mkCase(id, clinic, patient, service, stage, tech, shade, ageDays) {
   };
 }
 
-const cases = [
-  mkCase('CD-104', 'Dr. R. Haddad — Bright Smile Clinic', 'Patient #4471', 'veneers', 'reception', 'Malvin', 'A2', 1),
-  mkCase('CD-103', 'Dr. L. Farouk — City Dental', 'Patient #2290', 'crowns', 'qc', 'Rana', 'B1', 2),
-  mkCase('CD-101', 'Dr. N. Saleh — OrthoPlus', 'Patient #1187', 'bridges', 'designer', 'Malvin', 'A3', 3),
-  mkCase('CD-098', 'Dr. R. Haddad — Bright Smile Clinic', 'Patient #4392', 'dsd', 'doctor_approval', 'Omar', 'A1', 4),
-  mkCase('CD-096', 'Dr. A. Nasser — Pearl Dental', 'Patient #3350', 'implants', 'cadcam', 'Malvin', 'A3.5', 5),
-  mkCase('CD-093', 'Dr. L. Farouk — City Dental', 'Patient #2201', 'surgical_guide', 'layering', 'Rana', '—', 6),
-  mkCase('CD-090', 'Dr. N. Saleh — OrthoPlus', 'Patient #1090', 'veneers', 'qc_photo', 'Malvin', 'B2', 7),
-  mkCase('CD-085', 'Dr. A. Nasser — Pearl Dental', 'Patient #3299', 'crowns', 'ready', 'Omar', 'C2', 9)
-];
-cases.find(c => c.id === 'CD-098').revisions = 1;
-cases.find(c => c.id === 'CD-098').history = [
-  { stage: 'reception', at: daysAgo(4) },
-  { stage: 'qc', at: daysAgo(3.7) },
-  { stage: 'designer', at: daysAgo(3.3) },
-  { stage: 'doctor_approval', at: daysAgo(2.8), note: 'Sent for initial approval' },
-  { stage: 'designer', at: daysAgo(2.2), note: 'Modification requested — incisal length' },
-  { stage: 'doctor_approval', at: daysAgo(1.1), note: 'Re-submitted after revision' }
-];
-
-invoiceModel.seedFromCases(cases);
+// Starts empty — cases are created through the app (website submissions and
+// the dentist portal). mkCase/seedDesign above are kept only for tests.
+const cases = [];
 
 function s(v, max) { return String(v == null ? '' : v).slice(0, max || 60); }
 function normDesign(d) {
