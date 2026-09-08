@@ -52,6 +52,37 @@ Branch `workflow-redesign` still exists at `c37de80` — safe to delete once you
   persist a real session instead of the in-memory flag. Until then the
   gate is a UX flow, not a security boundary.
 
+### More landed after that
+
+- **Seed demo data cleared** — `cases`, `invoices`, `appointments`,
+  `enquiries`, `expenses` start empty (`src/models/*.model.js`). Team roster
+  and shop products kept (public catalog).
+- **Admin team management** — `admin/team.js` is a full editor now
+  (name, Arabic name, role, years, credentials, photo, remove).
+  `PATCH`/`DELETE /api/team/:id` added. Photos are canvas-downscaled to a
+  ~400px JPEG in the browser and clamped server-side under the 100kb body
+  limit, so no Cloudinary is needed for team avatars.
+- **Services page** — chapters zig-zag (image alternates sides); the
+  "Other Clinical Dental Procedures" block is a numbered list fed by
+  `CLINICAL_SERVICES` in `constants.js` — add entries there.
+- **Static caching + module preload** (`src/app.js`, `index.html`) —
+  index.html `no-cache`, JS/CSS 1h, images 7d; the always-loaded module
+  chain is preloaded.
+- **Temporary workflow sticky note** — `components/workflowHint.js` +
+  `.wf-hint` CSS + one call in `router.js`. Per-route, dismissible.
+  Remove those three when onboarding is done.
+- Lab Studio role picker / station chrome tidied; station page-heads fixed.
+
+### Deferred — needs real lab accounts first
+
+The ask "everyone working a role can set their profile photo" is parked:
+lab roles have no real per-user account yet (the `#/studio` sign-in is a
+visual stub — see item under "Fixes already applied" / the lab sign-in
+TODO). Once sign-in is wired to `DATA.users` / `authGate.js`, add a
+"My profile" photo control reusing `admin/team.js`'s `downscaleImage()` and
+a `PATCH /api/accounts/:id` (or self-serve `/api/me`). The dentist portal
+already has a read-only `profile` tab to build on.
+
 ## What is still open
 
 ### 1. Postgres — migration 009 + persistence (blocked: no DB configured)
