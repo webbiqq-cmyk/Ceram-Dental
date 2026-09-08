@@ -4,9 +4,9 @@ const jobModel = require('./job.model');
 
 const applications = [];
 
-async function addApplication({ jobId, name, email, phone, note }) {
+async function addApplication({ jobId, name, nationality, email, phone, note }) {
   const job = jobModel.jobs.find(j => j.id === jobId);
-  const app = { id: nextId('application', 'APP-'), jobId, jobTitle: job ? job.title : jobId, name, email, phone: phone || '', note: note || '', createdAt: new Date() };
+  const app = { id: nextId('application', 'APP-'), jobId, jobTitle: job ? job.title : jobId, name, nationality: nationality || '', email, phone: phone || '', note: note || '', createdAt: new Date() };
   await records.insert('applications', app);
   return app;
 }
