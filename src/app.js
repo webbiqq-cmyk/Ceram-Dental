@@ -39,7 +39,16 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Static assets: index.html always revalidated so app/route changes land
+// immediately; JS/CSS get an hour (ETag still catches edits sooner);
+// images a week. Cuts repeat-visit and under-load traffic to near zero.
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  maxAge: '1h',
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
+    else if (/[\\/]images[\\/]/.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=604800');
+  }
+}));
 app.get('/api/ready', (req,res) => require('./db/readiness').ready().then(()=>res.json({ok:true})).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})));
 app.use('/api', apiLimiter, (req,res,next) => require('./db/readiness').ready().then(()=>next()).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})), (req, res, next) => {
   res.set('Cache-Control', 'private, no-store');

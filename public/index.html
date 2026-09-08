@@ -27,6 +27,15 @@
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/silk.css">
 <link rel="stylesheet" href="/css/workspace.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://res.cloudinary.com">
+<!-- Warm the always-loaded module chain in parallel instead of discovering
+     it one file at a time after app.js parses. -->
+<link rel="modulepreload" href="/js/app.js">
+<link rel="modulepreload" href="/js/router.js">
+<link rel="modulepreload" href="/js/state.js">
+<link rel="modulepreload" href="/js/handlers.js">
+<link rel="modulepreload" href="/js/utils/format.js">
 
 <!-- Structured data for local/medical-business SEO (Google Business panel,
      rich results) — snapshot of the seeded business info. If this changes
