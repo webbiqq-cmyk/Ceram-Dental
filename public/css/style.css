@@ -79,15 +79,32 @@ img{max-width:100%; display:block;}
 [hidden]{display:none !important;}
 @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
 
-/* ---- reveal-on-scroll ---- */
+/* ---- reveal-on-scroll ----
+   Cheap by design: only opacity + translate (composited), no blur, no
+   per-letter splitting. A block fades up, then its own text settles in a
+   beat later via transition-delay — no JS timers, just CSS. */
 .reveal{
-  opacity:0; transform:translate3d(0,22px,0);
-  transition:opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1);
-  transition-delay:calc(var(--i,0) * 55ms);
+  opacity:0; transform:translate3d(0,20px,0);
+  transition:opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1);
+  transition-delay:calc(var(--i,0) * 60ms);
 }
 .reveal.visible{opacity:1; transform:none;}
-.reveal-group.visible > *{transition-delay:calc(var(--i,0) * 55ms);}
-@media (prefers-reduced-motion: reduce){ .reveal{opacity:1 !important; transform:none !important;} }
+.reveal-group.visible > *{transition-delay:calc(var(--i,0) * 60ms);}
+
+/* text inside a revealed block: a soft upward settle, gently staggered */
+.reveal :is(h1,h2,h3,.eyebrow,.eyebrow-accent,p,.btn){
+  opacity:0; transform:translate3d(0,9px,0);
+  transition:opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1);
+}
+.reveal.visible :is(h1,h2,h3,.eyebrow,.eyebrow-accent,p,.btn){opacity:1; transform:none;}
+.reveal.visible :is(.eyebrow,.eyebrow-accent){transition-delay:.06s;}
+.reveal.visible :is(h1,h2,h3){transition-delay:.13s;}
+.reveal.visible p{transition-delay:.2s;}
+.reveal.visible .btn{transition-delay:.28s;}
+
+@media (prefers-reduced-motion: reduce){
+  .reveal, .reveal :is(h1,h2,h3,.eyebrow,.eyebrow-accent,p,.btn){opacity:1 !important; transform:none !important;}
+}
 
 /* ---- top chrome ---- */
 /* solid bar, no backdrop-filter — a live blur over the hero image is the main scroll-jank source */
@@ -132,6 +149,10 @@ img{max-width:100%; display:block;}
 @media (max-width: 900px){
   .main-nav{display:none;}
   .nav-toggle{display:block;}
+  /* main-nav was the flex spacer; without it, group the actions with the
+     hamburger on the right instead of leaving them stranded by the logo. */
+  .topbar-actions{margin-left:auto;}
+  .nav-toggle{margin-left:0;}
 }
 
 /* ---- buttons ---- */
@@ -306,8 +327,10 @@ img{max-width:100%; display:block;}
 .signature-panel .eyebrow-accent{color:var(--gold); position:relative;}
 .signature-panel h2{font-size:46px; line-height:1.08; margin-top:18px; color:var(--violet); position:relative;}
 .signature-panel p{font-size:15px; line-height:1.8; color:var(--ink-soft); max-width:48ch; margin-top:22px; position:relative;}
-.signature-points{display:flex; flex-wrap:wrap; gap:8px; margin-top:26px; position:relative;}
-.signature-points span{border-bottom:1px solid var(--line); color:var(--violet); padding:7px 0; font-size:12px;}
+.signature-cta{position:relative; margin-top:28px; align-self:flex-start; transition:transform .2s ease, border-color .18s ease, color .18s ease, box-shadow .2s ease;}
+.signature-cta:hover{transform:translateY(-2px); box-shadow:0 10px 24px -14px color-mix(in srgb, var(--violet) 55%, transparent);}
+.signature-cta .btn-arw{display:inline-block; transition:transform .2s ease;}
+.signature-cta:hover .btn-arw{transform:translateX(4px);}
 .signature-media{display:grid; grid-template-columns:1fr 1fr; gap:14px; min-height:430px;}
 .signature-media img{width:100%; height:100%; object-fit:cover; border:1px solid var(--line); box-shadow:var(--shadow);}
 .signature-media img:first-child{margin-top:42px; height:calc(100% - 42px);}
@@ -379,12 +402,26 @@ img{max-width:100%; display:block;}
 .shop-strip h3{font-size:17px; margin-top:6px;}
 .shop-strip p{margin-top:6px; color:var(--ink-soft); font-size:13.5px; max-width:60ch;}
 
+/* ---- home: doctors teaser ---- */
+.team-teaser{display:flex; align-items:center; gap:28px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:2px; padding:26px 32px; box-shadow:var(--shadow);}
+.team-teaser-media{display:flex; flex-shrink:0;}
+.team-teaser .tt-avatar{width:56px; height:56px; border-radius:50%; overflow:hidden; border:2px solid var(--surface); background:var(--violet-soft); margin-left:-14px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--violet);}
+.team-teaser .tt-avatar:first-child{margin-left:0;}
+.team-teaser .tt-avatar img{width:100%; height:100%; object-fit:cover;}
+.team-teaser .tt-avatar-more{background:var(--violet); color:#fff; font-size:12.5px;}
+.team-teaser-copy{flex:1 1 260px;}
+.team-teaser-copy h2{font-size:20px; margin-top:4px;}
+.team-teaser-copy p{margin-top:8px; color:var(--ink-soft); font-size:13.5px; max-width:56ch;}
+.team-teaser > .btn{flex-shrink:0;}
+
 @media (max-width: 860px){
   .signature-section, .experience-band{grid-template-columns:1fr;}
   .signature-media{min-height:320px;}
   .home-split{grid-template-columns:1fr; gap:30px;}
   .split-badge{left:16px; bottom:16px;}
   .steps-grid{grid-template-columns:1fr 1fr;}
+  .team-teaser{gap:18px;}
+  .team-teaser > .btn{width:100%;}
 }
 @media (max-width: 560px){
   .steps-grid{grid-template-columns:1fr;}

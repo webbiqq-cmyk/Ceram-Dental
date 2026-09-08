@@ -2,9 +2,21 @@
 // an interval from app.js (not just on navigation) so a badge appears even
 // if someone sits on one page for a while. In-app only for now (no OS
 // push) — see README for why, and what real push would need.
-import { DATA, api, loadNotifications } from '../state.js';
+import { DATA, UI, api, loadNotifications } from '../state.js';
 import { esc } from '../utils/format.js';
 import { toast } from '../toast.js';
+
+// The bell is not a permanent nav fixture. Like the cart button, it only
+// earns a place in the topbar where notifications are actually actionable:
+// inside the staff portals, or once someone is shopping / mid-order. A
+// visitor reading the clinic pages gets a plain, uncluttered nav.
+const PUBLIC_ROUTES = { '': 1, about: 1, services: 1, shop: 1, contact: 1, careers: 1, 'new-case': 1 };
+function notifRelevant() {
+  const route = (location.hash || '#/').slice(2).split(/[/?]/)[0];
+  const inPortal = !PUBLIC_ROUTES[route];
+  const shopping = route === 'shop' || UI.cart.length > 0;
+  return inPortal || shopping;
+}
 
 function timeAgo(d) {
   const s = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 1000));
@@ -36,8 +48,9 @@ export function updateNotifUI() {
   const dropdown = document.getElementById('notifDropdown');
   if (!wrap || !badge || !dropdown) return;
   const signedIntoAny = DATA.auth.admin || DATA.auth.dentist || DATA.auth.lab;
-  wrap.hidden = !signedIntoAny;
-  if (!signedIntoAny) return;
+  const show = signedIntoAny && notifRelevant();
+  wrap.hidden = !show;
+  if (!show) { dropdown.classList.remove('open'); return; }
   badge.textContent = DATA.unreadNotifications;
   badge.hidden = DATA.unreadNotifications === 0;
   dropdown.innerHTML = renderDropdown();

@@ -1,7 +1,7 @@
 /* Shared Ceram editorial language; operational screens retain compact type. */
 :root{--porcelain:#f8f6f3;--surface-sunken:#f0ecef;--line:#e4dce4;--ink-soft:#696170;--silk-ease:cubic-bezier(.22,1,.36,1);}
 body{background:var(--porcelain);}
-.reveal{transform:translate3d(0,12px,0);transition-duration:.45s;transition-delay:calc(var(--i,0) * 30ms);}
+.reveal{transform:translate3d(0,16px,0);transition-duration:.6s;transition-delay:calc(var(--i,0) * 55ms);}
 .chapter-heading p,.visit-location,.editorial-intro p{max-width:42ch;}
 .chapter-image figcaption{padding-top:16px;}
 .signature-media img,.visit-image img,.chapter-image img,.about-craft img{border-radius:3px;}
@@ -81,11 +81,18 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .editorial-booking{text-align:center;padding:85px 20px;}
 .editorial-booking h2{font-size:46px;line-height:1.1;color:var(--violet);margin:18px 0 28px;}
 .about-hero>img{object-position:center 40%;}
-.team-section{padding:76px 0;}
-.clinic-story{display:grid;grid-template-columns:.85fr 1.15fr;gap:70px;padding:64px 0;border-bottom:1px solid var(--line);}
-.clinic-story h2{font-size:42px;line-height:1.08;color:var(--violet);}
-.clinic-story p{font-size:14px;line-height:1.9;color:var(--ink-soft);max-width:52ch;}
-.clinic-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;}
+.team-section{padding:64px 0 76px;}
+/* merged philosophy + about-the-clinic block, with room to grow */
+.about-manifesto{padding:78px 0 64px;border-bottom:1px solid var(--line);}
+.about-manifesto .am-lead{max-width:760px;}
+.about-manifesto .am-lead h2{font-size:46px;line-height:1.08;color:var(--violet);margin-top:14px;}
+.about-manifesto .am-lead p{font-size:14px;line-height:1.9;color:var(--ink-soft);max-width:60ch;margin-top:20px;}
+.am-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;margin-top:52px;align-items:stretch;}
+.am-block h3{font:500 27px/1.15 var(--font-accent);color:var(--violet);margin-top:12px;}
+.am-block p{font-size:14px;line-height:1.9;color:var(--ink-soft);max-width:52ch;margin-top:14px;}
+.am-placeholder{border:1px dashed #cabfce;border-radius:4px;padding:30px;min-height:220px;display:flex;flex-direction:column;justify-content:center;gap:12px;background:linear-gradient(180deg,rgba(255,255,255,.45),transparent);}
+.am-placeholder p{color:#8c7496;margin-top:0;max-width:36ch;}
+.clinic-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:52px;}
 .clinic-facts span{border-top:1px solid var(--line);padding-top:12px;font-size:11px;color:var(--ink-soft);line-height:1.5;}
 .clinic-facts b{display:block;color:var(--gold);font:500 18px var(--font-accent);margin-bottom:5px;}
 .team-heading{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:end;margin-bottom:38px;}
@@ -93,24 +100,41 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .team-heading p{font-size:14px;color:var(--ink-soft);line-height:1.8;}
 .doctor-search-label{display:block;font-size:12px;margin:22px 0 7px;}
 #doctorSearch{width:100%;padding:13px 16px;background:transparent;border:1px solid #cabfce;border-radius:3px;font-family:inherit;}
-.about-page .doctor-grid{gap:40px 32px;}
-.about-page .doctor-profile{min-width:0;border-top:1px solid var(--line);}
-.about-page .doctor-card{height:100%;display:grid;grid-template-columns:115px minmax(0,1fr);gap:22px;padding:26px 0;background:transparent;border:0;border-radius:0;box-shadow:none;}
-.about-page .doctor-card:hover{transform:translateY(-2px);box-shadow:none;}
-.about-page .doc-photo{width:115px;height:115px;border-radius:3px;}
+/* compact clinician grid — full credentials live in the doctor modal */
+.about-page .team-heading{grid-template-columns:1.25fr .75fr;gap:44px;margin-bottom:30px;}
+.about-page .team-heading h2{font-size:31px;margin-top:8px;}
+.about-page .team-heading p{font-size:13px;}
+.about-page .doctor-search-label{margin:14px 0 6px;}
+.about-page #doctorSearch{padding:10px 14px;}
+.about-page .doctor-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:30px 22px;margin-top:6px;}
+.about-page .doctor-profile{min-width:0;border-top:0;}
+.about-page .doctor-card{height:100%;display:flex;flex-direction:column;grid-template-columns:none;gap:11px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;}
+.about-page .doctor-card:hover{transform:translateY(-3px);box-shadow:none;}
+/* base .doc-photo uses `flex:0 0 104px`, which in this column-flex card
+   pins the photo HEIGHT to 104px — override so the square ratio drives it */
+.about-page .doc-photo{flex:none;align-self:stretch;width:100%;height:auto;aspect-ratio:1/1;border-radius:3px;}
+.about-page .doc-body{display:flex;flex-direction:column;align-items:flex-start;}
 .about-page .doc-head{display:block;}
-.about-page .doc-head h3{font:500 27px/1.1 var(--font-accent);}
-.about-page .doc-ar{display:block;font-size:13px;margin-top:6px;}
-.about-page .doc-role{font-size:12px;margin-top:12px;line-height:1.6;}
+.about-page .doc-head h3{font:500 17px/1.2 var(--font-accent);}
+.about-page .doc-ar{display:block;font-size:11.5px;margin-top:2px;color:var(--ink-soft);}
+.about-page .doc-role{margin-top:7px;padding:0;background:none;border-radius:0;font-size:11px;font-weight:600;color:var(--violet);line-height:1.45;}
+.about-page .doc-credentials-label,.about-page .doc-creds{display:none;}
 .doc-credentials-label{display:block;font-size:10px;text-transform:uppercase;color:var(--gold);margin-top:20px;}
-.about-page .doc-creds{font-size:12px;line-height:1.8;margin-top:8px;padding-left:15px;}
-.about-page .doc-years{background:transparent;padding:0;margin-top:8px;}
-.about-page .doc-more{display:inline-block;border-bottom:1px solid var(--line);padding-bottom:5px;}
+.about-page .doc-years{background:transparent;padding:0;margin-top:3px;font-size:11px;}
+.about-page .doc-more{display:inline-block;margin-top:9px;font-size:10.5px;letter-spacing:.02em;border-bottom:1px solid var(--line);padding-bottom:3px;}
 .about-craft{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:44px 0 76px;border-bottom:1px solid var(--line);}
 .about-craft img{width:100%;height:clamp(300px,34vw,500px);aspect-ratio:4/3;object-fit:cover;object-position:center;border-radius:3px;}
 .about-craft h2{font-size:46px;line-height:1.08;margin:18px 0;color:var(--violet);}
 .about-craft p{font-size:14px;line-height:1.85;color:var(--ink-soft);margin-bottom:24px;}
-.about-page .editorial-booking{background:linear-gradient(135deg,#f1e8f0,#fff);margin-top:0;}
+/* closing invitation — an unboxed editorial sign-off that settles into the
+   page rather than a floating tinted panel */
+.about-page .editorial-booking{background:none;margin-top:0;padding:100px 20px 110px;}
+.about-close .eyebrow{color:var(--gold);}
+.about-close .eyebrow::before{content:"";display:block;width:44px;height:2px;margin:0 auto 22px;background:var(--gold);opacity:.65;}
+.about-close h2{font-size:42px;margin:14px auto 20px;max-width:20ch;}
+.about-close p{font-size:14px;line-height:1.85;color:var(--ink-soft);max-width:46ch;margin:0 auto 32px;}
+.about-close-actions{display:flex;align-items:center;justify-content:center;gap:26px;flex-wrap:wrap;}
+.about-close-actions .text-link{font-size:13px;}
 .craft-values{display:flex;flex-wrap:wrap;gap:16px;margin-top:34px;font-size:11px;color:var(--gold);}
 .craft-values span{padding-top:12px;border-top:1px solid var(--line);}
 .visit-story{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin:90px 0;padding:0;}
@@ -215,10 +239,11 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
 @media(max-width:980px){
   .editorial-intro{grid-template-columns:1fr 1.5fr;gap:25px;}.editorial-intro>.eyebrow{grid-column:1/-1;}
   .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story{gap:32px;}
-  .clinic-story{gap:32px;}
+  .am-grid{gap:34px;}
+  .about-page .team-heading{grid-template-columns:1fr;gap:16px;align-items:start;}
   .chapter-heading h2{font-size:40px;}
-  .about-page .doctor-card{grid-template-columns:85px minmax(0,1fr);gap:15px;}
-  .about-page .doc-photo{width:96px;height:96px;}
+  .about-page .doctor-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 18px;}
+  .about-page .doctor-card{gap:10px;}
   .footer-grid{grid-template-columns:1fr 1fr;gap:32px 50px;}
   .patient-stories{gap:35px;}
 }
@@ -234,8 +259,15 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .chapter-nav{grid-template-columns:1fr 1fr;gap:12px 20px;padding:18px 0;}
   .chapter-nav button{font-size:11px;}
   .editorial-intro{padding:54px 0;grid-template-columns:1fr;gap:20px;}
-  .editorial-intro h2,.chapter-heading h2,.team-heading h2,.about-craft h2,.visit-details h2{font-size:38px;}
-  .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories,.clinic-story{grid-template-columns:1fr;}
+  .editorial-intro h2,.chapter-heading h2,.about-craft h2,.visit-details h2{font-size:38px;}
+  .about-manifesto{padding:54px 0;}
+  .about-manifesto .am-lead h2{font-size:34px;}
+  .am-grid{grid-template-columns:1fr;gap:24px;margin-top:36px;}
+  .am-placeholder{min-height:150px;}
+  .clinic-facts{margin-top:36px;}
+  .team-heading h2{font-size:38px;}
+  .about-page .team-heading h2{font-size:28px;}
+  .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories{grid-template-columns:1fr;}
   .treatment-chapter{padding:50px 0;}
   .chapter-heading{gap:15px;}
   .chapter-image img{height:280px;aspect-ratio:4/3;}
@@ -246,11 +278,12 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .clinical-chapter h2,.referral-section h2{font-size:36px;}
   .editorial-booking{padding:58px 0;}
   .editorial-booking h2{font-size:38px;}
+  .about-page .editorial-booking{padding:66px 0 74px;}
+  .about-close h2{font-size:32px;}
+  .about-close-actions{gap:16px;}
   .team-section{padding:50px 0;}
-  .clinic-story{padding:50px 0;}
   .clinic-facts{grid-template-columns:1fr;gap:12px;}
-  .about-page .doctor-card{grid-template-columns:95px minmax(0,1fr);}
-  .about-page .doc-photo{width:104px;height:104px;}
+  .about-page .doctor-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 18px;}
   .about-craft{padding:20px 0 55px;}
   .about-craft img{height:300px;aspect-ratio:4/3;}
   .visit-story{margin:56px 0;gap:32px;}

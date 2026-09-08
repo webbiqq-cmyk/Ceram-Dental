@@ -1,7 +1,6 @@
 import { DATA } from '../state.js';
 import { esc, money } from '../utils/format.js';
 import { SERVICE_GROUPS, SVC } from '../constants.js';
-import { doctorTile } from '../components/doctor.js';
 import { footer } from '../components/footer.js';
 import { visitSection } from '../components/visit.js';
 import { reviewSection } from '../components/reviews.js';
@@ -60,9 +59,7 @@ export function renderHome() {
         '<span class="eyebrow-accent">The Ceram Difference</span>' +
         '<h2 class="serif">A boutique patient experience with lab-grade control.</h2>' +
         '<p>Most dental clinics separate the appointment from the restoration. Ceram keeps the planning, smile design, ceramic work and quality control close, so the final result can be adjusted with real clinical context.</p>' +
-        '<div class="signature-points">' +
-          '<span>Digital smile planning</span><span>On-site milling</span><span>Hand-finished ceramics</span><span>Doctor-led approvals</span>' +
-        '</div>' +
+        '<a class="btn btn-ghost btn-sm signature-cta" href="#/about">About Ceram Dental <span class="btn-arw">&rarr;</span></a>' +
       '</div>' +
       '<div class="signature-media">' +
         editorialImage('home-care') +
@@ -96,11 +93,19 @@ export function renderHome() {
       '</div>' +
     '</section>' +
 
-    '<section class="section">' +
-      '<div class="section-head luxe-head"><div><span class="eyebrow">Our doctors</span><h2 class="serif">Meet the clinicians</h2>' +
-        '</div>' +
-        '<a class="btn btn-ghost btn-sm" href="#/about">Meet the team →</a></div>' +
-      '<div class="doctor-tiles">' + DATA.team.map((d, i) => doctorTile(d, i)).join('') + '</div>' +
+    '<section class="section team-teaser reveal">' +
+      '<div class="team-teaser-media">' +
+        DATA.team.slice(0, 5).map(d => (d.photo
+          ? '<span class="tt-avatar"><img src="' + esc(d.photo) + '" alt="' + esc(d.name) + '" loading="lazy" decoding="async"></span>'
+          : '<span class="tt-avatar tt-avatar-fallback">' + esc(d.initials || '') + '</span>')).join('') +
+        (DATA.team.length > 5 ? '<span class="tt-avatar tt-avatar-more">+' + (DATA.team.length - 5) + '</span>' : '') +
+      '</div>' +
+      '<div class="team-teaser-copy">' +
+        '<span class="eyebrow">Our doctors</span>' +
+        '<h2 class="serif">Care led by specialists</h2>' +
+        '<p>' + DATA.team.length + ' doctors and specialists across surgery, cosmetic care, orthodontics, periodontics and restorative dentistry.</p>' +
+      '</div>' +
+      '<a class="btn btn-gold" href="#/about">Meet the doctors →</a>' +
     '</section>' +
 
     visitSection() + reviewSection() +
