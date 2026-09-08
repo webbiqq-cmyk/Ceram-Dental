@@ -128,7 +128,7 @@ export async function renderPortal() {
     '<div class="welcome-card reveal">' +
       '<div><span class="eyebrow-accent">Dentist portal</span><h1 style="font-size:1.9rem;">Welcome back.</h1>' +
         '<p class="lede" style="margin-top:8px;">Track every case you\'ve sent us, and approve mockups the moment they\'re ready.</p>' +
-        '<button class="btn btn-ghost btn-sm" id="portalLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
+        (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="portalLogoutBtn" style="margin-top:14px;">Sign out</button>' : '') + '</div>' +
       '<a class="btn btn-gold btn-lg" href="#/new-case">+ Start a Case</a>' +
       '<a class="btn btn-ghost" href="#/new-order">Create job order</a>' +
     '</div>' +

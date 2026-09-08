@@ -60,8 +60,8 @@ export function renderAdmin() {
   const render = TAB_BODY[tab] || adminOverview;
   const body = render();
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1 style="font-size:1.9rem;">Run the business, not just the pipeline.</h1>' +
-      '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
+    '<div class="page-head reveal"><span class="eyebrow-accent">Accounts &amp; Admin</span><h1>Overview</h1>' +
+      (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Sign out</button>' : '') + '</div>' +
     '<div class="dash-shell">' +
       '<nav class="dash-sidebar">' + ADMIN_TABS.map(t => {
         const count = badges[t[0]];

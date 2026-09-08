@@ -21,7 +21,7 @@ async function getState(req,res) {
   const dentist=sessions[roles.indexOf('dentist')];
   const page=Math.max(1,Math.min(100000,Math.floor(Number(req.query.page)||1)));
   const limit=200, offset=(page-1)*limit;
-  const payload={jobs,auth,cloudinaryConfigured,settings:await settingsModel.get(),summary:{},users:[],activeSessions:[],activity:[],page,hasMore:false};
+  const payload={jobs,auth,loginRequired:LOGIN_REQUIRED,cloudinaryConfigured,settings:await settingsModel.get(),summary:{},users:[],activeSessions:[],activity:[],page,hasMore:false};
   await Promise.all(['team','products','cases','invoices','expenses','applications','messages','orders','appointments','enquiries'].map(async name=>{
     const isPublic=['team','products'].includes(name);
     const canRead=isPublic || auth.admin || (name==='cases' && (auth.dentist || auth.lab)) || (name==='invoices' && auth.dentist);
