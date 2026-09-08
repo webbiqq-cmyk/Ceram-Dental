@@ -97,7 +97,7 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .about-page .doctor-profile{min-width:0;border-top:1px solid var(--line);}
 .about-page .doctor-card{height:100%;display:grid;grid-template-columns:115px minmax(0,1fr);gap:22px;padding:26px 0;background:transparent;border:0;border-radius:0;box-shadow:none;}
 .about-page .doctor-card:hover{transform:translateY(-2px);box-shadow:none;}
-.about-page .doc-photo{width:115px;height:150px;border-radius:3px;}
+.about-page .doc-photo{width:115px;height:115px;border-radius:3px;}
 .about-page .doc-head{display:block;}
 .about-page .doc-head h3{font:500 27px/1.1 var(--font-accent);}
 .about-page .doc-ar{display:block;font-size:13px;margin-top:6px;}
@@ -145,7 +145,10 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .public-site .doctor-tiles{grid-template-columns:repeat(4,minmax(0,1fr));}
 .public-site .doctor-tile,.public-site .dt-photo{min-width:0;}
 .public-site .dt-photo{aspect-ratio:auto;}
-.public-site .dt-photo{width:100%;height:220px;border-radius:3px;margin-bottom:16px;}
+/* Portraits are pre-cropped square with the hairline at a fixed height, so a
+   1:1 frame keeps every head at the same level with no object-fit cropping. */
+.public-site .dt-photo{width:100%;aspect-ratio:1/1;height:auto;border-radius:3px;margin-bottom:16px;}
+.public-site .dt-photo img,.about-page .doc-photo img{object-fit:cover;object-position:center top;}
 .public-site .dt-name{font-family:var(--font-accent);font-size:25px;line-height:1.12;}
 .public-site .dt-role{font-size:12px;line-height:1.6;}
 .public-site .dt-years{background:transparent;padding:0;}
@@ -170,10 +173,21 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .site-footer .footer-grid>div:not(.footer-identity):not(.footer-contact){padding-top:4px;}
 .footer-bottom{font-size:10px;line-height:1.8;padding:22px 0;border-color:#55435c;}
 .footer-bottom>span:last-child{max-width:52ch;}
-.workplace .page-head{padding-bottom:20px;border-bottom:1px solid var(--line);}
-.workplace .page-head h1{font-size:30px;}
-.workplace .card,.workplace .stat-card,.workplace .table-wrap,.workplace .lane,.workplace .kcard,.workplace .review-panel{border-radius:6px;box-shadow:0 2px 8px #29163805;}
+/* Staff/workplace routes: strip the marketing chrome so the portals read as
+   an operational tool, not a page of the public site. */
+.workplace .main-nav,.workplace #cartBtn,.workplace #waFab{display:none;}
+.workplace .topbar{border-bottom:1px solid var(--line);}
+.workplace .topbar-actions{margin-left:auto;}
+.workplace .page{padding-top:8px;}
+.workplace .page-head{position:relative;padding-bottom:20px;border-bottom:1px solid var(--line);}
+.workplace .page-head h1{font-size:26px !important;font-family:var(--font-accent);font-weight:500;}
+.workplace .page-head .eyebrow-accent{color:var(--gold);}
+/* Sign-out sits quietly top-right of the header instead of floating under it. */
+.workplace .page-head [id$="LogoutBtn"]{position:absolute;top:0;right:0;margin:0 !important;}
+.workplace .card,.workplace .stat-card,.workplace .stat-tile,.workplace .table-wrap,.workplace .lane,.workplace .kcard,.workplace .review-panel{border-radius:6px;box-shadow:0 2px 8px #29163805;}
 .workplace .stat-card .n{color:var(--violet);}
+.workplace .stat-tile .val{font-size:20px;white-space:nowrap;}
+.workplace .stat-tile .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .workplace input,.workplace select,.workplace textarea{border-radius:4px;}
 .workplace .dash-tab{border-radius:0;}
 .workplace .reveal{transition-duration:.3s;transition-delay:0s;transform:translateY(5px);}
@@ -204,7 +218,7 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .clinic-story{gap:32px;}
   .chapter-heading h2{font-size:40px;}
   .about-page .doctor-card{grid-template-columns:85px minmax(0,1fr);gap:15px;}
-  .about-page .doc-photo{width:85px;height:115px;}
+  .about-page .doc-photo{width:96px;height:96px;}
   .footer-grid{grid-template-columns:1fr 1fr;gap:32px 50px;}
   .patient-stories{gap:35px;}
 }
@@ -236,7 +250,7 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .clinic-story{padding:50px 0;}
   .clinic-facts{grid-template-columns:1fr;gap:12px;}
   .about-page .doctor-card{grid-template-columns:95px minmax(0,1fr);}
-  .about-page .doc-photo{width:95px;height:125px;}
+  .about-page .doc-photo{width:104px;height:104px;}
   .about-craft{padding:20px 0 55px;}
   .about-craft img{height:300px;aspect-ratio:4/3;}
   .visit-story{margin:56px 0;gap:32px;}
@@ -255,11 +269,22 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .footer-bottom{gap:12px;}
   .public-site .section{margin-top:52px;margin-bottom:52px;}
   .public-site .section-head h2{font-size:36px;}
-  .public-site .dt-photo{height:190px;}
+  .public-site .dt-photo{height:auto;}
   .public-site .doctor-tiles{grid-template-columns:repeat(2,minmax(0,1fr));}
   .public-site .dt-name{font-size:23px;}
   .public-site .cta-banner h2{font-size:36px;}
   .contact-scene,.collection-banner{height:230px;}
   body[data-page="contact"] .grid-2{gap:38px;}
+  /* Staff routes on a phone */
+  .workplace .nav-toggle{display:none;}          /* main-nav is hidden here, so the hamburger is dead weight */
+  .workplace .page{padding-top:4px;}
+  .workplace .page-head{padding-top:6px;}
+  .workplace .page-head h1{font-size:22px !important;}
+  .workplace .page-head [id$="LogoutBtn"]{position:static;margin-top:14px !important;width:100%;}
+  .workplace .dash-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .workplace .dash-tabs .dash-tab{flex:0 0 auto;white-space:nowrap;}
+  .workplace .table-wrap{-webkit-overflow-scrolling:touch;}
+  .workplace .cases-table{min-width:560px;}     /* let it scroll inside .table-wrap instead of crushing columns */
+  .workplace .board,.workplace .lab-pipeline{scroll-snap-type:x proximity;}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto;}.reveal{transform:none;}.stories-track{scroll-behavior:auto;}}
