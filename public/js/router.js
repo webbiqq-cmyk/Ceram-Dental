@@ -1,4 +1,5 @@
 import { workspaceShell, attachWorkspaceHandlers } from './components/workspace.js';
+import { showWorkflowHint, removeWorkflowHint } from './components/workflowHint.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from './components/authGate.js';
 import { esc } from './utils/format.js';
 // Hash-based router — maps '#/route' to a render function, re-fetches
@@ -94,6 +95,8 @@ export async function router() {
     nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{UI.dataPage+=Number(b.dataset.pageStep);router();}));(app.querySelector('.workspace-content') || app).append(nav);
   }
   initReveal();
+  const hintOk = !PUBLIC_ROUTES[route] && !(role && !DATA.auth[role]) && !(route === 'studio' && UI.labRole !== 'manager');
+  if (hintOk) showWorkflowHint(route); else removeWorkflowHint();
   loadNotifications().then(updateNotifUI);
   requestAnimationFrame(() => { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });
 }

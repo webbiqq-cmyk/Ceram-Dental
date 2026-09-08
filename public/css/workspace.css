@@ -78,3 +78,15 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .team-editor .field.full{grid-column:1/-1}
 .team-editor-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
 .team-remove{color:#9a2944;margin-left:auto;background:none;border:0;cursor:pointer;font:inherit;font-size:12.5px;text-decoration:underline}
+/* TEMPORARY — workflow guide sticky note (see components/workflowHint.js) */
+.wf-hint{position:fixed;right:20px;bottom:20px;width:300px;max-width:calc(100vw - 40px);z-index:35;background:#fdf6da;border:1px solid #ecdca0;border-radius:4px;box-shadow:0 10px 30px -10px rgba(45,17,66,.35);transform:rotate(-1deg);font-size:12.5px;color:#5b4a20;padding:14px 16px 12px;line-height:1.55}
+.wf-hint-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.wf-hint-head span{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:10px;color:#9a7b2a}
+.wf-hint-x{background:none;border:0;font-size:18px;line-height:1;color:#9a7b2a;cursor:pointer;padding:0 2px}
+.wf-hint ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.wf-hint li{padding-left:2px}
+.wf-hint-foot{margin:10px 0 0;font-size:10.5px;color:#a58a4d;font-style:italic}
+.wf-hint-mini{position:fixed;right:20px;bottom:20px;width:auto;padding:0;transform:none;background:none;border:0;box-shadow:none;z-index:35}
+.wf-hint-mini button{width:36px;height:36px;border-radius:50%;border:1px solid #ecdca0;background:#fdf6da;color:#9a7b2a;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 6px 18px -6px rgba(45,17,66,.3)}
+@media(max-width:720px){.wf-hint{right:12px;bottom:12px;width:calc(100vw - 24px);transform:none}}
+@media(prefers-reduced-motion:reduce){.wf-hint{transform:none}}
