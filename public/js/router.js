@@ -50,12 +50,17 @@ export function currentRoute() { return (location.hash || '#/').slice(2); }
 let navToken = 0;
 let previousRoute;
 const workflowRoles={reception:'receptionist',designer:'designer',technician:'technician',qc:'qc','new-order':'dentist'};
+// Lab stations are reachable only after picking a role and signing in on
+// #/studio. A station role sees only its own station; the manager sees all.
+const LAB_STATIONS={reception:1,designer:1,technician:1,qc:1};
 
 export async function router() {
   const myToken = ++navToken;
   UI.workflowHasMore=false;
   closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal();
   const route = currentRoute();
+  if(LAB_STATIONS[route] && UI.labRole!=='manager' && UI.labRole!==route){ location.hash = UI.labRole ? '#/'+UI.labRole : '#/studio'; return; }
+  if(route==='studio' && UI.labRole && UI.labRole!=='manager'){ location.hash = '#/'+UI.labRole; return; }
   if(previousRoute!==route){UI.dataPage=1;previousRoute=route;}
   const role=workflowRoles[route];
   const fn = routes[route] || renderHome;
@@ -82,7 +87,7 @@ export async function router() {
   if(role && !DATA.auth[role]) attachAuthGateHandlers();
   else attachPageHandlers(route);
   document.getElementById('retryPage')?.addEventListener('click',()=>router());
-  if(role && DATA.auth[role]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.querySelector('.workspace-content').append(button);}
+  if(role && DATA.auth[role] && !LAB_STATIONS[route]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.querySelector('.workspace-content').append(button);}
   if(!PUBLIC_ROUTES[route] && (DATA.hasMore || UI.workflowHasMore || UI.dataPage>1)){
     const nav=document.createElement('nav');nav.className='u';nav.setAttribute('aria-label','Record pages');
     nav.innerHTML='<button class="btn btn-ghost" data-page-step="-1" '+(UI.dataPage<=1?'disabled':'')+'>Previous</button> <span>Page '+UI.dataPage+'</span> <button class="btn btn-ghost" data-page-step="1" '+(!(DATA.hasMore || UI.workflowHasMore)?'disabled':'')+'>Next</button>';

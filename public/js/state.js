@@ -35,6 +35,10 @@ export const UI = {
   adminTab: 'overview',
   shopTab: 'patients',
   labStage: 'all',
+  // Lab Studio access: pick a role, then "sign in" (visual only for now).
+  // '' = not signed in, 'manager' = lab overview, or a station route name.
+  labRole: '',
+  labRolePick: '',
   portalTab: 'overview',
   cartOpen: false,
   notifOpen: false,

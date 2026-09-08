@@ -18,10 +18,21 @@ test('Administration is its own surface, not nested in the lab workspace',()=>{
   // and the lab studio shell never links back into admin
   assert.doesNotMatch(workspaceShell('studio','Lab overview'),/#\/admin|>Administration</);
 });
-test('a staff workspace lists only the signed-in role navigation',()=>{
-  const {workspaceShell}=load('public/js/components/workspace.js',['workspaceShell'],{DATA:{auth:{technician:true}},UI:{}});
-  const html=workspaceShell('technician','Queue');
-  assert.match(html,/#\/technician/);assert.doesNotMatch(html,/#\/reception|#\/designer|#\/qc|#\/admin/);
+test('a lab station shows only its own nav; the manager sees every station',()=>{
+  const {workspaceShell}=load('public/js/components/workspace.js',['workspaceShell'],{DATA:{auth:{}},UI:{labRole:'technician'}});
+  const station=workspaceShell('technician','Queue');
+  const stationNav=station.slice(station.indexOf('<nav'),station.indexOf('</nav>'));
+  assert.match(stationNav,/href="#\/technician"/);
+  assert.doesNotMatch(stationNav,/#\/reception|#\/designer|#\/qc|#\/admin/);
+  assert.match(station,/data-lab-signout/);
+
+  const {workspaceShell:shell2}=load('public/js/components/workspace.js',['workspaceShell'],{DATA:{auth:{}},UI:{labRole:'manager'}});
+  const mgr=shell2('studio','Board');
+  ['reception','designer','technician','qc'].forEach(p=>assert.match(mgr,new RegExp('href="#/'+p+'"')));
+
+  // the pre-sign-in picker renders without a sidebar
+  const {workspaceShell:shell3}=load('public/js/components/workspace.js',['workspaceShell'],{DATA:{auth:{}},UI:{labRole:''}});
+  assert.doesNotMatch(shell3('studio','Pick a role'),/workspace-sidebar/);
 });
 test('one-step timeline omits doctor review and final veneer starts at handoff',()=>{
   const {stageTrackerHtml}=load('public/js/utils/workflow.js',['stageTrackerHtml']);

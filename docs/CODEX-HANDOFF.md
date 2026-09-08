@@ -32,6 +32,26 @@ Branch `workflow-redesign` still exists at `c37de80` — safe to delete once you
    face, where a lone `0` reads as `O`. Switched to the display sans with
    `font-variant-numeric: tabular-nums`.
 
+### Also landed after the merge
+
+- **Administration adopted the shared workspace shell** — its own light
+  sidebar (CERAM / Administration + the 14 admin tabs with badges),
+  workspace page-head, workspace-styled overview stat cards. Still a
+  separate surface with its own nav; only the layout is shared.
+  (`workspace.js`, `admin.js`, `admin/overview.js`, `workspace.css`.)
+- **Lab Studio role picker + sign-in gate.** `#/studio` now shows a
+  role picker (Lab manager / Reception / Design / Production / Quality
+  inspection) → a per-role sign-in screen → the station. New UI state
+  `UI.labRole` (`''` | `'manager'` | a station route) and `UI.labRolePick`.
+  `router.js` gates the four station routes: no `labRole` → `#/studio`;
+  a station role only opens its own station; the manager opens all.
+  **The sign-in is visual only — the submit handler accepts anything**
+  (`studio.js` `#labSigninForm`). TODO for you: check the username/password
+  against the admin-managed staff accounts (there is already an
+  `accounts` admin tab + `authGate.js`); on success set `UI.labRole` and
+  persist a real session instead of the in-memory flag. Until then the
+  gate is a UX flow, not a security boundary.
+
 ## What is still open
 
 ### 1. Postgres — migration 009 + persistence (blocked: no DB configured)
