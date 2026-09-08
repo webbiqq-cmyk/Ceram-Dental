@@ -49,6 +49,11 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .chapter-heading h2{font-size:46px;line-height:1.08;color:var(--violet);margin:9px 0 12px;}
 .chapter-heading p{color:var(--ink-soft);font-size:14px;}
 .chapter-content{display:grid;grid-template-columns:minmax(260px,.72fr) minmax(0,1.28fr);gap:58px;align-items:start;max-width:1020px;margin:0 auto;}
+/* zigzag: even chapters put the image on the right */
+.chapter-flipped .chapter-content{grid-template-columns:minmax(0,1.28fr) minmax(260px,.72fr);}
+.chapter-flipped .chapter-image{order:2;}
+.chapter-flipped .treatment-list{order:1;}
+.chapter-flipped .chapter-heading{margin-left:auto;flex-direction:row-reverse;text-align:right;}
 .chapter-image{max-width:430px;}
 .chapter-image img{width:100%;height:clamp(260px,30vw,410px);aspect-ratio:4/3;object-fit:cover;object-position:center;border-radius:3px;}
 .chapter-image figcaption{padding-top:12px;font-family:var(--font-accent);font-style:italic;font-size:21px;color:var(--ink-soft);}
@@ -72,9 +77,12 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 .clinical-chapter h2,.referral-section h2{font-size:42px;line-height:1.1;color:var(--violet);margin:14px 0 22px;}
 .clinical-chapter p{font-size:14px;line-height:1.85;color:var(--ink-soft);max-width:45ch;}
 .clinical-chapter .text-link{margin-top:24px;}
-.clinical-row{padding:22px 0;border-bottom:1px solid var(--line);}
-.clinical-row:first-child{padding-top:0;}
-.clinical-row h3{font:500 27px/1.2 var(--font-accent);margin-bottom:10px;}
+.clinical-note{font-size:12px !important;color:#8c7496 !important;margin-top:14px !important;}
+.clinical-list{border-top:1px solid var(--line);}
+.clinical-row{display:grid;grid-template-columns:38px 1fr;gap:16px;padding:22px 0;border-bottom:1px solid var(--line);align-items:start;}
+.clinical-row .clinical-index{font:500 14px/1 var(--font-accent);color:#b8945f;padding-top:6px;}
+.clinical-row h3{font:500 24px/1.2 var(--font-accent);margin-bottom:8px;}
+.clinical-row p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;}
 .guide-detail{padding:18px 0;border-bottom:1px solid var(--line);}
 .guide-detail summary{font-weight:600;font-size:14px;cursor:pointer;}
 .guide-detail p,.guide-detail ul{font-size:13px;color:var(--ink-soft);line-height:1.8;margin-top:12px;}
@@ -268,6 +276,9 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .team-heading h2{font-size:38px;}
   .about-page .team-heading h2{font-size:28px;}
   .chapter-content,.clinical-chapter,.referral-section,.team-heading,.about-craft,.visit-story,.patient-stories{grid-template-columns:1fr;}
+  .chapter-flipped .chapter-content{grid-template-columns:1fr;}
+  .chapter-flipped .chapter-image,.chapter-flipped .treatment-list{order:0;}
+  .chapter-flipped .chapter-heading{margin-left:0;flex-direction:row;text-align:left;}
   .treatment-chapter{padding:50px 0;}
   .chapter-heading{gap:15px;}
   .chapter-image img{height:280px;aspect-ratio:4/3;}
