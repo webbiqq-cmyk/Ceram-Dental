@@ -104,28 +104,29 @@ const LAB_ROLES = [
 ];
 
 function rolePicker() {
-  return '<div class="page"><div class="u">' +
+  return '<div class="page role-pick-page"><div class="u">' +
     '<div class="page-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>Choose your station</h1>' +
       '<p class="lede">Pick your role, then sign in with the credentials your administrator assigned you.</p></div></div>' +
     '<div class="role-pick-grid">' + LAB_ROLES.map((r,i) =>
-      '<button type="button" class="role-pick" data-lab-role-pick="' + r[0] + '">' +
-        '<span class="rp-num">0' + (i+1) + '</span><span class="rp-body"><b>' + esc(r[2]) + '</b><small>' + esc(r[3]) + '</small></span>' +
-        '<span class="rp-go">&rarr;</span></button>').join('') +
+      '<button type="button" class="role-pick' + (r[0] === 'manager' ? ' role-pick-wide' : '') + '" data-lab-role-pick="' + r[0] + '">' +
+        '<span class="rp-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+        '<span class="rp-body"><b>' + esc(r[2]) + '</b><small>' + esc(r[3]) + '</small></span>' +
+        '<span class="rp-go" aria-hidden="true">&rarr;</span></button>').join('') +
     '</div></div></div>';
 }
 
 function signinScreen(r) {
-  return '<div class="page"><div class="u">' +
-    '<div class="page-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>Sign in &middot; ' + esc(r[2]) + '</h1>' +
+  return '<div class="page lab-signin-page"><div class="u"><div class="lab-signin-inner">' +
+    '<div class="page-head lab-signin-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>Sign in &middot; ' + esc(r[2]) + '</h1>' +
       '<p class="lede">Use the credentials assigned to you in the admin panel.</p></div></div>' +
-    '<form class="wizard" id="labSigninForm" style="max-width:440px"><div class="wiz-body">' +
+    '<form class="wizard" id="labSigninForm"><div class="wiz-body">' +
       '<div class="field"><label for="labUser">Username</label><input id="labUser" autocomplete="username" placeholder="' + esc(r[0]) + '.ceram"></div>' +
       '<div class="field"><label for="labPass">Password</label><input id="labPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>' +
       '<p class="workspace-notice">Testing mode — any details are accepted. Sign-in will be checked against admin-managed accounts later.</p>' +
     '</div><div class="wiz-foot">' +
       '<button type="button" class="btn btn-ghost" data-lab-role-back>&larr; Choose a different role</button>' +
       '<button type="submit" class="btn btn-primary">Sign in</button></div></form>' +
-  '</div></div>';
+  '</div></div></div>';
 }
 
 async function managerOverview() {
@@ -134,7 +135,7 @@ async function managerOverview() {
   const pending = orders.filter(o => o.status === 'pending_reception_review').length;
   const production = orders.filter(o => ['in_design','doctor_approved','in_production'].includes(o.status)).length;
   const ready = orders.filter(o => ['qc_approved','ready_for_delivery','ready_for_pickup'].includes(o.status)).length;
-  return '<div class="page"><div class="u"><div class="page-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>A clear view of the work ahead.</h1><p class="lede">The whole board — open any station to work a case.</p></div><button class="btn btn-ghost btn-sm" data-lab-signout>Switch role</button></div>' +
+  return '<div class="page"><div class="u"><div class="page-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>A clear view of the work ahead.</h1><p class="lede">The whole board — open any station to work a case.</p></div></div>' +
     '<div class="stat-row"><div class="stat-card"><div class="n">' + pending + '</div><div class="l">Incoming orders</div></div><div class="stat-card"><div class="n">' + production + '</div><div class="l">Design &amp; production</div></div><div class="stat-card"><div class="n">' + orders.filter(o=>o.status==='qc_pending').length + '</div><div class="l">Quality review</div></div><div class="stat-card"><div class="n">' + ready + '</div><div class="l">Packing &amp; collection</div></div></div>' +
     '<div class="workspace-role-grid">' + LAB_ROLES.filter(r=>r[0]!=='manager').map((r,i)=>'<a class="workspace-role-card" href="#/' + r[1] + '"><span>0' + (i+1) + ' / STATION</span><h3>' + esc(r[2]) + '</h3><p>' + esc(r[3]) + '</p><span>Open station &rarr;</span></a>').join('') + '</div>' +
     '<section class="card" style="margin-top:26px"><h3>Recent case updates</h3>' + (UI.workflowHasMore || UI.dataPage>1?'<p class="lede">Showing cases on this page.</p>':'') + '<ul class="workspace-list">' + orders.slice(0,8).map(o=>'<li><button class="link-btn" data-studio-order="' + o.id + '">' + esc(o.order_number) + ' · ' + esc(jobTypeLabel(o.job_type)) + '</button><p>' + statusPill(o.status) + '</p></li>').join('') + (!orders.length?'<li>New job orders will appear here.</li>':'') + '</ul></section>' +
