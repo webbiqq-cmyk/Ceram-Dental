@@ -116,3 +116,10 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .wf-hint-mini button{width:36px;height:36px;border-radius:50%;border:1px solid #ecdca0;background:#fdf6da;color:#9a7b2a;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 6px 18px -6px rgba(45,17,66,.3)}
 @media(max-width:720px){.wf-hint{right:12px;bottom:12px;width:calc(100vw - 24px);transform:none}}
 @media(prefers-reduced-motion:reduce){.wf-hint{transform:none}}
+/* Private case image previews, shared by current cases and case history. */
+.case-file-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:14px}
+.case-file-card{min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px;overflow-wrap:anywhere}
+.case-file-card p{margin:10px 0 4px}.case-file-card small{color:var(--ink-soft)}
+.case-image-button{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#f8f6f9;color:var(--ink);cursor:pointer;font:inherit}
+.case-image-button img{width:100%;height:160px;object-fit:contain}.case-image-button span{display:block;padding:10px;font-size:13px}
+.case-image-viewer img{width:100%;max-height:70dvh;object-fit:contain}.case-image-viewer img[hidden]{display:none}

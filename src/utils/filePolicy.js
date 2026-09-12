@@ -17,6 +17,9 @@ function downloadLink(file){
   if(!isConfigured)return {...file,url:''};
   const match=/\/(image|raw)\/authenticated\/v[0-9]+\/.+\.([a-z0-9]+)$/i.exec(file.url || '');
   if(!match)return {...file,url:''};
-  return {...file,url:cloudinary.utils.private_download_url(file.public_id,match[2],{resource_type:match[1],type:'authenticated',expires_at:Math.floor(Date.now()/1000)+300,attachment:true})};
+  const options={resource_type:match[1],type:'authenticated',expires_at:Math.floor(Date.now()/1000)+300};
+  const previewable=match[1]==='image' && /^(jpe?g|png|webp|gif|avif)$/i.test(match[2]);
+  return {...file,url:cloudinary.utils.private_download_url(file.public_id,match[2],{...options,attachment:true}),
+    preview_url:previewable ? cloudinary.utils.private_download_url(file.public_id,match[2],{...options,attachment:false}) : ''};
 }
 module.exports={validateFile,downloadLink};

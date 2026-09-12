@@ -1,5 +1,5 @@
 import { esc, fmtDateTime } from '../utils/format.js';
-import { getOrder, listMessages, postMessage, doctorDecision } from '../utils/ordersApi.js';
+import { getOrder, listFiles, listMessages, postMessage, doctorDecision } from '../utils/ordersApi.js';
 import { stageTrackerHtml, statusPill, jobTypeLabel, STATUS_META } from '../utils/workflow.js';
 import { uploadZoneHtml, attachUploadZone } from './caseUpload.js';
 import { toast } from '../toast.js';
@@ -9,6 +9,44 @@ import { renderCurrent } from '../router.js';
 function messagesHtml(messages) {
   return messages.map(m => '<div class="chat-msg"><div class="chat-bubble">' + esc(m.body) + '</div><div class="chat-meta">' + esc(m.sender_name || 'Lab') + ' · ' + fmtDateTime(m.created_at) + '</div></div>').join('') || '<p>No messages yet. Start a conversation with your case team.</p>';
 }
+function caseFilesHtml(files) {
+  if (!files.length) return '<p class="lede">No files attached yet.</p>';
+  return '<div class="case-file-gallery">' + files.map(f => {
+    const label = (f.category || 'file').replace(/_/g, ' ') + ' · ' + (f.stage_type || '');
+    return '<article class="case-file-card">' + (f.preview_url ?
+      '<button type="button" class="case-image-button" data-preview-file="' + esc(f.id) + '" aria-label="View ' + esc(label) + '"><img src="' + esc(f.preview_url) + '" alt="' + esc(label) + '" loading="lazy" referrerpolicy="no-referrer"><span>View image</span></button>' : '') +
+      '<p>' + esc(label) + '</p><small>' + fmtDateTime(f.created_at) + '</small>' +
+      (f.url ? '<a class="workspace-file" target="_blank" rel="noopener noreferrer" href="' + esc(f.url) + '">Download file ↗</a>' : '<p>File unavailable.</p>') + '</article>';
+  }).join('') + '</div>';
+}
+
+function attachImagePreviews(panel, role, id) {
+  panel.querySelectorAll('[data-preview-file]').forEach(button => button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      // Refresh the private link and recheck case access each time a viewer opens.
+      const {files} = await listFiles(role, id);
+      if (!panel.isConnected) return;
+      const file = files.find(f => String(f.id) === button.dataset.previewFile);
+      if (!file?.preview_url) throw new Error('Image preview unavailable. Reopen the case and try again.');
+      const viewer = document.createElement('dialog');
+      viewer.className = 'workspace-dialog case-image-viewer';
+      viewer.setAttribute('aria-label', 'Case image preview');
+      viewer.innerHTML = '<header><h2>Case image</h2><button class="btn btn-ghost" autofocus>Close image</button></header><p role="status">Loading image…</p><img alt="Uploaded case image" referrerpolicy="no-referrer">';
+      const img = viewer.querySelector('img'), status = viewer.querySelector('[role="status"]');
+      img.onload = () => { status.hidden = true; };
+      img.onerror = () => { img.hidden = true; status.textContent = 'Could not load this image. Close and reopen the viewer to retry.'; };
+      img.src = file.preview_url;
+      panel.append(viewer);
+      viewer.querySelector('button').onclick = () => viewer.close();
+      viewer.addEventListener('close', () => { viewer.remove(); if (button.isConnected) button.focus(); }, {once:true});
+      viewer.showModal();
+    } catch (error) { toast(error.message); }
+    finally { button.disabled = false; }
+  }));
+  panel.querySelectorAll('.case-image-button img').forEach(img => img.addEventListener('error', () => { img.hidden = true; }, {once:true}));
+}
+
 let detailRequest = 0;
 export async function showOrderDetail(role, id) {
   const request=++detailRequest, route=location.hash, trigger=document.activeElement;
@@ -27,7 +65,7 @@ export async function showOrderDetail(role, id) {
       stageTrackerHtml({jobType:o.job_type, stageType:o.stage_type, status:o.status}) +
       '<dl class="workspace-facts">' + fact('Patient reference',o.patient_ref) + fact('Shade',o.shade) + fact('Collection method',o.delivery_method === 'delivery' ? 'Delivery to clinic' : 'In-house pickup') + fact('Last updated',fmtDateTime(o.updated_at || o.created_at)) + (o.scan_body ? fact('Scan body',o.scan_body)+fact('Implant system',o.implant_system)+fact('Abutment',o.abutment_size) : '') + '</dl>' +
       '<div class="workspace-detail-grid"><div><section><h3>Instructions & notes</h3><p style="white-space:pre-wrap">' + esc(o.instructions || 'No additional instructions.') + '</p>' + (o.rejection_note ? '<div class="workspace-notice">' + esc(o.rejection_note) + '</div>' : '') + '</section>' +
-      '<section><h3>Case files & design</h3>' + (files.length ? files.map(f => '<a class="workspace-file" target="_blank" rel="noopener" href="' + esc(f.url) + '"><span>' + esc(f.category.replace(/_/g,' ')) + ' · ' + esc(f.stage_type) + '</span><span>Open ↗</span></a>').join('') : '<p class="lede">No files attached yet.</p>') +
+      '<section><h3>Case files & design</h3>' + caseFilesHtml(files) +
       (role === 'dentist' && !locked ? uploadZoneHtml('doctor-file', 'Attach case file', 'Images, PDF or scans under 10 MB') : '') + '</section>' +
       (review ? '<section class="workspace-notice"><h3>Review veneer demo / design</h3><p>Review the design files and discuss any questions with the lab before approving.</p><label for="demoReviewNote">Review notes (required for rejection)</label><textarea id="demoReviewNote" maxlength="4000" placeholder="Describe any changes needed…"></textarea><label class="workspace-check"><input id="demoLockAccepted" type="checkbox"> I understand that approval locks this design. Any later change requires a new job order.</label><div class="drawer-actions"><button class="btn btn-primary" data-demo-decision="approve">Approve demo / design</button><button class="btn btn-danger-ghost" data-demo-decision="reject">Request changes</button></div><p data-review-error role="alert"></p></section>' : '') +
       (role === 'dentist' && (locked || o.status === 'rejected_by_reception') ? '<section><h3>' + (locked ? 'Need a different result?' : 'Correct and resubmit') + '</h3><p class="lede">Create a new order using these details. Review and correct the information, then attach the required files again.</p><button class="btn btn-ghost" data-new-from-case>Create new order from these details</button></section>' : '') +
@@ -37,6 +75,7 @@ export async function showOrderDetail(role, id) {
     panel.addEventListener('close', () => { panel.remove(); if (trigger?.isConnected) trigger.focus(); }, {once:true});
     panel.querySelector('[data-detail-close]').onclick = () => panel.close();
     panel.showModal();
+    attachImagePreviews(panel, role, id);
     attachLiveChat(panel, role, id, '[data-order-chat]');
     panel.querySelector('form').onsubmit = async e => {
       e.preventDefault(); const input=panel.querySelector('form input'), button=panel.querySelector('form button'); button.disabled=true;

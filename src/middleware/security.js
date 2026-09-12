@@ -22,7 +22,7 @@ const helmetMiddleware = helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://api.cloudinary.com'],
       connectSrc: ["'self'", 'https://api.cloudinary.com', ...extraConnect],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
