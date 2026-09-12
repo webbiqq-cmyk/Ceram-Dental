@@ -72,8 +72,14 @@ export async function router() {
   const app = document.getElementById('app');
   app.style.opacity = 0;
   try { await loadState(); } catch (e) { /* server briefly unavailable — keep last known state */ }
+  // The lab manager doesn't need separate credentials per station — signed
+  // in as 'lab' is already enough to open reception/design/production/QC
+  // (the backend's requireAnyRole for every station action already allows
+  // 'lab' too — see orders.routes.js), matching what LAB_STATIONS's own
+  // redirect above already assumed ("the manager sees all").
+  const roleSatisfied = !role || DATA.auth[role] || (LAB_STATIONS[route] && DATA.auth.lab);
   let html;
-  try { html = role && !DATA.auth[role] ? renderLoginGate({role,title:'Staff sign in',subtitle:'Sign in with your assigned account to continue.'}) : await fn(); }
+  try { html = role && !roleSatisfied ? renderLoginGate({role,title:'Staff sign in',subtitle:'Sign in with your assigned account to continue.'}) : await fn(); }
   catch(e){html='<div class="page"><p>'+esc(e.message || 'Unable to load this page.')+'</p><button class="btn" id="retryPage">Retry</button></div>';} 
   if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
   document.getElementById('orderDetail')?.close();
@@ -85,17 +91,17 @@ export async function router() {
   document.body.dataset.page = route || 'home';
   updateCartBadge(); // show/hide the cart button for this route
   window.scrollTo(0, 0);
-  if(role && !DATA.auth[role]) attachAuthGateHandlers();
+  if(role && !roleSatisfied) attachAuthGateHandlers();
   else attachPageHandlers(route);
   document.getElementById('retryPage')?.addEventListener('click',()=>router());
-  if(role && DATA.auth[role] && !LAB_STATIONS[route]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.querySelector('.workspace-content').append(button);}
+  if(role && roleSatisfied && !LAB_STATIONS[route]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.querySelector('.workspace-content').append(button);}
   if(!PUBLIC_ROUTES[route] && (DATA.hasMore || UI.workflowHasMore || UI.dataPage>1)){
     const nav=document.createElement('nav');nav.className='u';nav.setAttribute('aria-label','Record pages');
     nav.innerHTML='<button class="btn btn-ghost" data-page-step="-1" '+(UI.dataPage<=1?'disabled':'')+'>Previous</button> <span>Page '+UI.dataPage+'</span> <button class="btn btn-ghost" data-page-step="1" '+(!(DATA.hasMore || UI.workflowHasMore)?'disabled':'')+'>Next</button>';
     nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{UI.dataPage+=Number(b.dataset.pageStep);router();}));(app.querySelector('.workspace-content') || app).append(nav);
   }
   initReveal();
-  const hintOk = !PUBLIC_ROUTES[route] && !(role && !DATA.auth[role]) && !(route === 'studio' && UI.labRole !== 'manager');
+  const hintOk = !PUBLIC_ROUTES[route] && !(role && !roleSatisfied) && !(route === 'studio' && UI.labRole !== 'manager');
   if (hintOk) showWorkflowHint(route); else removeWorkflowHint();
   loadNotifications().then(updateNotifUI);
   requestAnimationFrame(() => { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });

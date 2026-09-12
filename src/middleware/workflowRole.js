@@ -17,12 +17,20 @@
 // bypass: requireAnyRole([claimed]) still runs the real readSession
 // check for that role, so once REQUIRE_LOGIN=true a claimed role with no
 // matching cookie still correctly 401s.
+//
+// 'lab' and 'admin' are always kept alongside the claimed role (when the
+// route allows them) rather than narrowed away — the lab manager doesn't
+// hold separate reception/designer/technician/qc credentials, so a
+// dashboard's hardcoded asRole (e.g. reception.js always sends
+// 'receptionist') must not exclude a legitimate 'lab' session just
+// because it isn't the role that page assumes.
 const { requireAnyRole } = require('./auth');
 
 function requireWorkflowRole(allowedRoles) {
   return (req, res, next) => {
     const claimed = (req.query && req.query.asRole) || (req.body && req.body.asRole);
-    const roles = (claimed && allowedRoles.includes(claimed)) ? [claimed] : allowedRoles;
+    const overrides = ['lab', 'admin'].filter(r => allowedRoles.includes(r) && r !== claimed);
+    const roles = (claimed && allowedRoles.includes(claimed)) ? [claimed, ...overrides] : allowedRoles;
     return requireAnyRole(roles)(req, res, next);
   };
 }

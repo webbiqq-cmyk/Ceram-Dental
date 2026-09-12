@@ -23,14 +23,19 @@ router.get('/orders/:id', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.detail
 
 // Lab Studio actions — auth + role + clinic-IP allowlist (requireClinicIP is
 // a no-op until CLINIC_IP_ALLOWLIST is set). Dentist actions stay remote.
-router.post('/orders/:id/reception-review', requireAnyRole(['receptionist']), requireClinicIP, idempotent('orders:reception-review'), orders.receptionReview);
-router.post('/orders/:id/design-done', requireAnyRole(['designer']), requireClinicIP, idempotent('orders:design-done'), orders.designDone);
-router.post('/orders/:id/production-done', requireAnyRole(['technician']), requireClinicIP, idempotent('orders:production-done'), orders.productionDone);
-router.post('/orders/:id/qc-decision', requireAnyRole(['qc']), requireClinicIP, idempotent('orders:qc-decision'), orders.qcDecision);
+// 'lab' (the manager) is allowed on every station action, not just its own
+// reads — the manager doesn't hold separate reception/designer/technician/qc
+// credentials, and workflow.service.js's canAccess() already treats 'lab'
+// as able to touch any order; resolveActorId() still records the
+// manager's own real user id as whoever performed the action.
+router.post('/orders/:id/reception-review', requireAnyRole(['receptionist','lab']), requireClinicIP, idempotent('orders:reception-review'), orders.receptionReview);
+router.post('/orders/:id/design-done', requireAnyRole(['designer','lab']), requireClinicIP, idempotent('orders:design-done'), orders.designDone);
+router.post('/orders/:id/production-done', requireAnyRole(['technician','lab']), requireClinicIP, idempotent('orders:production-done'), orders.productionDone);
+router.post('/orders/:id/qc-decision', requireAnyRole(['qc','lab']), requireClinicIP, idempotent('orders:qc-decision'), orders.qcDecision);
 router.post('/orders/:id/doctor-decision', requireAnyRole(['dentist']), idempotent('orders:doctor-decision'), orders.doctorDecision);
-router.post('/orders/:id/confirm-completion', requireAnyRole(['receptionist']), requireClinicIP, idempotent('orders:confirm-completion'), orders.confirmCompletion);
-router.post('/orders/:id/mark-delivered', requireAnyRole(['receptionist']), requireClinicIP, idempotent('orders:mark-delivered'), orders.markDelivered);
-router.post('/orders/:id/mark-completed', requireAnyRole(['receptionist']), requireClinicIP, idempotent('orders:mark-completed'), orders.markCompleted);
+router.post('/orders/:id/confirm-completion', requireAnyRole(['receptionist','lab']), requireClinicIP, idempotent('orders:confirm-completion'), orders.confirmCompletion);
+router.post('/orders/:id/mark-delivered', requireAnyRole(['receptionist','lab']), requireClinicIP, idempotent('orders:mark-delivered'), orders.markDelivered);
+router.post('/orders/:id/mark-completed', requireAnyRole(['receptionist','lab']), requireClinicIP, idempotent('orders:mark-completed'), orders.markCompleted);
 
 router.get('/orders/:id/messages', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.listMessages);
 router.post('/orders/:id/messages', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.postMessage);
