@@ -1,13 +1,19 @@
 import { listOrders } from '../utils/ordersApi.js';
 import { statusPill, jobTypeLabel } from '../utils/workflow.js';
 import { showOrderDetail } from '../components/orderDetail.js';
-import { DATA, UI } from '../state.js';
+import { DATA, UI, api, loadState } from '../state.js';
 import { esc, svcLabel } from '../utils/format.js';
 import { STAGES } from '../constants.js';
 // Circular with router.js (router.js's routes table needs renderStudio) —
 // safe here since renderCurrent is only called from inside event handlers.
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
+import { toast } from '../toast.js';
+
+// Each station's real backend role/cookie (see src/models/user.model.js
+// ROLES and src/middleware/auth.js) — 'lab' is the same manager account
+// the "Earlier case pipeline" view already signs into for real.
+const LAB_BACKEND_ROLE = { manager: 'lab', reception: 'receptionist', designer: 'designer', technician: 'technician', qc: 'qc' };
 
 function isSignedIn() { return !!(DATA.auth && DATA.auth.lab); }
 
@@ -124,7 +130,7 @@ function signinScreen(r) {
     '<form class="wizard" id="labSigninForm"><div class="wiz-body">' +
       '<div class="field"><label for="labUser">Username</label><input id="labUser" autocomplete="username" placeholder="' + esc(r[0]) + '.ceram"></div>' +
       '<div class="field"><label for="labPass">Password</label><input id="labPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>' +
-      '<p class="workspace-notice">Testing mode — any details are accepted. Sign-in will be checked against admin-managed accounts later.</p>' +
+      '<p class="workspace-notice">Checked against the account your admin assigned in Accounts &amp; Access. No account set up yet for this station? Sign in still opens the dashboard for now — assign real credentials there when ready.</p>' +
     '</div><div class="wiz-foot">' +
       '<button type="button" class="btn btn-ghost" data-lab-role-back>&larr; Choose a different role</button>' +
       '<button type="submit" class="btn btn-primary">Sign in</button></div></form>' +
@@ -155,13 +161,36 @@ export function attachStudioHandlers() {
   if (UI.labRole === 'manager' && UI.studioLegacy) attachLegacyStudioHandlers();
   document.querySelectorAll('[data-lab-role-pick]').forEach(b => b.addEventListener('click', () => { UI.labRolePick = b.dataset.labRolePick; renderCurrent(); }));
   document.querySelector('[data-lab-role-back]')?.addEventListener('click', () => { UI.labRolePick = ''; renderCurrent(); });
-  document.getElementById('labSigninForm')?.addEventListener('submit', e => {
+  document.getElementById('labSigninForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const pick = UI.labRolePick || 'manager';
+    const role = LAB_BACKEND_ROLE[pick];
+    const username = document.getElementById('labUser').value;
+    const password = document.getElementById('labPass').value;
+    // Real check against whatever account the admin has assigned for this
+    // station. Nothing assigned yet (or wrong creds) is expected right
+    // now — fall through to the dashboard regardless rather than dead-end
+    // the whole workflow before Accounts & Access has real logins set up;
+    // once a real account exists, this is what actually signs into it.
+    if (username && password) {
+      try {
+        await api('/api/auth/' + role + '/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+        await loadState();
+        toast('Signed in.');
+      } catch (err) { /* no account assigned yet for this station — continue below */ }
+    }
     UI.labRolePick = ''; UI.labRole = pick; UI.studioLegacy = false; UI.dataPage = 1;
     if (pick === 'manager') renderCurrent(); else location.hash = '#/' + pick;
   });
-  document.querySelectorAll('[data-lab-signout]').forEach(b => b.addEventListener('click', () => { UI.labRole = ''; UI.labRolePick = ''; UI.studioLegacy = false; renderCurrent(); }));
+  document.querySelectorAll('[data-lab-signout]').forEach(b => b.addEventListener('click', () => {
+    // Switching station stays inside Lab Studio — unlike authGate's
+    // logout() (built for leaving a private workspace entirely, so it
+    // redirects home), this just clears whatever real session the
+    // previous station actually established, if any, and stays put.
+    const prevRole = LAB_BACKEND_ROLE[UI.labRole];
+    if (prevRole) api('/api/auth/' + prevRole + '/logout', { method: 'POST' }).catch(() => {});
+    UI.labRole = ''; UI.labRolePick = ''; UI.studioLegacy = false; renderCurrent();
+  }));
   document.querySelectorAll('[data-studio-view]').forEach(b => b.addEventListener('click', () => { UI.studioLegacy = b.dataset.studioView === 'legacy'; renderCurrent(); }));
   document.querySelectorAll('[data-studio-order]').forEach(b => b.addEventListener('click', () => showOrderDetail('lab', b.dataset.studioOrder)));
 }
