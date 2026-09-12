@@ -23,6 +23,23 @@ async function login(req, res) {
   const { username, password, remember } = req.body || {};
   if (!username || !password) return bad(res, 'Username/email and password are required.');
 
+  // First-run bootstrap: production ships with zero admin rows (nothing to
+  // seed a real one from — see migrations 001/005), so there's no account
+  // to "sign in" to yet. While that's true, this screen doubles as setup:
+  // whatever is typed here becomes the actual admin account, one time
+  // only. The instant one active admin exists, this never runs again and
+  // every later attempt is a normal, fully-checked login.
+  if (role === 'admin' && !(await userModel.hasActiveUser('admin'))) {
+    if (String(password).length < 10) return bad(res, 'Choose a password with at least 10 characters to set up the admin account.');
+    const passwordHash = await authService.hashPassword(password);
+    const user = await userModel.createUser({ username, passwordHash, role: 'admin', name: username });
+    if (!user) return bad(res, 'That username is taken — choose another to set up the admin account.');
+    const { token, maxAgeMs } = await authService.issueToken(user, { remember: !!remember });
+    res.cookie(COOKIE_NAMES.admin, token, Object.assign({}, COOKIE_OPTIONS, { maxAge: maxAgeMs }));
+    await activityLog.log({ userId: user.id, role, username: user.username, name: user.name, action: 'admin-bootstrap', detail: 'Initial admin account created via sign-in.', ip: req.clientIp });
+    return ok(res, { user: publicUser(user), remembered: !!remember, bootstrap: true });
+  }
+
   let user;
   try { user = await authService.login(username, password, role); }
   catch (err) { return bad(res, 'Unable to sign in right now. Please try again.'); }

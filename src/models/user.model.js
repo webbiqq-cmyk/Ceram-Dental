@@ -136,4 +136,11 @@ async function findByIdentifierAndRole(identifier, role) {
     ? (await findByEmailAndRole(identifier, role)) || (await findByUsernameAndRole(identifier, role))
     : (await findByUsernameAndRole(identifier, role)) || (await findByEmailAndRole(identifier, role));
 }
-module.exports={ROLES,ROLE_GROUPS,users,publicView,findById,findByUsernameAndRole,findByEmailAndRole,findByIdentifierAndRole,list,createUser,setPasswordHash,setActive,updateName,removeUser,recordLoginResult,isLocked};
+// Used to bootstrap the first admin account: production ships with zero
+// admin rows (nothing to seed one from), so the sign-in screen itself has
+// to double as setup until exactly one exists — see auth.controller.js.
+async function hasActiveUser(role) {
+  if (!db.pool) return users.some(u => u.role === role && u.active);
+  return !!(await db.query('SELECT 1 FROM users WHERE role=$1 AND active LIMIT 1', [role])).rows[0];
+}
+module.exports={ROLES,ROLE_GROUPS,users,publicView,findById,findByUsernameAndRole,findByEmailAndRole,findByIdentifierAndRole,hasActiveUser,list,createUser,setPasswordHash,setActive,updateName,removeUser,recordLoginResult,isLocked};

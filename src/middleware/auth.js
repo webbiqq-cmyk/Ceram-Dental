@@ -9,15 +9,15 @@ const COOKIE_NAMES = Object.fromEntries(ROLES.map(role=>[role,role+'_session']))
 // host-only, which is correct for single-domain / local.
 const COOKIE_OPTIONS = {httpOnly:true,secure:IS_PRODUCTION,sameSite:'strict',path:'/', ...(COOKIE_DOMAIN ? {domain:COOKIE_DOMAIN} : {})};
 function cookieNameFor(role) { return COOKIE_NAMES[role]; }
-// Dentist accounts are self-service — anyone can create one right from the
-// public site (dentistSignup.js -> registerDentist). That's a different
-// deal from the seeded admin/lab logins nobody outside the team can create,
-// so unlike the rest of the open demo, dentist never falls back to the
-// shared "no-auth" placeholder: a made-up identity there would just mask
-// the very feature (a real account, real profile data, a real sign-out)
-// self-registration exists for. Admin/lab keep the original LOGIN_REQUIRED
-// switch, untouched.
-const ALWAYS_AUTHENTICATE = new Set(['dentist','in_house_dentist']);
+// Every staff-facing role now requires a real session, not the shared
+// "no-auth" placeholder — dentist because self-registration means an
+// account always exists (dentistSignup.js -> registerDentist); admin and
+// every lab role because Accounts & Access is now the one place those
+// logins get created (admin bootstraps its own first account on first
+// sign-in — see auth.controller.js — everything else is admin-assigned).
+// 'dispatch' isn't reachable from any page yet, so it stays out of this
+// until it is — no point gating a role nothing can sign into.
+const ALWAYS_AUTHENTICATE = new Set(['dentist','in_house_dentist','admin','lab','lab_manager','receptionist','designer','technician','qc']);
 function requiresRealSession(role) { return LOGIN_REQUIRED || ALWAYS_AUTHENTICATE.has(role); }
 async function readSession(req,role) {
   if(!COOKIE_NAMES[role])return null;

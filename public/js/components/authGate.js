@@ -60,10 +60,11 @@ export function attachAuthGateHandlers() {
     const password = document.getElementById('ag-password').value;
     const remember = document.getElementById('ag-remember').checked;
     try {
-      await api('/api/auth/' + role + '/login', { method: 'POST', body: JSON.stringify({ username, password, remember }) });
+      const {bootstrap} = await api('/api/auth/' + role + '/login', { method: 'POST', body: JSON.stringify({ username, password, remember }) });
       await loadState();
       renderCurrent();
-      if (remember) toast('Signed in — this device will stay signed in for 30 days.');
+      if (bootstrap) toast('Admin account created — you\'re signed in.');
+      else if (remember) toast('Signed in — this device will stay signed in for 30 days.');
     } catch (err) { toast(err.message); }
   });
   signup?.addEventListener('submit', async e => {

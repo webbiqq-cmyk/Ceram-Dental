@@ -123,14 +123,15 @@ function rolePicker() {
     '</div></div></div>';
 }
 
-function signinScreen(r) {
+function signinScreen(r, error) {
   return '<div class="page lab-signin-page"><div class="u"><div class="lab-signin-inner">' +
     '<div class="page-head lab-signin-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>Sign in &middot; ' + esc(r[2]) + '</h1>' +
       '<p class="lede">Use the credentials assigned to you in the admin panel.</p></div></div>' +
     '<form class="wizard" id="labSigninForm"><div class="wiz-body">' +
       '<div class="field"><label for="labUser">Username</label><input id="labUser" autocomplete="username" placeholder="' + esc(r[0]) + '.ceram"></div>' +
       '<div class="field"><label for="labPass">Password</label><input id="labPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>' +
-      '<p class="workspace-notice">Checked against the account your admin assigned in Accounts &amp; Access. No account set up yet for this station? Sign in still opens the dashboard for now — assign real credentials there when ready.</p>' +
+      '<p class="workspace-notice">Checked against the account your admin assigned in Accounts &amp; Access &rarr; Team.</p>' +
+      (error ? '<p role="alert" style="color:var(--critical)">' + esc(error) + '</p>' : '') +
     '</div><div class="wiz-foot">' +
       '<button type="button" class="btn btn-ghost" data-lab-role-back>&larr; Choose a different role</button>' +
       '<button type="submit" class="btn btn-primary">Sign in</button></div></form>' +
@@ -151,16 +152,22 @@ async function managerOverview() {
   '</div></div>';
 }
 
+let labSigninError = '';
+
 export async function renderStudio() {
-  if (UI.labRole === 'manager') return managerOverview();
-  if (UI.labRolePick) return signinScreen(LAB_ROLES.find(r => r[0] === UI.labRolePick) || LAB_ROLES[0]);
+  if (UI.labRole === 'manager') {
+    if (!(DATA.auth && DATA.auth.lab)) return renderLoginGate({ role: 'lab', title: 'Lab Studio', subtitle: 'Sign in with the lab manager account assigned in Accounts & Access.' });
+    return managerOverview();
+  }
+  if (UI.labRolePick) return signinScreen(LAB_ROLES.find(r => r[0] === UI.labRolePick) || LAB_ROLES[0], labSigninError);
   return rolePicker();
 }
 
 export function attachStudioHandlers() {
+  if (UI.labRole === 'manager' && !(DATA.auth && DATA.auth.lab)) { attachAuthGateHandlers(); return; }
   if (UI.labRole === 'manager' && UI.studioLegacy) attachLegacyStudioHandlers();
-  document.querySelectorAll('[data-lab-role-pick]').forEach(b => b.addEventListener('click', () => { UI.labRolePick = b.dataset.labRolePick; renderCurrent(); }));
-  document.querySelector('[data-lab-role-back]')?.addEventListener('click', () => { UI.labRolePick = ''; renderCurrent(); });
+  document.querySelectorAll('[data-lab-role-pick]').forEach(b => b.addEventListener('click', () => { UI.labRolePick = b.dataset.labRolePick; labSigninError = ''; renderCurrent(); }));
+  document.querySelector('[data-lab-role-back]')?.addEventListener('click', () => { UI.labRolePick = ''; labSigninError = ''; renderCurrent(); });
   document.getElementById('labSigninForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const pick = UI.labRolePick || 'manager';
@@ -168,19 +175,16 @@ export function attachStudioHandlers() {
     const username = document.getElementById('labUser').value;
     const password = document.getElementById('labPass').value;
     // Real check against whatever account the admin has assigned for this
-    // station. Nothing assigned yet (or wrong creds) is expected right
-    // now — fall through to the dashboard regardless rather than dead-end
-    // the whole workflow before Accounts & Access has real logins set up;
-    // once a real account exists, this is what actually signs into it.
-    if (username && password) {
-      try {
-        await api('/api/auth/' + role + '/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-        await loadState();
-        toast('Signed in.');
-      } catch (err) { /* no account assigned yet for this station — continue below */ }
-    }
-    UI.labRolePick = ''; UI.labRole = pick; UI.studioLegacy = false; UI.dataPage = 1;
-    if (pick === 'manager') renderCurrent(); else location.hash = '#/' + pick;
+    // station — no more falling through on failure. Nothing set up yet
+    // for this station, or the wrong details, both just stay here with an
+    // error; Accounts & Access → Team is where a real account gets made.
+    try {
+      await api('/api/auth/' + role + '/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+      await loadState();
+      labSigninError = '';
+      UI.labRolePick = ''; UI.labRole = pick; UI.studioLegacy = false; UI.dataPage = 1;
+      if (pick === 'manager') renderCurrent(); else location.hash = '#/' + pick;
+    } catch (err) { labSigninError = err.message; renderCurrent(); }
   });
   document.querySelectorAll('[data-lab-signout]').forEach(b => b.addEventListener('click', () => {
     // Switching station stays inside Lab Studio — unlike authGate's

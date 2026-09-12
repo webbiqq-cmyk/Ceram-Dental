@@ -55,7 +55,7 @@ function isSignedIn() { return !!(DATA.auth && DATA.auth.admin); }
 
 export async function renderAdmin() {
   if (!isSignedIn()) {
-    return renderLoginGate({ role: 'admin', title: 'Administration', subtitle: 'Sign in with the admin account to manage billing, expenses, team and settings.' });
+    return renderLoginGate({ role: 'admin', title: 'Administration', subtitle: 'Sign in with the admin account to manage billing, expenses, team and settings. No admin account yet? The first sign-in here creates it.' });
   }
   const tab = UI.adminTab;
   const render = TAB_BODY[tab] || adminOverview;
