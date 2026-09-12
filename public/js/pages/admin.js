@@ -5,7 +5,7 @@ import { DATA, UI } from '../state.js';
 import { esc } from '../utils/format.js';
 import { ADMIN_TABS } from '../constants.js';
 import { renderCurrent } from '../router.js';
-import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
+import { renderLoginGate, attachAuthGateHandlers } from '../components/authGate.js';
 import { adminOverview } from './admin/overview.js';
 import { adminEnquiries, attachEnquiriesHandlers } from './admin/enquiries.js';
 import { adminAppointments, attachAppointmentsHandlers } from './admin/appointments.js';
@@ -64,8 +64,7 @@ export async function renderAdmin() {
   const me = DATA.me && DATA.me.admin;
   const eyebrow = tab === 'overview' ? 'Welcome, ' + esc(me?.name || 'Administrator') : 'Administration';
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + title + '</h1></div>' +
-      '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Sign out</button></div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + title + '</h1></div></div>' +
     body +
   '</div></div>';
 }
@@ -75,6 +74,4 @@ export function attachAdminHandlers() {
   document.querySelectorAll('[data-admin-tab]').forEach(b => b.addEventListener('click', () => { UI.adminTab = b.dataset.adminTab; renderCurrent(); }));
   const attach = TAB_HANDLERS[UI.adminTab];
   if (attach) attach();
-  const logoutBtn = document.getElementById('adminLogoutBtn');
-  if (logoutBtn) logoutBtn.addEventListener('click', () => logout('admin'));
 }

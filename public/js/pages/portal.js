@@ -5,7 +5,7 @@ import { STAGES, STAGE_INDEX } from '../constants.js';
 import { footer } from '../components/footer.js';
 import { pillHtml } from '../components/drawer.js';
 import { renderCurrent } from '../router.js';
-import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
+import { renderLoginGate, attachAuthGateHandlers } from '../components/authGate.js';
 import { jobTypeLabel, statusPill } from '../utils/workflow.js';
 import { listOrders } from '../utils/ordersApi.js';
 import { showOrderDetail } from '../components/orderDetail.js';
@@ -118,7 +118,7 @@ export async function renderPortal() {
   // dentistSignup.js), a friendly fallback otherwise — not gated behind
   // having signed up, so it's not invisible-by-default for a plain visitor.
   const eyebrow = tab === 'overview' ? 'Welcome, ' + esc(me?.name || 'Dentist') : 'Dentist workspace';
-  return '<div class="page"><div class="u"><div class="page-head"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + titles[tab] + '</h1><p class="lede">' + (tab==='rejected' ? 'Read the lab notes and choose the next step for each case.' : 'A clear view of your cases, from first details to final delivery.') + '</p></div><a class="btn btn-primary" href="#/new-order">+ New case</a></div>' + body + '<div class="workspace-toolbar" style="margin-top:16px"><button class="link-btn" data-portal-tab="cases">View earlier case records</button><button class="btn btn-ghost" id="portalLogoutBtn">Sign out</button></div></div></div>';
+  return '<div class="page"><div class="u"><div class="page-head"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + titles[tab] + '</h1><p class="lede">' + (tab==='rejected' ? 'Read the lab notes and choose the next step for each case.' : 'A clear view of your cases, from first details to final delivery.') + '</p></div><a class="btn btn-primary" href="#/new-order">+ New case</a></div>' + body + '<div class="workspace-toolbar" style="margin-top:16px"><button class="link-btn" data-portal-tab="cases">View earlier case records</button></div></div></div>';
 }
 export function attachPortalHandlers() {
   if (!isSignedIn()) { attachAuthGateHandlers(); return; }
@@ -134,5 +134,4 @@ export function attachPortalHandlers() {
     let shown=0; document.querySelectorAll('#portalTable tbody tr').forEach(tr=>{ tr.hidden=!(tr.dataset.hay || '').includes(e.target.value.trim().toLowerCase());if(!tr.hidden)shown++; });
     document.getElementById('portalNoMatch').hidden=shown>0;
   });
-  document.getElementById('portalLogoutBtn')?.addEventListener('click',()=>logout('dentist'));
 }
