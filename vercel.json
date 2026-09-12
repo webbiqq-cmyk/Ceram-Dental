@@ -24,7 +24,7 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "/server.js"
+      "dest": "https://ceram-dental-api.onrender.com/api/$1"
     },
     {
       "src": "/$",
