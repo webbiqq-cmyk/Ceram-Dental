@@ -10,7 +10,7 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
    on a phone, where the old sidebar-footer link used to disappear. */
 .ws-home-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:100px;background:var(--violet-soft,#efeaf3);color:#2d1142;font-size:11.5px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .15s ease,transform .12s ease}
 .ws-home-btn:hover{background:#e4d7ec;transform:translateX(-2px)}
-.workspace-monogram{display:grid;place-items:center;width:42px;height:46px;border:1px solid #d8c19a;border-radius:16px 16px 5px 5px;font:28px Georgia,serif;color:#6c491d;background:#fcf8f1}
+.workspace-monogram{width:42px;height:46px;object-fit:contain;flex-shrink:0}
 .workspace-nav-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:12px 12px -12px;color:var(--ink-soft)}
 .workspace-sidebar nav{display:grid;gap:5px}.workspace-sidebar nav :is(a,button){display:block;text-align:left;text-decoration:none;font:inherit;font-size:14px;font-weight:500;color:#66596d;padding:13px 15px;border:0;border-radius:9px;background:transparent;cursor:pointer}
 .workspace-sidebar nav [aria-current=page]{background:#f0eaf4;color:#2d1142;font-weight:700;border-left:3px solid #2d1142}
@@ -37,7 +37,7 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .workspace-steps{display:flex;list-style:none;gap:16px;margin:0 0 26px;padding:0}.workspace-steps li{flex:1;padding:13px 0;border-bottom:2px solid var(--line);font-size:13px;color:#66596d}.workspace-steps li[aria-current=step]{border-color:#6c491d;color:#2d1142;font-weight:700}.workspace-steps span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#f0eaf4;margin-right:7px}.workplace .wizard{max-width:860px;margin:0 auto}.workplace .wiz-body{padding:28px}.workplace .wiz-foot{padding:20px 28px;gap:12px;display:flex;justify-content:space-between}.workplace .svc-pick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px}.workplace .svc-pick{border-radius:9px;padding:18px 14px;min-height:90px;text-align:left;border:1px solid #dcd3e1;background:#fff;color:#2d1142}.workplace .svc-pick.selected{background:#f3edf7;border:2px solid #67447d;padding:17px 13px}.workplace .svc-pick .d{font-size:11px;line-height:1.5;color:#66596d;margin-top:6px}.workplace .field-grid{gap:18px}.workplace .form-section{margin-bottom:24px}.workplace .form-section-head{margin-bottom:16px}.workplace .upload-zone{border:1px dashed #b7a5c4;border-radius:10px;background:#faf8fb;padding:24px;cursor:pointer}.workplace .st-row{overflow-x:auto;padding-bottom:8px}.workplace .st-step{min-width:64px}.workplace .stage-tracker.two-part{gap:18px}
 @media(min-width:1100px){.workspace-sidebar{position:sticky;top:0;height:calc(100vh - 80px)}.workspace-content .case-list:has(.case-card:nth-child(3)){grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1050px){.workspace-shell{grid-template-columns:190px minmax(0,1fr)}.workspace-sidebar{padding:25px 14px}.workspace-content{padding:28px 22px}.workplace .stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-two-col,.workspace-detail-grid{grid-template-columns:1fr}.workplace .case-list,.workplace .case-grid{grid-template-columns:1fr}}
-@media(max-width:720px){.workspace-shell{display:block}.workspace-sidebar{padding:16px;border-right:0;border-bottom:1px solid var(--line);gap:16px}.workspace-brand{font-size:16px}.workspace-sidebar nav{display:flex;overflow:auto;gap:6px}.workspace-sidebar nav :is(a,button){white-space:nowrap;flex-shrink:0;padding:11px 13px}.workspace-support,.workspace-nav-label{display:none}.workspace-content{padding:24px 16px 40px}.workplace .stat-row{gap:10px}.workplace .stat-card{padding:17px}.workplace .stat-card .n{font-size:28px}.workplace .case-card{padding:18px}.workspace-role-grid{grid-template-columns:1fr}.workplace .svc-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.workplace .wiz-body{padding:20px}.workplace .wiz-foot{padding:18px}.workspace-steps{gap:8px}.workspace-steps li{font-size:11px}.workspace-dialog{padding:20px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.workspace-facts{padding:16px}.workplace .page-head [id$=LogoutBtn]{width:auto}.workplace .chat-input-row{flex-wrap:wrap}.workplace .chat-input-row input{flex-basis:65%}}
+@media(max-width:720px){.workspace-shell{display:block}.workspace-sidebar{padding:16px;border-right:0;border-bottom:1px solid var(--line);gap:16px}.workspace-brand{font-size:16px}.workspace-sidebar nav{display:flex;overflow:auto;gap:6px}.workspace-sidebar nav :is(a,button){white-space:nowrap;flex-shrink:0;padding:11px 13px}.workspace-support,.workspace-nav-label{display:none}.workspace-content{padding:24px 16px 40px}.workplace .stat-row{gap:10px}.workplace .stat-card{padding:17px}.workplace .stat-card .n{font-size:28px}.workplace .case-card{padding:18px}.workspace-role-grid{grid-template-columns:1fr}.role-pick-grid{grid-template-columns:1fr;grid-template-rows:none;min-height:0;gap:12px}.role-pick-wide{grid-column:auto;flex-direction:column;align-items:stretch;gap:12px}.role-pick-wide .rp-go{align-self:flex-end}.role-pick{padding:20px 22px}.role-pick .rp-body b{font-size:19px}.role-pick-wide .rp-body b{font-size:20px}.workplace .svc-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.workplace .wiz-body{padding:20px}.workplace .wiz-foot{padding:18px}.workspace-steps{gap:8px}.workspace-steps li{font-size:11px}.workspace-dialog{padding:20px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.workspace-facts{padding:16px}.workplace .page-head [id$=LogoutBtn]{width:auto}.workplace .chat-input-row{flex-wrap:wrap}.workplace .chat-input-row input{flex-basis:65%}}
 @media(prefers-reduced-motion:reduce){.workplace *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 .workplace [hidden]{display:none!important}.workplace [data-checklist-hint]{font-size:12px;color:#66596d;align-self:center}.administration-content{max-width:1400px;margin:auto}.workplace .upload-zone:focus-visible{outline:3px solid #8665a0;outline-offset:3px}
 .workplace .drawer:not(.open),.workplace .cart-drawer:not(.open){visibility:hidden;box-shadow:none}
@@ -56,14 +56,34 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 .workspace-role-card>span:last-child{display:inline-block;margin-top:12px}
 
 /* Lab Studio role picker — compact rows, not full-bleed cards */
-.role-pick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;max-width:760px}
-.role-pick{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#2d1142;font:inherit;cursor:pointer;transition:border-color .18s ease,transform .18s ease}
-.role-pick:hover{border-color:#b8945f;transform:translateY(-1px)}
-.role-pick .rp-num{font:600 13px/1 var(--font-mono,ui-monospace,monospace);color:#b8945f;flex-shrink:0}
-.role-pick .rp-body{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
-.role-pick .rp-body b{font-size:15px;font-weight:600}
-.role-pick .rp-body small{font-size:12px;color:var(--ink-soft);line-height:1.5}
-.role-pick .rp-go{color:#6c491d;font-size:16px;flex-shrink:0}
+.role-pick-page .page-head{margin-bottom:16px}
+.role-pick-page{margin-bottom:-34px}
+.role-pick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto minmax(126px,1fr) minmax(126px,1fr);gap:13px;min-height:calc(100dvh - 340px)}
+.role-pick{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:10px;height:100%;text-align:left;padding:20px 26px;border:1px solid var(--line);border-radius:16px;background:#fff;color:#2d1142;font:inherit;cursor:pointer;transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.role-pick::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:#b8945f;opacity:0;transition:opacity .18s ease}
+.role-pick:hover{border-color:#b8945f;transform:translateY(-2px);box-shadow:0 20px 44px -26px color-mix(in srgb,var(--violet,#2d1142) 55%,transparent)}
+.role-pick:hover::before{opacity:1}
+.role-pick .rp-num{font:500 20px/1 var(--font-accent,Georgia,serif);letter-spacing:.06em;color:#c9ad82}
+.role-pick .rp-body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.role-pick .rp-body b{font:600 23px/1.15 var(--font-accent,Georgia,serif)}
+.role-pick .rp-body small{font-size:13px;color:var(--ink-soft);line-height:1.6;max-width:42ch}
+.role-pick .rp-go{align-self:flex-end;font-size:20px;color:#6c491d;transition:transform .18s ease}
+.role-pick:hover .rp-go{transform:translateX(6px)}
+.role-pick-wide{grid-column:1 / -1;flex-direction:row;align-items:center;gap:26px;background:linear-gradient(180deg,#fdfaf4,#fff)}
+.role-pick-wide .rp-body{flex:1;gap:6px}
+.role-pick-wide .rp-body b{font-size:26px}
+.role-pick-wide .rp-body small{max-width:70ch}
+.role-pick-wide .rp-go{align-self:center}
+
+.lab-signin-page .u{display:flex;justify-content:center}
+.lab-signin-inner{width:100%;max-width:512px;margin-top:min(4vh,40px)}
+.lab-signin-head{text-align:center;flex-direction:column;align-items:center;margin-bottom:26px}
+.lab-signin-inner .wiz-body{padding:32px 34px}
+.lab-signin-inner .field input{min-height:48px;font-size:15px}
+.lab-signin-head .lede{max-width:38ch}
+.lab-signin-inner .wizard{width:100%}
+.lab-signin-inner .wiz-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.lab-signin-inner .wiz-foot .btn-primary{flex:1;min-width:120px}
 .workplace #labSigninForm{margin:0}
 /* Admin · team editor */
 .team-add{display:flex;gap:10px;flex-wrap:wrap}

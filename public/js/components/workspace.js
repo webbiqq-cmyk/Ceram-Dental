@@ -12,7 +12,7 @@ const bare = (html, cls) => '<div class="workspace-content' + (cls ? ' ' + cls :
 function shell(brandHref, brandLabel, navLabel, links, content, extra) {
   return '<div class="workspace-shell"><aside class="workspace-sidebar">' +
     '<div class="workspace-brand-row">' +
-      '<a class="workspace-brand" href="#/' + brandHref + '"><span class="workspace-monogram">C</span><span>CERAM<small>' + brandLabel + '</small></span></a>' +
+      '<a class="workspace-brand" href="#/' + brandHref + '"><img class="workspace-monogram" src="/images/ceram-emblem.png" width="42" height="46" alt="Ceram" decoding="async"><span>CERAM<small>' + brandLabel + '</small></span></a>' +
       '<a class="ws-home-btn" href="#/" title="Back to the Ceram website"><span aria-hidden="true">&larr;</span> Website</a>' +
     '</div>' +
     '<p class="workspace-nav-label">' + navLabel + '</p>' +
