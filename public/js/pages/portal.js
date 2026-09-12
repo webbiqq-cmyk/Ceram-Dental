@@ -76,9 +76,12 @@ const needsReview = o => o.job_type === 'veneers' && o.stage_type === 'demo' && 
 const needsAttention = o => o.status === 'rejected_by_reception' || !!o.rejection_note && o.status === 'in_design';
 
 function orderCard(o) {
-  return '<article class="case-card" data-case-search="' + esc((o.order_number + ' ' + o.patient_ref + ' ' + jobTypeLabel(o.job_type)).toLowerCase()) + '"><div class="cc-top"><div><div class="cc-id">' + esc(o.order_number) + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + '</div></div>' + statusPill(o.status) + '</div><h3 class="cc-title">' + esc(o.patient_ref) + '</h3><p class="cc-sub">' + (o.job_type === 'veneers' ? (o.stage_type === 'demo' ? 'Step 1 · Demo / design' : 'Step 2 · Final production') : 'One-step case') + ' · ' + esc(o.delivery_method === 'delivery' ? 'Delivery' : 'In-house pickup') + '</p>' +
+  // The whole card opens the case now, not just the button in the corner —
+  // it's a real <button> (not <article>) so the click target covers the
+  // entire box; the pill in the footer is now just a visual label.
+  return '<button type="button" class="case-card" data-order-detail="' + o.id + '" data-case-search="' + esc((o.order_number + ' ' + o.patient_ref + ' ' + jobTypeLabel(o.job_type)).toLowerCase()) + '"><div class="cc-top"><div><div class="cc-id">' + esc(o.order_number) + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + '</div></div>' + statusPill(o.status) + '</div><h3 class="cc-title">' + esc(o.patient_ref) + '</h3><p class="cc-sub">' + (o.job_type === 'veneers' ? (o.stage_type === 'demo' ? 'Step 1 · Demo / design' : 'Step 2 · Final production') : 'One-step case') + ' · ' + esc(o.delivery_method === 'delivery' ? 'Delivery' : 'In-house pickup') + '</p>' +
     (o.rejection_note ? '<p class="workspace-notice">' + esc(o.rejection_note) + '</p>' : '') +
-    '<div class="cc-foot"><time>' + fmtDate(o.updated_at || o.created_at) + '</time><button class="btn ' + (needsReview(o) ? 'btn-gold' : 'btn-ghost') + '" data-order-detail="' + o.id + '">' + (needsReview(o) ? 'Review demo / design' : needsAttention(o) ? 'Read notes & next steps' : 'Open case') + '</button></div></article>';
+    '<div class="cc-foot"><time>' + fmtDate(o.updated_at || o.created_at) + '</time><span class="btn ' + (needsReview(o) ? 'btn-gold' : 'btn-ghost') + '">' + (needsReview(o) ? 'Review demo / design' : needsAttention(o) ? 'Read notes & next steps' : 'Open case') + '</span></div></button>';
 }
 function ordersSection(rows, empty) {
   return rows.length ? '<div class="case-list">' + rows.map(orderCard).join('') + '</div>' : '<div class="empty-note">' + empty + '</div>';

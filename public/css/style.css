@@ -978,6 +978,9 @@ img{max-width:100%; display:block;}
    card instead of each dashboard inventing its own. */
 .case-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); transition:border-color .15s ease, transform .12s ease;}
 .case-card:hover{border-color:var(--gold-light); transform:translateY(-2px);}
+/* The dentist portal's case card is a real <button> so the whole box opens
+   the case, not just the pill in its footer — undo the native button look. */
+button.case-card{display:block; width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer;}
 .case-card .cc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
 .case-card .cc-id{font-family:var(--font-mono); font-weight:700; color:var(--violet); font-size:13px;}
 .case-card .cc-type{font-size:10.5px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); margin-top:2px;}
