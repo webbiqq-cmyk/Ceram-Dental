@@ -561,8 +561,9 @@ img{max-width:100%; display:block;}
 .checkout-form{display:flex; flex-direction:column; gap:10px; padding:4px 22px 22px;}
 
 /* ================= CONTACT / CAREERS forms ================= */
-.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-.field{display:flex; flex-direction:column; gap:6px;}
+.form-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; min-width:0;}
+.field{display:flex; flex-direction:column; gap:6px; min-width:0;}
+.field input,.field select,.field textarea{min-width:0; max-width:100%;}
 .field.full{grid-column:1/-1;}
 .field label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
 .field input, .field select, .field textarea{font-family:inherit; font-size:14px; padding:10px 12px; border-radius:9px; border:1px solid var(--line); background:var(--porcelain); color:var(--ink); transition:border-color .15s ease, box-shadow .15s ease;}
@@ -601,6 +602,10 @@ img{max-width:100%; display:block;}
 .login-gate .lede{margin-top:10px; margin-bottom:26px;}
 .login-gate .field label{font-size:12px;}
 .login-gate .btn-block{margin-top:6px;}
+@media(max-width:600px){
+  .login-gate{padding:24px; margin:24px auto;}
+  .login-gate .form-grid{grid-template-columns:minmax(0,1fr);}
+}
 .link-btn{display:block; width:100%; margin:4px auto 0; background:none; border:0; padding:10px 0; color:var(--ink-soft); font-size:12.5px; text-align:center; cursor:pointer; border-top:1px solid var(--line); transition:color .15s ease;}
 .link-btn:hover{color:var(--violet);}
 
