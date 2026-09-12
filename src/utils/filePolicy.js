@@ -15,7 +15,7 @@ function validateFile(orderId,{url,publicId,version,signature,stageType,category
 function downloadLink(file){
   const {cloudinary,isConfigured}=require('../config/cloudinary');
   if(!isConfigured)return {...file,url:''};
-  const match=/\/(image|raw)\/authenticated\/v[0-9]+\/.+\.([a-z0-9]+)$/i.exec(file.url || '');
+  const match=/\/(image|raw)\/authenticated\/(?:s--[A-Za-z0-9_-]+--\/)?v[0-9]+\/.+\.([a-z0-9]+)$/i.exec(file.url || '');
   if(!match)return {...file,url:''};
   const options={resource_type:match[1],type:'authenticated',expires_at:Math.floor(Date.now()/1000)+300};
   const previewable=match[1]==='image' && /^(jpe?g|png|webp|gif|avif)$/i.test(match[2]);

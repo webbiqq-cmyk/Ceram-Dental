@@ -23,3 +23,12 @@ test('PDF and SVG files do not receive inline image previews',()=>{
     assert.ok(result.url);
   }
 });
+
+test('signed Cloudinary delivery paths produce private preview and download links',()=>{
+  const signed=file('jpg');
+  signed.url=signed.url.replace('/authenticated/v1/', '/authenticated/s--udS6_jUU--/v1/');
+  const result=downloadLink(signed);
+  assert.ok(result.url);
+  assert.ok(result.preview_url);
+  assert.equal(new URL(result.preview_url).searchParams.get('public_id'),signed.public_id);
+});
