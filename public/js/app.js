@@ -7,6 +7,7 @@ import { openCart, closeCart, changeQty, checkout } from './components/cart.js';
 import { closeApplyModal } from './components/applyModal.js';
 import { closeDoctorModal } from './components/doctor.js';
 import { initNotifBell, updateNotifUI } from './components/notifications.js';
+import { openDentistSignupModal, closeDentistSignupModal } from './components/dentistSignup.js';
 
 // How often to check for new notifications without the user navigating —
 // this is the in-app substitute for OS push (see README for why, and what
@@ -18,19 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartBadge();
   injectDrawerShell();
 
-  document.getElementById('dashBtn').addEventListener('click', e => {
+  const mainNav = document.getElementById('mainNav');
+  document.getElementById('navToggle').addEventListener('click', e => {
     e.stopPropagation();
-    document.getElementById('dashMenu').classList.toggle('open');
+    mainNav.classList.toggle('open');
   });
-  document.addEventListener('click', () => document.getElementById('dashMenu').classList.remove('open'));
-
-  document.getElementById('navToggle').addEventListener('click', () => {
-    const nav = document.getElementById('mainNav');
-    const open = nav.style.display === 'flex';
-    nav.style.display = open ? 'none' : 'flex';
-    nav.style.cssText += 'position:absolute; top:64px; left:0; right:0; background:var(--surface); flex-direction:column; padding:14px 24px; border-bottom:1px solid var(--line); gap:16px;';
-    nav.style.display = open ? 'none' : 'flex';
-  });
+  // Close the mobile menu once a destination is picked, instead of leaving
+  // it open over the newly-loaded page — same on any other way the route
+  // changes (back/forward, a link from outside the menu, etc.).
+  mainNav.addEventListener('click', e => { if (e.target.tagName === 'A') mainNav.classList.remove('open'); });
+  window.addEventListener('hashchange', () => mainNav.classList.remove('open'));
+  document.addEventListener('click', e => { if (!mainNav.contains(e.target) && e.target.id !== 'navToggle') mainNav.classList.remove('open'); });
 
   document.getElementById('cartBtn').addEventListener('click', openCart);
   document.getElementById('cartBackdrop').addEventListener('click', closeCart);
@@ -41,9 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const inc = e.target.closest('[data-cart-inc]'); if (inc) changeQty(inc.dataset.cartInc, 1);
     const dec = e.target.closest('[data-cart-dec]'); if (dec) changeQty(dec.dataset.cartDec, -1);
     const act = e.target.closest('[data-act]'); if (act) handleCaseAction(act.dataset.act, act.dataset.id);
+    if (e.target.closest('[data-open-dentist-signup]')) openDentistSignupModal();
   });
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal(); closeDentistSignupModal(); } });
 
   initNotifBell();
   // Stop polling when the tab isn't visible — no point waking up a

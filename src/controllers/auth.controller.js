@@ -18,18 +18,23 @@ function publicUser(u) { return { username: u.username, role: u.role, name: u.na
 async function login(req, res) {
   const role = req.params.role;
   if (!isValidRole(role)) return bad(res, 'Unknown login.');
+  // "username" here is really "username or email" — kept as-is on the wire
+  // for compatibility with existing clients, just treated as either.
   const { username, password, remember } = req.body || {};
-  if (!username || !password) return bad(res, 'Username and password are required.');
+  if (!username || !password) return bad(res, 'Username/email and password are required.');
 
   let user;
   try { user = await authService.login(username, password, role); }
   catch (err) { return bad(res, 'Unable to sign in right now. Please try again.'); }
 
   if (!user) {
-    const attempted = await userModel.findByUsernameAndRole(username, role);
+    // Same identifier lookup as the real attempt (not just by username) so
+    // a wrong-password attempt via email still hits lockout tracking and
+    // the activity log instead of silently looking like an unknown user.
+    const attempted = await userModel.findByIdentifierAndRole(username, role);
     if (attempted) await userModel.recordLoginResult(attempted.id, { success: false, ip: req.clientIp });
     await activityLog.log({ userId: attempted?.id, role, username: String(username).slice(0, 100), action: 'login-failed', detail: attempted ? 'wrong password' : 'unknown user', ip: req.clientIp });
-    return bad(res, 'Incorrect username or password.');
+    return bad(res, 'Incorrect username/email or password.');
   }
   if (await userModel.isLocked(user.id)) {
     await activityLog.log({ userId: user.id, role, username: user.username, action: 'login-blocked', detail: 'account locked', ip: req.clientIp });
@@ -61,7 +66,7 @@ async function registerDentist(req, res) {
   if (String(password).length < 10) return bad(res, 'Password must be at least 10 characters.');
   const passwordHash = await authService.hashPassword(password);
   const user = await userModel.createUser({ username, passwordHash, role:'dentist', name, phone, email, accountType, company:accountType === 'clinic' ? company : 'Individual use' });
-  if (!user) return bad(res, 'That username already exists.');
+  if (!user) return bad(res, 'That username or email is already registered.');
   const { token, maxAgeMs } = await authService.issueToken(user);
   res.cookie(COOKIE_NAMES.dentist, token, Object.assign({}, COOKIE_OPTIONS, { maxAge:maxAgeMs }));
   ok(res, { user: publicUser(user) });
@@ -87,8 +92,17 @@ async function logout(req, res) {
 }
 
 async function me(req, res) {
-  // req.user is set by requireRole() — reaching here means the session is valid
-  ok(res, { user: { username: req.user.username, role: req.user.role, name: req.user.name, remembered: !!req.user.remembered } });
+  // req.user is set by requireRole() — reaching here means the session is
+  // valid. It's the decoded JWT though, which deliberately doesn't carry
+  // phone/email (keeps the token itself minimal) — load the full record for
+  // those. `synthetic` tells the frontend this is the open-demo placeholder,
+  // not a real account, so it doesn't show a fabricated name/"Sign out".
+  const full = req.user.synthetic ? null : await userModel.findById(req.user.sub);
+  ok(res, { user: {
+    username: req.user.username, role: req.user.role, name: req.user.name,
+    phone: full?.phone || '', email: full?.email || '',
+    remembered: !!req.user.remembered, synthetic: !!req.user.synthetic
+  } });
 }
 
 async function changePassword(req, res) {

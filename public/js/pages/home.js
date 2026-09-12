@@ -2,7 +2,6 @@ import { DATA } from '../state.js';
 import { esc, money } from '../utils/format.js';
 import { SERVICE_GROUPS, SVC } from '../constants.js';
 import { footer } from '../components/footer.js';
-import { visitSection } from '../components/visit.js';
 import { reviewSection } from '../components/reviews.js';
 import { brandLogoStack } from '../components/brand.js';
 import { editorialImage } from '../components/editorialImage.js';
@@ -108,7 +107,7 @@ export function renderHome() {
       '<a class="btn btn-gold" href="#/about">Meet the doctors →</a>' +
     '</section>' +
 
-    visitSection() + reviewSection() +
+    reviewSection() +
 
     '<section class="section faq-section reveal">' +
       '<div class="section-head luxe-head"><div><span class="eyebrow">FAQs</span><h2 class="serif">Before you book</h2></div></div>' +

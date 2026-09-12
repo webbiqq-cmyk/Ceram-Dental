@@ -11,10 +11,13 @@ const bare = (html, cls) => '<div class="workspace-content' + (cls ? ' ' + cls :
 
 function shell(brandHref, brandLabel, navLabel, links, content, extra) {
   return '<div class="workspace-shell"><aside class="workspace-sidebar">' +
-    '<a class="workspace-brand" href="#/' + brandHref + '"><span class="workspace-monogram">C</span><span>CERAM<small>' + brandLabel + '</small></span></a>' +
+    '<div class="workspace-brand-row">' +
+      '<a class="workspace-brand" href="#/' + brandHref + '"><span class="workspace-monogram">C</span><span>CERAM<small>' + brandLabel + '</small></span></a>' +
+      '<a class="ws-home-btn" href="#/" title="Back to the Ceram website"><span aria-hidden="true">&larr;</span> Website</a>' +
+    '</div>' +
     '<p class="workspace-nav-label">' + navLabel + '</p>' +
     '<nav aria-label="Workspace navigation">' + links + '</nav>' +
-    '<div class="workspace-support">' + (extra || '<strong>Made for careful work.</strong><p>Every case, from first details to final delivery.</p>') + '<a href="#/">Back to Ceram</a></div>' +
+    '<div class="workspace-support">' + (extra || '<strong>Made for careful work.</strong><p>Every case, from first details to final delivery.</p>') + '</div>' +
     '</aside><div class="workspace-content" id="workspaceContent" tabindex="-1">' + content + '</div></div>';
 }
 

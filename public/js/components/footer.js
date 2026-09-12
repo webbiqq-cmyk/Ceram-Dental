@@ -28,12 +28,14 @@ export function footer() {
   const s = DATA.settings || {};
   const phone = s.phone || '+973 1713 1123';
   const email = s.email || '';
+  const address = s.address || 'New Zinj, Manama, Bahrain';
+  const map = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Ceram Dental ' + address);
   return '<footer class="site-footer"><div class="u">' +
-    '<div class="footer-invitation"><div><span class="eyebrow">Ceram Specialist Dental Center</span><h2 class="serif">Care worth making time for.</h2></div><a class="btn btn-white" href="#/contact">Arrange your visit &rarr;</a></div>' +
+    '<div class="footer-invitation"><div><span class="eyebrow">Ceram Specialist Dental Center</span><h2 class="serif">Care worth making time for.</h2></div><a class="btn btn-white" href="#/contact">Book a consultation &rarr;</a></div>' +
     '<div class="footer-grid"><div class="footer-identity"><a class="footer-brand" href="#/" aria-label="Ceram Dental home">' + brandLogoCompact({ cls: 'brand-logo' }) + '</a><p class="about-copy">Specialist dentistry.<br>In-house craftsmanship.<br>A personal approach to your smile.</p><div class="social-row">' + socialIcons() + '</div></div>' +
     '<div><h4>Discover</h4><a href="#/about">Our doctors</a><a href="#/services">Treatments</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
-    '<div><h4>Professional access</h4><a href="#/portal">Dentist Portal</a><a href="#/studio">Lab Studio</a><a href="#/admin">Accounts &amp; Admin</a></div>' +
-    '<div class="footer-contact"><h4>Visit Ceram</h4><p>' + esc(s.address || 'New Zinj, Manama, Bahrain') + '</p><p>' + esc(s.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '</p><a href="tel:' + esc(phone.replace(/[^+0-9]/g, '')) + '">' + esc(phone) + '</a>' +
-    (email ? '<a href="mailto:' + esc(email) + '">' + esc(email) + '</a>' : '') + '</div></div>' +
+    '<div><h4>Professional access</h4><a href="#/portal">Dentist Portal</a></div>' +
+    '<div class="footer-contact"><h4>Find us in Bahrain</h4><p>' + esc(address) + '</p><p>' + esc(s.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '</p><a href="tel:' + esc(phone.replace(/[^+0-9]/g, '')) + '">' + esc(phone) + '</a>' +
+    (email ? '<a href="mailto:' + esc(email) + '">' + esc(email) + '</a>' : '') + '<a href="' + esc(map) + '" target="_blank" rel="noopener">Get directions &nearr;</a></div></div>' +
     '<div class="footer-bottom"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '</span><span>Clinic imagery is illustrative. Review examples are not patient testimonials.</span></div></div></footer>';
 }

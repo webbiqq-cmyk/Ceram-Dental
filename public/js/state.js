@@ -29,7 +29,7 @@ function readCart(){try{const rows=JSON.parse(localStorage.getItem('ceram_cart')
 export const DATA = {
   cases: [], invoices: [], expenses: [], products: [], jobs: [], applications: [], messages: [],
   orders: [], team: [], appointments: [], enquiries: [], settings: {}, summary: {},
-  auth: { admin: false, dentist: false, lab: false },
+  auth: { admin: false, dentist: false, lab: false }, me: {},
   users: [], activeSessions: [], activity: [], cloudinaryConfigured: false,
   notifications: [], unreadNotifications: 0
 };

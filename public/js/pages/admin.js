@@ -2,6 +2,7 @@
 // in pages/admin/<tab>.js; this file just picks the right one. Gated
 // behind an admin session — see components/authGate.js.
 import { DATA, UI } from '../state.js';
+import { esc } from '../utils/format.js';
 import { ADMIN_TABS } from '../constants.js';
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
@@ -60,9 +61,11 @@ export async function renderAdmin() {
   const render = TAB_BODY[tab] || adminOverview;
   const title = (ADMIN_TABS.find(t => t[0] === tab) || ['', 'Overview'])[1];
   const body = await render();
+  const me = DATA.me && DATA.me.admin;
+  const eyebrow = tab === 'overview' ? 'Welcome, ' + esc(me?.name || 'Administrator') : 'Administration';
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><div><span class="eyebrow-accent">Administration</span><h1>' + title + '</h1></div>' +
-      (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Sign out</button>' : '') + '</div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + title + '</h1></div>' +
+      '<button class="btn btn-ghost btn-sm" id="adminLogoutBtn">Sign out</button></div>' +
     body +
   '</div></div>';
 }

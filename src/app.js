@@ -53,11 +53,15 @@ app.get('/api/health', (req, res) => {
 // Static assets: index.html always revalidated so app/route changes land
 // immediately; JS/CSS get an hour (ETag still catches edits sooner);
 // images a week. Cuts repeat-visit and under-load traffic to near zero.
+// Only in production, though — a local `npm start` has no CDN/repeat-visitor
+// traffic to protect, and a 1h cache just makes every edit look like it did
+// nothing until a hard refresh, which is confusing for local dev.
+const isProd = process.env.NODE_ENV === 'production';
 app.use(express.static(path.join(__dirname, '..', 'public'), {
-  maxAge: '1h',
+  maxAge: isProd ? '1h' : 0,
   setHeaders(res, filePath) {
     if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
-    else if (/[\\/]images[\\/]/.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=604800');
+    else if (isProd && /[\\/]images[\\/]/.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=604800');
   }
 }));
 app.get('/api/ready', (req,res) => require('./db/readiness').ready().then(()=>res.json({ok:true})).catch(()=>res.status(503).json({ok:false,error:'Storage is not ready.'})));

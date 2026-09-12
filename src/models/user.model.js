@@ -49,15 +49,33 @@ async function findByUsernameAndRole(username,role) {
 async function list() { return db.pool ? (await db.query('SELECT id,username,role,name,active,created_at FROM users ORDER BY name LIMIT 1000')).rows.map(decode).map(publicView) : users.map(publicView); }
 async function createUser({username,passwordHash,role,name,phone,email,accountType,company}) {
   username=String(username || '').trim();
+  email=String(email || '').trim();
   if (!username || !ROLES.includes(role) || !passwordHash) return null;
-  const u={id:crypto.randomUUID(),username,passwordHash,role,name:name || username,phone:phone||'',email:email||'',accountType:accountType||'',company:company||'',active:true,createdAt:new Date()};
-  if (!db.pool) { if(users.some(x=>x.role===role && x.username.toLowerCase()===username.toLowerCase())) return null; users.push(u); return publicView(u); }
-  const {rows}=await db.query('INSERT INTO users(id,username,password_hash,role,name) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING RETURNING *',[u.id,username,passwordHash,role,u.name]);
+  const u={id:crypto.randomUUID(),username,passwordHash,role,name:name || username,phone:phone||'',email,accountType:accountType||'',company:company||'',active:true,createdAt:new Date()};
+  // Email is scoped per role too, same as username — otherwise two dentist
+  // accounts could share an email and login-by-email would only ever be
+  // able to reach whichever one the lookup finds first.
+  if (!db.pool) {
+    if(users.some(x=>x.role===role && x.username.toLowerCase()===username.toLowerCase())) return null;
+    if(email && users.some(x=>x.role===role && String(x.email||'').toLowerCase()===email.toLowerCase())) return null;
+    users.push(u); return publicView(u);
+  }
+  // Written straight into users' own phone/email/account_type/company
+  // columns (migration 008) — findByEmailAndRole and decode() both read
+  // those columns directly, so anything routed through a side table would
+  // simply never be found by them.
+  // No pre-check SELECT here on purpose: two concurrent signups could both
+  // pass a check-then-insert and land two accounts on one email. The
+  // per-role unique index on lower(email) (migration 012) makes the INSERT
+  // itself the single source of truth — ON CONFLICT DO NOTHING (no target,
+  // so it covers either the username or the email index) is what actually
+  // decides uniqueness, atomically.
+  const {rows}=await db.query(
+    'INSERT INTO users(id,username,password_hash,role,name,phone,email,account_type,company) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING RETURNING *',
+    [u.id,username,passwordHash,role,u.name,u.phone,u.email,u.accountType,u.company]
+  );
   if (!rows[0]) return null;
-  // Profile fields live in the durable record store so signup works against
-  // databases that have not yet applied migration 008.
-  await records.put('user_profiles',{id:u.id,phone:u.phone,email:u.email,accountType:u.accountType,company:u.company});
-  return publicView({...decode(rows[0]),...u});
+  return publicView(decode(rows[0]));
 }
 async function revokeSessions(id) { await require('./session.model').revokeForUser(id); }
 async function setPasswordHash(id,hash) {
@@ -108,4 +126,14 @@ async function findByEmailAndRole(email, role) {
   if (!db.pool) return users.find(u => u.active && u.role === role && String(u.email || '').toLowerCase() === email) || null;
   return decode((await db.query('SELECT * FROM users WHERE lower(email)=$1 AND role=$2 AND active LIMIT 1', [email, role])).rows[0]);
 }
-module.exports={ROLES,ROLE_GROUPS,users,publicView,findById,findByUsernameAndRole,findByEmailAndRole,list,createUser,setPasswordHash,setActive,updateName,removeUser,recordLoginResult,isLocked};
+// Sign-in accepts either a username or an email — one lookup, so both the
+// credential check and failed-attempt tracking (lockout, activity log) stay
+// in sync regardless of which one someone typed.
+async function findByIdentifierAndRole(identifier, role) {
+  identifier = String(identifier || '').trim();
+  if (!identifier) return null;
+  return identifier.includes('@')
+    ? (await findByEmailAndRole(identifier, role)) || (await findByUsernameAndRole(identifier, role))
+    : (await findByUsernameAndRole(identifier, role)) || (await findByEmailAndRole(identifier, role));
+}
+module.exports={ROLES,ROLE_GROUPS,users,publicView,findById,findByUsernameAndRole,findByEmailAndRole,findByIdentifierAndRole,list,createUser,setPasswordHash,setActive,updateName,removeUser,recordLoginResult,isLocked};

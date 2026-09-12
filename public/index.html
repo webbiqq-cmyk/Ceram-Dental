@@ -90,14 +90,11 @@
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1.1"/><circle cx="18" cy="21" r="1.1"/><path d="M2.5 3h2.4l2.1 11.3A2 2 0 0 0 9 16h8.4a2 2 0 0 0 2-1.6L21 7H6"/></svg>
         <span class="cart-count" id="cartCount" hidden>0</span>
       </button>
-      <div class="dash-switch">
-        <button class="dash-btn" id="dashBtn">Dashboards ▾</button>
-        <div class="dash-menu" id="dashMenu">
-          <a href="#/portal">Dentist Portal</a>
-          <a href="#/studio">Lab Studio</a>
-          <a href="#/admin">Administration</a>
-        </div>
-      </div>
+      <!-- Lab Studio and Admin are private staff tools reached by their own
+           URL (see README — separate subdomains in production); only the
+           Dentist Portal is a public entry point, for in-house and
+           referring/external dentists placing lab orders. -->
+      <a class="btn btn-primary btn-sm" href="#/portal">Dentist Portal</a>
     </div>
 
     <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>

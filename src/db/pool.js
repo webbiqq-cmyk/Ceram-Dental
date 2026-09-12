@@ -7,10 +7,12 @@ let pool = null;
 if (connectionString) {
   const url = new URL(connectionString);
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  // Render's private database endpoint uses its internal network without TLS.
+  const renderInternal = process.env.RENDER === 'true' && /^dpg-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(url.hostname);
   // URL SSL flags must not silently override certificate verification.
   for (const key of ['sslmode', 'sslcert', 'sslkey', 'sslrootcert']) url.searchParams.delete(key);
   pool = new Pool({ connectionString: url.toString(),
-    ssl: local ? false : { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT } : {}) },
+    ssl: local || renderInternal ? false : { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT } : {}) },
     max: integer('DB_POOL_MAX', 5, 1, 50), connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 10000, statement_timeout: 10000, idle_in_transaction_session_timeout: 15000,
     application_name: 'ceram-dental', allowExitOnIdle: true });

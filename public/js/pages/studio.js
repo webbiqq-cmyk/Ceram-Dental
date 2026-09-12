@@ -53,9 +53,11 @@ function renderLegacyStudio() {
       return '<button class="lab-chip' + (stageFilter === s.key ? ' active' : '') + '" data-lab-stage="' + s.key + '">' + s.label + ' ' + n + '</button>';
     }).join('');
 
+  const labMe = DATA.me && DATA.me.lab;
+  const eyebrow = 'Welcome, ' + esc(labMe?.name || 'Lab Studio');
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal" style="margin-bottom:16px;"><span class="eyebrow-accent">Internal · Lab Studio</span><h1 style="font-size:1.9rem;">Case pipeline</h1>' +
-      (DATA.loginRequired ? '<button class="btn btn-ghost btn-sm" id="studioLogoutBtn" style="margin-top:14px;">Sign out</button>' : '') + '</div>' +
+    '<div class="page-head reveal" style="margin-bottom:16px;"><span class="eyebrow-accent">' + eyebrow + '</span><h1 style="font-size:1.9rem;">Case pipeline</h1>' +
+      '<button class="btn btn-ghost btn-sm" id="studioLogoutBtn" style="margin-top:14px;">Sign out</button></div>' +
     '<div class="stat-row reveal">' +
       '<div class="stat-card"><div class="n">' + inLab + '</div><div class="l">In lab hands</div></div>' +
       '<div class="stat-card tone-gold"><div class="n">' + awaitingDoc + '</div><div class="l">Awaiting doctor</div></div>' +

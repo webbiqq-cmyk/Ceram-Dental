@@ -8,8 +8,12 @@ const sessionModel = require('../models/session.model');
 // Verifies credentials scoped to one role — a correct password for the
 // dentist account does nothing on the admin login, and vice versa, because
 // the lookup itself is role-scoped, not just the resulting token.
-async function login(username, password, role) {
-  const user = await userModel.findByUsernameAndRole(username, role);
+// `identifier` can be either a username or an email — whichever the account
+// was found by, the rest of the check (and the resulting session) is
+// identical, so a dentist who signed up with an email can sign back in
+// with either one interchangeably.
+async function login(identifier, password, role) {
+  const user = await userModel.findByIdentifierAndRole(identifier, role);
   // Run bcrypt.compare against a fixed dummy hash even when no user was
   // found, so a login attempt for a username that doesn't exist takes
   // about as long as one for a real username with a wrong password —

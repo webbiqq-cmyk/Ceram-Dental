@@ -1,5 +1,4 @@
 import { DATA } from '../state.js';
-import { esc } from '../utils/format.js';
 import { doctorCard } from '../components/doctor.js';
 import { footer } from '../components/footer.js';
 import { editorialImage } from '../components/editorialImage.js';
@@ -28,9 +27,9 @@ export function renderAbout() {
       '</div>' +
       '<div class="clinic-facts"><span><b>01</b>Doctor-led planning</span><span><b>02</b>In-house ceramic studio</span><span><b>03</b>Digital scans and records</span></div>' +
     '</section>' +
-    '<section class="team-section"><div class="team-heading"><div><span class="eyebrow">Meet the clinicians</span><h2 class="serif">Different specialties, a shared commitment.</h2></div><div><p>' + team.length + ' doctors and specialists across surgery, cosmetic care, orthodontics, periodontics and restorative dentistry.</p><label class="doctor-search-label" for="doctorSearch">Find a doctor or specialty</label><input id="doctorSearch" type="search" placeholder="Name, specialty or treatment" autocomplete="off"></div></div>' +
-    '<div class="doctor-grid">' + team.map((d, i) => '<div class="doctor-profile" data-doctor-search="' + esc([d.name, d.nameAr, d.role, ...(d.credentials || [])].join(' ').toLowerCase()) + '">' + doctorCard(d, i) + '</div>').join('') + '</div>' +
-    '<p id="doctorNoMatch" class="empty-note" hidden>No doctors match your search.</p></section>' +
+    '<section class="team-section"><div class="team-heading"><div><span class="eyebrow">Meet the clinicians</span><h2 class="serif">Different specialties, a shared commitment.</h2></div><div><p>' + team.length + ' doctors and specialists across surgery, cosmetic care, orthodontics, periodontics and restorative dentistry.</p></div></div>' +
+    '<div class="doctor-grid">' + team.map((d, i) => doctorCard(d, i)).join('') + '</div>' +
+    '</section>' +
     '<section class="about-craft"><figure>' + editorialImage('about-craft') + '</figure><div><span class="eyebrow">The in-house studio</span><h2 class="serif">Where science<br>meets a careful hand.</h2><p>From digital design to ceramic finishing, the lab is part of the conversation. Shape, shade and fit are considered alongside the clinical plan.</p><a class="text-link" href="#/services">Explore our approach &rarr;</a><div class="craft-values"><span>Digital planning</span><span>Careful finishing</span><span>Clinical review</span></div></div></section>' +
     '<section class="editorial-booking about-close"><span class="eyebrow">Get to know us</span><h2 class="serif">Your first visit is the beginning.</h2>' +
       '<p>Come in for a conversation and a proper look. You\'ll leave with a clear picture of what your smile needs and how we\'d approach it &mdash; no pressure either way.</p>' +
@@ -38,16 +37,6 @@ export function renderAbout() {
     '</section></div></div>' + footer();
 }
 
-export function attachAboutHandlers() {
-  const input = document.getElementById('doctorSearch');
-  if (!input) return;
-  input.addEventListener('input', () => {
-    const query = input.value.trim().toLowerCase();
-    let count = 0;
-    document.querySelectorAll('[data-doctor-search]').forEach(card => {
-      card.hidden = !card.dataset.doctorSearch.includes(query);
-      if (!card.hidden) count++;
-    });
-    document.getElementById('doctorNoMatch').hidden = count > 0;
-  });
-}
+// No page-specific wiring needed now that the doctor search is removed;
+// kept as a no-op export so handlers.js's per-route dispatch stays simple.
+export function attachAboutHandlers() {}

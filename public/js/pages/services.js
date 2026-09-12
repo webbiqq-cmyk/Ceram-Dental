@@ -28,7 +28,9 @@ export function renderServices() {
       '<div class="treatment-list reveal">' + g.services.map(treatment).join('') + '</div></div></section>').join('') +
     '<section class="clinical-chapter" id="clinical-services"><div><span class="eyebrow">04 / Specialist care</span><h2 class="serif">Other Clinical<br>Dental Procedures</h2><p>Care for the foundations of a healthy smile. Your doctor will discuss treatment and fees following an assessment.</p><p class="clinical-note">This list grows as our specialist team expands.</p><a class="text-link" href="#/about">Meet your specialists &rarr;</a></div>' +
     '<div class="clinical-list">' + CLINICAL_SERVICES.map((s, i) => '<article class="clinical-row reveal"><span class="clinical-index">0' + (i + 1) + '</span><div><h3>' + esc(s.label) + '</h3><p>' + esc(s.desc) + '</p></div></article>').join('') + '</div></section>' +
-    '<section class="referral-section"><div><span class="eyebrow">For referring dentists</span><h2 class="serif">Good work begins<br>with a clear brief.</h2><a class="text-link" href="#/portal">Open Dentist Portal &rarr;</a></div><div>' +
+    '<section class="referral-section"><div><span class="eyebrow">For referring dentists</span><h2 class="serif">Good work begins<br>with a clear brief.</h2><p>Send us a case from your own practice, or manage your in-house cases here — one portal for both.</p>' +
+      '<div class="referral-actions"><button class="btn btn-primary" data-open-dentist-signup>Sign up to send cases</button><a class="text-link" href="#/portal">Already registered? Open Dentist Portal &rarr;</a></div>' +
+    '</div><div>' +
     GUIDES.map(g => '<details class="guide-detail"><summary>' + esc(g.t) + '</summary><p>' + esc(g.d) + '</p><ul>' + PROTOCOL.map(p => '<li>' + esc(p.label) + '</li>').join('') + '</ul></details>').join('') +
     '</div></section><section class="editorial-booking"><span class="eyebrow">Your next chapter</span><h2 class="serif">Let us start with a conversation.</h2><a class="btn btn-primary" href="#/contact">Book a consultation &rarr;</a></section></div></div>' + footer();
 }
