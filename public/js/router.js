@@ -1,6 +1,6 @@
 import { workspaceShell, attachWorkspaceHandlers } from './components/workspace.js';
 import { showWorkflowHint, removeWorkflowHint } from './components/workflowHint.js';
-import { renderLoginGate, attachAuthGateHandlers, logout } from './components/authGate.js';
+import { renderLoginGate, attachAuthGateHandlers } from './components/authGate.js';
 import { esc } from './utils/format.js';
 // Hash-based router — maps '#/route' to a render function, re-fetches
 // server state on every navigation, then wires up that page's interactions.
@@ -13,31 +13,34 @@ import { closeDoctorModal } from './components/doctor.js';
 import { updateNotifUI } from './components/notifications.js';
 import { attachPageHandlers } from './handlers.js';
 
-import { renderHome } from './pages/home.js';
-import { renderAbout } from './pages/about.js';
-import { renderServices } from './pages/services.js';
-import { renderShop } from './pages/shop.js';
-import { renderContact } from './pages/contact.js';
-import { renderCareers } from './pages/careers.js';
-import { renderNewCase } from './pages/newCase.js';
-import { renderPortal } from './pages/portal.js';
-import { renderStudio } from './pages/studio.js';
-import { renderAdmin } from './pages/admin.js';
-import { renderReception } from './pages/reception.js';
-import { renderDesigner } from './pages/designer.js';
-import { renderTechnician } from './pages/technician.js';
-import { renderQC } from './pages/qc.js';
-import { renderNewOrder } from './pages/newOrder.js';
-
 export const PUBLIC_ROUTES = { '': 1, 'about': 1, 'services': 1, 'shop': 1, 'contact': 1, 'careers': 1, 'new-case': 1 };
 
-const routes = {
-  '': renderHome, 'about': renderAbout, 'services': renderServices, 'shop': renderShop,
-  'contact': renderContact, 'careers': renderCareers, 'new-case': renderNewCase,
-  'portal': renderPortal, 'studio': renderStudio, 'admin': renderAdmin,
-  'reception': renderReception, 'designer': renderDesigner, 'technician': renderTechnician, 'qc': renderQC,
-  'new-order': renderNewOrder
+// Each route's module loads only when actually visited, instead of every
+// page in the app (all 11 Admin tabs, every lab role, Portal, Studio...)
+// being pulled in up front just because router.js statically imported all
+// of them — a plain visit to the homepage was fetching ~60 JS files for
+// pages nobody had asked for yet. Dynamic import() fetches a route's file
+// the first time it's needed; the browser caches it by URL after that, so
+// revisiting the same route is free. render/attach live in the same file
+// for every page, so one import resolves both at once.
+const ROUTE_MODULES = {
+  '': () => import('./pages/home.js').then(m => ({ render: m.renderHome })),
+  about: () => import('./pages/about.js').then(m => ({ render: m.renderAbout, attach: m.attachAboutHandlers })),
+  services: () => import('./pages/services.js').then(m => ({ render: m.renderServices, attach: m.attachServicesHandlers })),
+  shop: () => import('./pages/shop.js').then(m => ({ render: m.renderShop, attach: m.attachShopHandlers })),
+  contact: () => import('./pages/contact.js').then(m => ({ render: m.renderContact, attach: m.attachContactHandlers })),
+  careers: () => import('./pages/careers.js').then(m => ({ render: m.renderCareers, attach: m.attachCareersHandlers })),
+  'new-case': () => import('./pages/newCase.js').then(m => ({ render: m.renderNewCase, attach: m.attachNewCaseHandlers })),
+  portal: () => import('./pages/portal.js').then(m => ({ render: m.renderPortal, attach: m.attachPortalHandlers })),
+  studio: () => import('./pages/studio.js').then(m => ({ render: m.renderStudio, attach: m.attachStudioHandlers })),
+  admin: () => import('./pages/admin.js').then(m => ({ render: m.renderAdmin, attach: m.attachAdminHandlers })),
+  reception: () => import('./pages/reception.js').then(m => ({ render: m.renderReception, attach: m.attachReceptionHandlers })),
+  designer: () => import('./pages/designer.js').then(m => ({ render: m.renderDesigner, attach: m.attachDesignerHandlers })),
+  technician: () => import('./pages/technician.js').then(m => ({ render: m.renderTechnician, attach: m.attachTechnicianHandlers })),
+  qc: () => import('./pages/qc.js').then(m => ({ render: m.renderQC, attach: m.attachQCHandlers })),
+  'new-order': () => import('./pages/newOrder.js').then(m => ({ render: m.renderNewOrder, attach: m.attachNewOrderHandlers }))
 };
+async function loadRoute(route) { return (ROUTE_MODULES[route] || ROUTE_MODULES[''])(); }
 
 export function currentRoute() { return (location.hash || '#/').slice(2); }
 
@@ -64,7 +67,6 @@ export async function router() {
   if(route==='studio' && UI.labRole && UI.labRole!=='manager'){ location.hash = '#/'+UI.labRole; return; }
   if(previousRoute!==route){UI.dataPage=1;previousRoute=route;}
   const role=workflowRoles[route];
-  const fn = routes[route] || renderHome;
   document.querySelectorAll('.main-nav a').forEach(a => {
     a.classList.toggle('active', a.getAttribute('href') === '#/' + route);
   });
@@ -78,9 +80,12 @@ export async function router() {
   // 'lab' too — see orders.routes.js), matching what LAB_STATIONS's own
   // redirect above already assumed ("the manager sees all").
   const roleSatisfied = !role || DATA.auth[role] || (LAB_STATIONS[route] && DATA.auth.lab);
-  let html;
-  try { html = role && !roleSatisfied ? renderLoginGate({role,title:'Staff sign in',subtitle:'Sign in with your assigned account to continue.'}) : await fn(); }
-  catch(e){html='<div class="page"><p>'+esc(e.message || 'Unable to load this page.')+'</p><button class="btn" id="retryPage">Retry</button></div>';} 
+  let html, attach;
+  try {
+    if (role && !roleSatisfied) { html = renderLoginGate({role,title:'Staff sign in',subtitle:'Sign in with your assigned account to continue.'}); }
+    else { const mod = await loadRoute(route); html = await mod.render(); attach = mod.attach; }
+  }
+  catch(e){html='<div class="page"><p>'+esc(e.message || 'Unable to load this page.')+'</p><button class="btn" id="retryPage">Retry</button></div>';}
   if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
   document.getElementById('orderDetail')?.close();
   document.getElementById('orderDetail')?.remove();
@@ -92,9 +97,8 @@ export async function router() {
   updateCartBadge(); // show/hide the cart button for this route
   window.scrollTo(0, 0);
   if(role && !roleSatisfied) attachAuthGateHandlers();
-  else attachPageHandlers(route);
+  else attachPageHandlers(route, attach);
   document.getElementById('retryPage')?.addEventListener('click',()=>router());
-  if(role && roleSatisfied && !LAB_STATIONS[route]){const button=document.createElement('button');button.className='btn btn-ghost';button.textContent='Sign out';button.addEventListener('click',()=>logout(role));app.querySelector('.workspace-content').append(button);}
   if(!PUBLIC_ROUTES[route] && (DATA.hasMore || UI.workflowHasMore || UI.dataPage>1)){
     const nav=document.createElement('nav');nav.className='u';nav.setAttribute('aria-label','Record pages');
     nav.innerHTML='<button class="btn btn-ghost" data-page-step="-1" '+(UI.dataPage<=1?'disabled':'')+'>Previous</button> <span>Page '+UI.dataPage+'</span> <button class="btn btn-ghost" data-page-step="1" '+(!(DATA.hasMore || UI.workflowHasMore)?'disabled':'')+'>Next</button>';
@@ -119,15 +123,15 @@ export function renderCurrent() { router(); }
 export async function repaintCurrent() {
   const myToken = ++navToken;
   const route = currentRoute();
-  const fn = routes[route] || renderHome;
-  const html = await fn();
+  const mod = await loadRoute(route); // already cached by the browser after the initial visit that got us here
+  const html = await mod.render();
   if (myToken !== navToken) return;
   const app = document.getElementById('app');
   document.getElementById('orderDetail')?.close();
   document.getElementById('orderDetail')?.remove();
   app.innerHTML = PUBLIC_ROUTES[route] ? html : workspaceShell(route, html);
   attachWorkspaceHandlers();
-  attachPageHandlers(route);
+  attachPageHandlers(route, mod.attach);
   // No reveal-on-scroll choreography here — this is a repaint of content
   // that's already on screen (an optimistic update or its rollback), not
   // a fresh page landing, so nothing should fade or blink back in.

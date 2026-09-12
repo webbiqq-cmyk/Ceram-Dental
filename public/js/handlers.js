@@ -1,45 +1,16 @@
 // Per-route event wiring, dispatched by router.js right after a page
 // renders. Each route's own interaction logic lives with its render
-// function (pages/*.js) — this file just calls the right one, plus the
+// function (pages/*.js) — router.js's lazy import() already resolved that
+// page's attach function alongside its render function (same file, one
+// fetch) and hands it straight in here, so this file doesn't need its own
+// static import of every page just to dispatch to it. What's left is the
 // handful of bindings that apply on every route (opening the case drawer /
 // doctor modal from a data-open / data-doctor element).
-import { attachNewCaseHandlers } from './pages/newCase.js';
-import { attachAboutHandlers } from './pages/about.js';
-import { attachShopHandlers } from './pages/shop.js';
-import { attachServicesHandlers } from './pages/services.js';
-import { attachContactHandlers } from './pages/contact.js';
-import { attachCareersHandlers } from './pages/careers.js';
-import { attachPortalHandlers } from './pages/portal.js';
-import { attachStudioHandlers } from './pages/studio.js';
-import { attachAdminHandlers } from './pages/admin.js';
-import { attachReceptionHandlers } from './pages/reception.js';
-import { attachDesignerHandlers } from './pages/designer.js';
-import { attachTechnicianHandlers } from './pages/technician.js';
-import { attachQCHandlers } from './pages/qc.js';
-import { attachNewOrderHandlers } from './pages/newOrder.js';
 import { openDrawer } from './components/drawer.js';
 import { openDoctorModal } from './components/doctor.js';
 import { addToCart } from './components/cart.js';
 
-const ROUTE_HANDLERS = {
-  about: attachAboutHandlers,
-  'new-case': attachNewCaseHandlers,
-  shop: attachShopHandlers,
-  services: attachServicesHandlers,
-  contact: attachContactHandlers,
-  careers: attachCareersHandlers,
-  portal: attachPortalHandlers,
-  studio: attachStudioHandlers,
-  admin: attachAdminHandlers,
-  reception: attachReceptionHandlers,
-  designer: attachDesignerHandlers,
-  technician: attachTechnicianHandlers,
-  qc: attachQCHandlers,
-  'new-order': attachNewOrderHandlers
-};
-
-export function attachPageHandlers(route) {
-  const attach = ROUTE_HANDLERS[route];
+export function attachPageHandlers(route, attach) {
   if (attach) attach();
   if (route !== 'shop') document.querySelectorAll('[data-add-product]').forEach(button => button.addEventListener('click', () => addToCart(button.dataset.addProduct)));
   document.querySelectorAll('[data-review-step]').forEach(button => button.addEventListener('click', () => {
