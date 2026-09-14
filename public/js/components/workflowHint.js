@@ -23,8 +23,9 @@ const HINTS = {
   qc: ['Open a case that production has handed over.',
     'Record your findings and attach photos/scans where required.',
     'Complete the checklist and confirm packing, then approve to reception — or reject back to the technician.'],
-  'new-order': ['Step 1 — pick the job type. Step 2 — case details. Step 3 — review and send to reception.',
-    'Veneers run demo → approval → production. Everything else completes in one pass, no doctor approval.'],
+  'new-order': ['Add the patient reference, then select teeth and assign services on the full-mouth chart.',
+    'Review and configure each service group. One lab order is created per group.',
+    'Supporting scans and photos are attached securely after the orders are created.'],
   admin: ['Every internal record lives here — use the left nav.',
     'Enquiries and appointments come from the public site; billing, expenses and products are managed here.',
     'Case Tracking shows lab job orders; Accounts & Access manages every login.']

@@ -1,0 +1,13 @@
+import { esc } from '../utils/format.js';
+import { DentalChart } from './dentalChart.js';
+import { groupServices } from './selectedServicesSummary.js';
+import { toothMeta } from './toothMetadata.js';
+const LABELS={veneer:'Veneers',crown:'Crowns',bridge:'Bridges',implant:'Implant restorations'};
+function withOther(value,other) {
+  const text=String(other||'').trim();
+  return text && (value==='Other' || value==='Custom') ? value+': '+text : value;
+}
+export function ReviewSummary(form) {
+  const groups=groupServices(form.teeth);
+  return '<div class="review-summary dental-review"><section class="review-case"><span class="review-label">Ceram digital prescription</span><h2>'+esc(form.patientRef)+'</h2><p>'+esc(form.caseKind || 'New case')+' · '+(form.deliveryMethod==='delivery'?'Clinic delivery':'In-house pickup')+'</p></section><section class="review-map"><div class="review-section-head"><span class="review-label">Treatment map</span><button type="button" class="text-button" data-edit-step="1">Edit prescription</button></div>'+DentalChart(form.teeth)+'</section><section><div class="review-section-head"><span class="review-label">Prescriptions</span><strong>'+groups.length+'</strong></div>'+groups.map(g=>{const c=form.configs[g.key]||{};const facts=[c.shade&&['Shade',withOther(c.shade,c.shadeOther)],c.material&&['Material',withOther(c.material,c.materialOther)],c.secondary&&[(g.key==='bridge'?'Pontic preference':g.key==='veneer'?'Tooth form':'Restoration type'),withOther(c.secondary,c.secondaryOther)],c.restorationType&&['Restoration',withOther(c.restorationType,c.restorationTypeOther)],c.finish&&[(g.key==='veneer'?'Surface character':'Finish'),withOther(c.finish,c.finishOther)],c.character&&['Translucency / character',withOther(c.character,c.characterOther)],c.contact&&['Contacts',withOther(c.contact,c.contactOther)],c.abutment&&['Abutment',withOther(c.abutment,c.abutmentOther)],c.implantSystem&&['Implant system',c.implantSystem],c.scanBody&&['Scan body',c.scanBody],c.abutmentSize&&['Abutment size',c.abutmentSize]].filter(Boolean);return '<article class="review-service"><div><span class="service-card-kicker">'+LABELS[g.key]+'</span><h3>'+g.teeth.map(n=>n+' - '+toothMeta(n).name).join('<br>')+'</h3></div><dl>'+facts.map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join('')+'</dl>'+(c.notes?'<p><strong>Clinical instructions:</strong> '+esc(c.notes)+'</p>':'')+'</article>';}).join('')+'</section><section class="workspace-notice"><strong>Reference files come next.</strong> After these orders are created, you can securely attach scans, photos, PDFs, STL, OBJ or PLY files to each order.</section></div>';
+}
