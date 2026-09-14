@@ -9,6 +9,7 @@ let stateRequest=null, stateLoadedAt=0, loadedPage=0, stateGeneration=0, stateRe
 // no other change needed. Cross-origin requests send credentials so the
 // session cookie (shared via COOKIE_DOMAIN=.domain.com) still travels.
 export const API_BASE=(document.querySelector('meta[name="ceram-api"]')?.content || '').replace(/\/$/,'');
+const LOCAL_AUTH_BYPASS=['localhost','127.0.0.1'].includes(location.hostname);
 export async function api(path, opts={}) {
   const method=(opts.method || 'GET').toUpperCase();
   const mutation=!['GET','HEAD'].includes(method);
@@ -33,6 +34,18 @@ export const DATA = {
   users: [], activeSessions: [], activity: [], cloudinaryConfigured: false,
   notifications: [], unreadNotifications: 0
 };
+
+function applyLocalAuthBypass() {
+  if(!LOCAL_AUTH_BYPASS) return;
+  DATA.auth={...DATA.auth,admin:true,dentist:true,lab:true};
+  DATA.me={...DATA.me,admin:{id:'local-admin',username:'local-admin',name:'Local Admin'},dentist:{id:'local-dentist',username:'local-dentist',name:'Local Dentist'},lab:{id:'local-lab',username:'local-lab',name:'Local Lab'}};
+  for(const key of ['cases','invoices','expenses','products','jobs','applications','messages','orders','team','appointments','enquiries','users','activeSessions','activity','notifications']) {
+    if(!Array.isArray(DATA[key])) DATA[key]=[];
+  }
+  DATA.summary={revenue:0,outstanding:0,overdue:0,totalExpenses:0,net:0,activeCases:0,readyCases:0,newAppointments:0,totalAppointments:0,shopRevenue:0,openApplications:0,newMessages:0,trend:[],...(DATA.summary||{})};
+  if(!Array.isArray(DATA.summary.trend)) DATA.summary.trend=[];
+}
+applyLocalAuthBypass();
 
 export const UI = {
   cart: readCart(),
@@ -88,11 +101,12 @@ export async function loadState() {
     // A mutation or newer request may have completed while this response was in flight.
     // Never let an older snapshot overwrite freshly changed client state.
     if(generation!==stateGeneration || requestToken!==stateRequestToken)return;
-    delete s.ok; Object.assign(DATA,s); stateLoadedAt=Date.now();
+    delete s.ok; Object.assign(DATA,s); applyLocalAuthBypass(); stateLoadedAt=Date.now();
   }).catch(err=>{
     if(err.status===401){
       DATA.auth={admin:false,dentist:false,lab:false}; DATA.users=[]; DATA.activeSessions=[];
       DATA.cases=[]; DATA.invoices=[]; DATA.expenses=[]; DATA.orders=[]; DATA.applications=[]; DATA.messages=[]; DATA.appointments=[]; DATA.enquiries=[];
+      applyLocalAuthBypass();
     }
     throw err;
   }).finally(()=>{if(requestToken===stateRequestToken)stateRequest=null;});

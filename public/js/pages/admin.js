@@ -15,7 +15,7 @@ import { adminProducts, attachProductsHandlers } from './admin/products.js';
 import { adminOrders, attachOrderHandlers } from './admin/orders.js';
 import { adminTeam, attachTeamHandlers } from './admin/team.js';
 import { adminApplications } from './admin/applications.js';
-import { adminMessages } from './admin/messages.js';
+import { adminMessages, attachMessagesHandlers } from './admin/messages.js';
 import { adminSettings, attachSettingsHandlers } from './admin/settings.js';
 import { adminAccounts, attachAccountsHandlers } from './admin/accounts.js';
 import { adminActivity } from './admin/activity.js';
@@ -45,6 +45,7 @@ const TAB_HANDLERS = {
   invoices: attachInvoicesHandlers,
   expenses: attachExpensesHandlers,
   products: attachProductsHandlers,
+  messages: attachMessagesHandlers,
   team: attachTeamHandlers,
   settings: attachSettingsHandlers,
   accounts: attachAccountsHandlers,
@@ -64,7 +65,7 @@ export async function renderAdmin() {
   const me = DATA.me && DATA.me.admin;
   const eyebrow = tab === 'overview' ? 'Welcome, ' + esc(me?.name || 'Administrator') : 'Administration';
   return '<div class="page"><div class="u">' +
-    '<div class="page-head reveal"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + title + '</h1></div></div>' +
+    '<div class="page-head reveal"><div><span class="eyebrow-accent">' + eyebrow + '</span><h1>' + title + '</h1><p class="lede">' + (tab === 'overview' ? 'Your practice at a glance. Keep the details moving.' : 'Manage ' + esc(title.toLowerCase()) + ' in one focused workspace.') + '</p></div><span class="workspace-context">Administration / ' + esc(title) + '</span></div>' +
     body +
   '</div></div>';
 }

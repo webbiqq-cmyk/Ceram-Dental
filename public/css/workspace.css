@@ -15,9 +15,12 @@ body.workplace{--violet:#2d1142;--gold:#6c491d;--ink:#2d1142;--ink-soft:#66596d;
 button.ws-home-btn{border:0;font:inherit;cursor:pointer}
 .workspace-monogram{width:42px;height:46px;object-fit:contain;flex-shrink:0}
 .workspace-nav-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:12px 12px -12px;color:var(--ink-soft)}
-.workspace-sidebar nav{display:grid;gap:5px}.workspace-sidebar nav :is(a,button){display:block;text-align:left;text-decoration:none;font:inherit;font-size:14px;font-weight:500;color:#66596d;padding:13px 15px;border:0;border-radius:9px;background:transparent;cursor:pointer}
-.workspace-sidebar nav [aria-current=page]{background:#f0eaf4;color:#2d1142;font-weight:700;border-left:3px solid #2d1142}
-.workspace-sidebar nav :is(a,button):hover{background:#f6f2f8}.workspace-support{margin-top:auto;padding:16px 12px 2px;display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--ink-soft);line-height:1.6}.workspace-support strong{color:#2d1142}.workspace-support .ws-support-role{margin:0;font-weight:700;color:#2d1142}.workspace-support .ws-support-role span{display:block;font-weight:400;color:var(--ink-soft);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}.workspace-support .ws-switch{width:100%;min-height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#2d1142;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}.workspace-support .ws-switch:hover{background:#f6f2f8}
+.workspace-sidebar nav{display:grid;gap:2px}.workspace-sidebar nav :is(a,button){display:flex;align-items:center;gap:11px;text-align:left;text-decoration:none;font:inherit;font-size:13.5px;font-weight:500;color:#66596d;padding:11px 13px;border:0;border-radius:9px;background:transparent;cursor:pointer;transition:background .15s var(--ease,ease),color .15s var(--ease,ease)}
+.workspace-sidebar nav .ws-icon{flex-shrink:0;color:#9a8ba5;opacity:.9;transition:color .15s ease}
+.workspace-sidebar nav [aria-current=page]{background:linear-gradient(90deg,#f0eaf4,#f6f1f8 90%);color:#2d1142;font-weight:700;border-left:3px solid var(--violet);padding-left:10px}
+.workspace-sidebar nav [aria-current=page] .ws-icon{color:var(--violet)}
+.workspace-sidebar nav :is(a,button):hover{background:#f6f2f8}
+.workspace-sidebar nav :is(a,button):hover .ws-icon{color:#67447d}.workspace-support{margin-top:auto;padding:16px 12px 2px;display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--ink-soft);line-height:1.6}.workspace-support strong{color:#2d1142}.workspace-support .ws-support-role{margin:0;font-weight:700;color:#2d1142}.workspace-support .ws-support-role span{display:block;font-weight:400;color:var(--ink-soft);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}.workspace-support .ws-switch{width:100%;min-height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#2d1142;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}.workspace-support .ws-switch:hover{background:#f6f2f8}
 .workspace-content{min-width:0;padding:20px 32px 16px;outline:none}.workspace-content .u{width:100%;max-width:none;margin:0;padding:0}.workspace-content .page{padding:0}
 .workplace .page-head,.workplace .welcome-card{border:0;background:none;box-shadow:none;padding:0;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
 .workplace .page-head h1,.workplace .welcome-card h1{font:500 clamp(22px,2.6vw,30px)/1.2 var(--font-accent)!important;letter-spacing:-.025em;margin:6px 0}
@@ -46,14 +49,13 @@ button.ws-home-btn{border:0;font:inherit;cursor:pointer}
 .workplace .drawer:not(.open),.workplace .cart-drawer:not(.open){visibility:hidden;box-shadow:none}
 .workplace .nav-toggle{display:none}.workspace-list .link-btn{text-align:left;display:inline;padding:0;color:#2d1142}.workspace-dialog textarea{width:100%}.workspace-dialog [data-review-error]{color:#922d45}
 /* Administration — same shell as the lab/portal workspaces, its own nav */
-.workspace-sidebar nav button{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.workspace-sidebar nav button>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-sidebar nav button{display:flex;align-items:center;gap:10px}
+.workspace-admin .workspace-sidebar nav button{justify-content:space-between}
+.ws-nav-label{display:flex;align-items:center;gap:11px;min-width:0}
+.ws-nav-label .ws-nav-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ws-badge{flex-shrink:0;background:#9a2944;color:#fff;font:700 10px/1 var(--font-mono,monospace);border-radius:100px;padding:3px 7px;min-width:18px;text-align:center}
 .workspace-sidebar nav [aria-current=page] .ws-badge{background:#2d1142}
 @media(min-width:1100px){.workspace-sidebar{overflow-y:auto}}
-.workplace .admin-stat-row{grid-template-columns:repeat(5,minmax(0,1fr))}
-@media(max-width:1200px){.workplace .admin-stat-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:720px){.workplace .admin-stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .workspace-role-card{text-align:left;font:inherit;display:block}
 .workspace-role-card h3{color:#2d1142}
 .workspace-role-card>span:last-child{display:inline-block;margin-top:12px}
@@ -224,3 +226,59 @@ button.ws-home-btn{border:0;font:inherit;cursor:pointer}
 .case-image-button{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#f8f6f9;color:var(--ink);cursor:pointer;font:inherit}
 .case-image-button img{width:100%;height:160px;object-fit:contain}.case-image-button span{display:block;padding:10px;font-size:13px}
 .case-image-viewer img{width:100%;max-height:70dvh;object-fit:contain}.case-image-viewer img[hidden]{display:none}
+
+/* ================= DASHBOARD FOUNDATION (Overview redesign) =================
+   Shared across the dentist and admin overview screens: richer metric
+   cards, a hero/welcome band, compact embedded stage rails on case cards,
+   an icon activity timeline and a polished empty state. Additive to the
+   existing .stat-card/.card/.workspace-list rules above, not a replacement,
+   so every screen that already uses them keeps working unchanged. */
+.stat-card-v2{display:flex;align-items:flex-start;gap:13px;transition:transform .18s var(--ease,ease),box-shadow .18s var(--ease,ease),border-color .18s var(--ease,ease)}
+.stat-card-icon{flex-shrink:0;display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--violet-soft,#efeaf3);color:var(--violet)}
+.stat-card-v2.tone-gold .stat-card-icon{background:var(--gold-soft,#faf4ea);color:var(--gold,#6c491d)}
+.stat-card-v2.tone-danger .stat-card-icon{background:var(--critical-soft,#f5e2df);color:var(--critical,#a8433e)}
+.stat-card-v2.tone-success .stat-card-icon{background:var(--success-soft,#e8f1ea);color:var(--success,#2f6b45)}
+.stat-card-body{min-width:0}
+.stat-card-meta{margin-top:6px;font-size:11px;color:var(--ink-soft);line-height:1.4}
+.stat-card-meta.is-action{color:var(--critical,#a8433e);font-weight:700}
+.workplace button.stat-card.stat-card-v2{transition:transform .18s var(--ease,ease),box-shadow .18s var(--ease,ease),border-color .18s var(--ease,ease)}
+.workplace button.stat-card.stat-card-v2:hover{transform:translateY(-3px);box-shadow:0 16px 32px -20px rgba(45,17,66,.4);border-color:#dccbe6}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;padding:38px 22px;border:1px dashed #d9cfe0;border-radius:14px;background:linear-gradient(180deg,#fffefc,#fbf8f2)}
+.empty-state-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--violet-soft,#efeaf3);color:var(--violet)}
+.empty-state-title{font-weight:700;color:var(--ink);margin:0;font-size:14.5px}
+.empty-state-text{margin:0;max-width:44ch;color:var(--ink-soft);font-size:12.5px;line-height:1.6}
+.empty-state .btn{margin-top:4px}
+
+.activity-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.activity-item:last-child{border-bottom:0;padding-bottom:0}
+.activity-item:first-child{padding-top:0}
+.activity-dot{flex-shrink:0;margin-top:1px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--violet-soft,#efeaf3);color:var(--violet)}
+.activity-dot.tone-success{background:var(--success-soft,#e8f1ea);color:var(--success,#2f6b45)}
+.activity-dot.tone-danger{background:var(--critical-soft,#f5e2df);color:var(--critical,#a8433e)}
+.activity-body{min-width:0}
+.activity-body b{font-size:13px;font-weight:600;color:var(--ink)}
+
+/* Compact stage rail embedded in a case card — same component/data as the
+   full .stage-tracker on the case detail view, just visually condensed. */
+.case-progress{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.case-progress .stage-tracker{gap:10px}
+.case-progress .st-row{overflow:visible}
+.case-progress .st-step{gap:5px}
+.case-progress .st-step .st-dot{width:20px;height:20px;font-size:9.5px;border-width:1.5px}
+.case-progress .st-step::before{top:9px}
+.case-progress .st-step .st-label{display:none}
+.case-progress .st-step.now .st-label{display:block;font-size:10px;position:absolute;top:26px;white-space:nowrap;left:50%;transform:translateX(-50%)}
+.case-progress .st-group-label{font-size:9px}
+
+@media(max-width:720px){.case-progress .st-step.now .st-label{position:static;transform:none;white-space:normal}}
+
+/* Admin overview hierarchy — one primary financial card + supporting tiles,
+   replacing five near-identical boxes (see admin/overview.js). */
+.admin-hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,1fr);gap:16px;margin-bottom:16px}
+.admin-hero-primary{padding:24px 26px;border-radius:16px;background:linear-gradient(135deg,#fff 0%,#fdf8f1 55%,#faf1e4 100%);border:1px solid color-mix(in srgb,var(--gold-light,#ead4aa) 45%,var(--line))}
+.admin-hero-figure{font-family:var(--font-display);font-weight:600;font-size:clamp(28px,3.6vw,40px);color:var(--violet);margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.admin-hero-side{display:grid;gap:12px}
+.admin-hero-side .stat-card{height:100%}
+@media(max-width:1100px){.admin-hero{grid-template-columns:1fr}.admin-hero-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.admin-hero-side{grid-template-columns:1fr}}

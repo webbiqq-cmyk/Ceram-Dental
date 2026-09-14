@@ -23,6 +23,14 @@ export function renderContact() {
         infoRow('M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Zm0-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'Address', esc(s.address)) +
         infoRow('M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z', 'Hours', esc(s.hours)) +
         '<div><span class="eyebrow" style="margin-bottom:10px;">Follow along</span><div class="social-row">' + socialIcons() + '</div></div>' +
+        '<details class="contact-quick-msg"><summary>Prefer to just send a message? <span aria-hidden="true">&rarr;</span></summary>' +
+          '<form id="quickMessageForm" class="form-grid" style="margin-top:14px;">' +
+            field('', 'text', 'qm-name', 'Name', true) +
+            field('', 'email', 'qm-email', 'Email', true) +
+            '<div class="field full"><label>Message</label><textarea id="qm-message" required placeholder="What can we help with?"></textarea></div>' +
+            '<div class="field full"><button class="btn btn-ghost btn-block" type="submit">Send message</button></div>' +
+          '</form>' +
+        '</details>' +
       '</div>' +
       '<div class="card reveal">' +
         '<span class="eyebrow" style="margin-bottom:14px;">Book a consultation</span>' +
@@ -56,6 +64,19 @@ export function attachContactHandlers() {
       }) });
       toast('Request sent — we\'ll call to confirm.');
       bf.reset();
+    } catch (err) { toast(err.message); }
+  });
+  const qf = document.getElementById('quickMessageForm');
+  if (qf) qf.addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await api('/api/contact', { method: 'POST', body: JSON.stringify({
+        name: document.getElementById('qm-name').value,
+        email: document.getElementById('qm-email').value,
+        message: document.getElementById('qm-message').value
+      }) });
+      toast('Message sent — we\'ll get back to you soon.');
+      qf.reset();
     } catch (err) { toast(err.message); }
   });
 }

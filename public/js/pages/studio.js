@@ -9,6 +9,7 @@ import { STAGES } from '../constants.js';
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers, logout } from '../components/authGate.js';
 import { toast } from '../toast.js';
+import { icon } from '../components/icons.js';
 
 // Each station's real backend role/cookie (see src/models/user.model.js
 // ROLES and src/middleware/auth.js) — 'lab' is the same manager account
@@ -117,7 +118,7 @@ function rolePicker() {
       '<p class="lede">Pick your role, then sign in with the credentials your administrator assigned you.</p></div></div>' +
     '<div class="role-pick-grid">' + LAB_ROLES.map((r,i) =>
       '<button type="button" class="role-pick' + (r[0] === 'manager' ? ' role-pick-wide' : '') + '" data-lab-role-pick="' + r[0] + '">' +
-        '<span class="rp-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+        '<span class="rp-num">' + icon(['grid','inbox','sliders','box','check'][i]) + '</span>' +
         '<span class="rp-body"><b>' + esc(r[2]) + '</b><small>' + esc(r[3]) + '</small></span>' +
         '<span class="rp-go" aria-hidden="true">&rarr;</span></button>').join('') +
     '</div></div></div>';
@@ -146,7 +147,8 @@ async function managerOverview() {
   const ready = orders.filter(o => ['qc_approved','ready_for_delivery','ready_for_pickup'].includes(o.status)).length;
   return '<div class="page"><div class="u"><div class="page-head"><div><span class="eyebrow-accent">Ceram · Lab Studio</span><h1>A clear view of the work ahead.</h1><p class="lede">The whole board — open any station to work a case.</p></div></div>' +
     '<div class="stat-row"><div class="stat-card"><div class="n">' + pending + '</div><div class="l">Incoming orders</div></div><div class="stat-card"><div class="n">' + production + '</div><div class="l">Design &amp; production</div></div><div class="stat-card"><div class="n">' + orders.filter(o=>o.status==='qc_pending').length + '</div><div class="l">Quality review</div></div><div class="stat-card"><div class="n">' + ready + '</div><div class="l">Packing &amp; collection</div></div></div>' +
-    '<div class="workspace-role-grid">' + LAB_ROLES.filter(r=>r[0]!=='manager').map((r,i)=>'<a class="workspace-role-card" href="#/' + r[1] + '"><span>0' + (i+1) + ' / STATION</span><h3>' + esc(r[2]) + '</h3><p>' + esc(r[3]) + '</p><span>Open station &rarr;</span></a>').join('') + '</div>' +
+    '<div class="section-head"><h2>Your production floor</h2><span class="workspace-context">Four connected stations</span></div>' +
+    '<div class="workspace-role-grid">' + LAB_ROLES.filter(r=>r[0]!=='manager').map((r,i)=>'<a class="workspace-role-card" href="#/' + r[1] + '"><div class="station-card-top"><span class="station-icon">' + icon(['inbox','sliders','box','check'][i]) + '</span><span>0' + (i+1) + ' / STATION</span></div><h3>' + esc(r[2]) + '</h3><p>' + esc(r[3]) + '</p><span class="station-card-link">Open station &rarr;</span></a>').join('') + '</div>' +
     '<section class="card" style="margin-top:26px"><h3>Recent case updates</h3>' + (UI.workflowHasMore || UI.dataPage>1?'<p class="lede">Showing cases on this page.</p>':'') + '<ul class="workspace-list">' + orders.slice(0,8).map(o=>'<li><button class="link-btn" data-studio-order="' + o.id + '">' + esc(o.order_number) + ' · ' + esc(jobTypeLabel(o.job_type)) + '</button><p>' + statusPill(o.status) + '</p></li>').join('') + (!orders.length?'<li>New job orders will appear here.</li>':'') + '</ul></section>' +
     '<button class="btn btn-ghost" style="margin-top:24px" data-studio-view="legacy">Earlier case pipeline</button>' +
   '</div></div>';

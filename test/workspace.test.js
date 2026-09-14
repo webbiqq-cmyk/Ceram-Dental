@@ -4,7 +4,11 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 function load(file,names,context={}) {
   const source=fs.readFileSync(file,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'');
-  return vm.runInNewContext(source+'\n({'+names.join(',')+'})',{...context});
+  // workspace.js (and friends) import the shared icon() helper for sidebar
+  // nav glyphs; this harness strips import lines rather than resolving
+  // modules, so give every eval'd file a harmless stand-in unless a test
+  // supplies its own.
+  return vm.runInNewContext(source+'\n({'+names.join(',')+'})',{icon:name=>'<i data-icon="'+name+'"></i>',...context});
 }
 test('Administration is its own surface, not nested in the lab workspace',()=>{
   const ADMIN_TABS=[['overview','Overview'],['enquiries','Enquiries'],['orders','Case Tracking & Orders']];

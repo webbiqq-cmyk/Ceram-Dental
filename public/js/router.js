@@ -1,4 +1,5 @@
 import { workspaceShell, attachWorkspaceHandlers } from './components/workspace.js';
+import { attachWorkspaceViewport } from './components/workspaceViewport.js';
 import { showWorkflowHint, removeWorkflowHint } from './components/workflowHint.js';
 import { renderLoginGate, attachAuthGateHandlers } from './components/authGate.js';
 import { esc } from './utils/format.js';
@@ -105,6 +106,7 @@ export async function router() {
     nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{UI.dataPage+=Number(b.dataset.pageStep);router();}));(app.querySelector('.workspace-content') || app).append(nav);
   }
   initReveal();
+  if (!PUBLIC_ROUTES[route]) attachWorkspaceViewport(route + ':' + UI.adminTab + ':' + UI.portalTab + ':' + UI.dataPage);
   const hintOk = !PUBLIC_ROUTES[route] && !(role && !roleSatisfied) && !(route === 'studio' && UI.labRole !== 'manager');
   if (hintOk) showWorkflowHint(route); else removeWorkflowHint();
   loadNotifications().then(updateNotifUI);
@@ -136,4 +138,5 @@ export async function repaintCurrent() {
   // that's already on screen (an optimistic update or its rollback), not
   // a fresh page landing, so nothing should fade or blink back in.
   app.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+  if (!PUBLIC_ROUTES[route]) attachWorkspaceViewport(route + ':' + UI.adminTab + ':' + UI.portalTab + ':' + UI.dataPage);
 }

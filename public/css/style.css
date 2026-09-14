@@ -40,6 +40,15 @@
   --critical-soft:#F5E2DF;
   --shadow: 0 1px 2px rgba(30,19,48,.07), 0 10px 30px -14px rgba(30,19,48,.18);
 
+  /* Semantic aliases for workspace UI (metric cards, status dots, empty
+     states) — point at the existing palette above rather than introducing
+     new hues, so dashboards stay in the same restrained system. */
+  --success:#2F6B45; --success-soft:#E8F1EA;
+  --warning:#6C491D; --warning-soft:#FAF4EA;
+  --info:#3E5C8A; --info-soft:#EAEFF6;
+  --shadow-soft: 0 1px 2px rgba(30,19,48,.05), 0 6px 18px -12px rgba(30,19,48,.16);
+  --ease: cubic-bezier(.4,0,.2,1);
+
   --font-display:'Outfit', ui-sans-serif, system-ui, sans-serif;
   --font-body:'Montserrat', ui-sans-serif, system-ui, sans-serif;
   --font-accent:'Cormorant Garamond', ui-serif, Georgia, serif;
@@ -542,14 +551,29 @@ img{max-width:100%; display:block;}
 .spec-list li b{color:var(--ink); font-weight:600;}
 
 /* ---- admin: product management ---- */
-.prod-admin-list{display:flex; flex-direction:column; gap:16px;}
-.prod-card .prod-card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:14px;}
+/* Each product collapses to one compact row (thumb, name, badges, price,
+   stock) and only opens its full edit form on click — instead of every
+   product rendering its whole form at once, which made the page very long. */
+.prod-admin-list{display:flex; flex-direction:column; gap:12px;}
+.prod-card{padding:0; overflow:hidden;}
+.prod-card.is-hidden{opacity:.72;}
+.prod-summary-row{display:flex; align-items:center; gap:10px; padding:14px 18px;}
+.prod-summary-toggle{flex:1; min-width:0; display:flex; align-items:center; gap:14px; text-align:left; background:none; border:0; padding:0; font:inherit; color:inherit; cursor:pointer;}
+.prod-summary-main{flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; min-width:0;}
+.prod-summary-main b{font-size:14.5px; overflow-wrap:anywhere;}
+.prod-summary-badges{display:flex; gap:6px; flex-wrap:wrap;}
+.prod-summary-meta{font-size:12px; color:var(--ink-soft);}
+.prod-summary-chevron{flex-shrink:0; color:var(--ink-soft); transition:transform .18s var(--ease,ease); font-size:14px;}
+.prod-summary-toggle[aria-expanded=true] .prod-summary-chevron{transform:rotate(180deg);}
+.prod-details{padding:0 18px 20px; border-top:1px solid var(--line); margin-top:2px;}
+.prod-details .form-grid{padding-top:18px;}
 .prod-thumb{width:54px; height:54px; flex-shrink:0; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:var(--surface-sunken); display:flex; align-items:center; justify-content:center; color:var(--violet);}
 .prod-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
 .prod-thumb.is-placeholder.ph-retail{background:var(--violet-soft);}
 .prod-thumb svg{width:24px; height:24px;}
 .prod-card-actions.field{flex-direction:row; align-items:center; gap:10px; margin-top:4px;}
 .prod-card-actions .btn{flex:0 0 auto;}
+@media(max-width:640px){.prod-summary-row{flex-wrap:wrap;}.prod-summary-row>[data-quick-product-visibility]{margin-left:68px;}}
 
 .cart-backdrop{position:fixed; inset:0; background:rgba(34,26,43,.55); z-index:60; opacity:0; pointer-events:none; transition:opacity .18s;}
 .cart-backdrop.open{opacity:1; pointer-events:auto;}
@@ -589,6 +613,9 @@ img{max-width:100%; display:block;}
 .social-row a{width:38px; height:38px; border-radius:10px; background:var(--surface-sunken); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; color:var(--ink); transition:border-color .15s, color .15s, background .15s, transform .12s;}
 .social-row a:hover{border-color:var(--violet); color:var(--violet); transform:translateY(-2px);}
 .social-row a svg{display:block;}
+.contact-quick-msg{margin-top:6px; padding-top:16px; border-top:1px solid var(--line);}
+.contact-quick-msg summary{cursor:pointer; color:var(--violet); font-weight:700; font-size:13.5px; list-style:none;}
+.contact-quick-msg summary::-webkit-details-marker{display:none;}
 
 .job-card{border:1px solid var(--line); border-radius:14px; background:var(--surface); box-shadow:var(--shadow); padding:20px; display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:12px; flex-wrap:wrap;}
 .job-card h3{font-size:16px;}
@@ -809,6 +836,24 @@ img{max-width:100%; display:block;}
 .list-row:last-child{border-bottom:none;}
 .list-row .t{font-weight:600;}
 .list-row .s{color:var(--ink-soft); font-size:12px;}
+
+/* ---- admin: website messages (inquiries via the contact form) ---- */
+.msg-list{display:flex; flex-direction:column; gap:10px;}
+.msg-card{padding:0; overflow:hidden;}
+.msg-summary{display:flex; align-items:center; gap:12px; padding:14px 18px; cursor:pointer; list-style:none;}
+.msg-summary::-webkit-details-marker{display:none;}
+.msg-dot{flex-shrink:0; width:8px; height:8px; border-radius:50%; background:transparent;}
+.msg-card.is-unread .msg-dot{background:var(--critical);}
+.msg-card.is-unread .msg-summary-main b{font-weight:800;}
+.msg-summary-main{flex:1; min-width:0; display:flex; align-items:baseline; gap:10px;}
+.msg-summary-main b{font-size:13.5px; flex-shrink:0;}
+.msg-summary-preview{color:var(--ink-soft); font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+.msg-summary time{flex-shrink:0; font-size:11px; color:var(--ink-soft);}
+.msg-body{padding:0 18px 18px; border-top:1px solid var(--line);}
+.msg-full{margin:16px 0 10px; line-height:1.6; white-space:pre-wrap;}
+.msg-meta{font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
+.msg-actions{display:flex; gap:10px; flex-wrap:wrap;}
+@media(max-width:640px){.msg-summary-preview{display:none;}}
 
 /* ================= FOOTER ================= */
 .site-footer{position:relative; background:var(--plum-surface); color:rgba(255,255,255,.86); margin-top:80px; content-visibility:auto; contain-intrinsic-size:auto 420px;}

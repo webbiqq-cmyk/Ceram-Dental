@@ -35,36 +35,51 @@ export function adminProducts() {
 
   if (!DATA.products.length) return stats + addForm + '<div class="empty-note">No products yet — add your first one above.</div>';
 
-  const cards = DATA.products.map(p =>
-    '<div class="card reveal prod-card">' +
-      '<form class="form-grid product-edit-form" data-product-id="' + esc(p.id) + '">' +
-        '<div class="field full prod-card-head">' +
-          productMediaHtml(p, 'prod-thumb') +
-          '<div style="flex:1; min-width:0;"><span class="eyebrow">' + esc(p.category) + (p.active === false ? ' · hidden' : '') + '</span>' +
-            '<h3 style="font-size:16px; margin-top:4px;">' + esc(p.name) + '</h3></div>' +
-          '<span class="mono" style="font-size:11px; color:var(--ink-soft);">' + esc(p.id) + '</span>' +
-        '</div>' +
-        '<div class="field"><label>Name</label><input name="name" value="' + esc(p.name) + '" required></div>' +
-        '<div class="field"><label>Category</label><select name="category">' + catOptions(p.category) + '</select></div>' +
-        '<div class="field"><label>Price (BD)</label><input name="price" type="number" min="0" step="0.001" value="' + esc(p.price) + '" required></div>' +
-        '<div class="field"><label>SKU</label><input name="sku" value="' + esc(p.sku || '') + '"></div>' +
-        '<div class="field"><label>Stock on hand</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock == null ? '' : p.stock) + '"></div>' +
-        '<div class="field"><label>Shop visibility</label><select name="active">' +
-          '<option value="true"' + (p.active === false ? '' : ' selected') + '>Listed in shop</option>' +
-          '<option value="false"' + (p.active === false ? ' selected' : '') + '>Hidden</option></select></div>' +
-        '<div class="field full"><label>Image URL</label><input id="pe-image-' + esc(p.id) + '" name="image" value="' + esc(p.image || '') + '" placeholder="https://… (blank = placeholder tile)"></div>' +
-        (DATA.cloudinaryConfigured ? uploadWidgetHtml('pe-image-' + p.id) : '') +
-        '<div class="field full"><label>Description</label><textarea name="desc">' + esc(p.desc || '') + '</textarea></div>' +
-        '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
-          '<textarea name="specs" rows="4">' + esc(specsToText(p.specs)) + '</textarea></div>' +
-        '<div class="field full prod-card-actions">' +
-          '<button class="btn btn-primary btn-sm" type="submit">Save changes</button>' +
-          '<button class="btn btn-danger-ghost btn-sm" type="button" data-del-product="' + esc(p.id) + '">Delete</button></div>' +
-      '</form>' +
-    '</div>'
-  ).join('');
+  const toolbar = '<div class="workspace-toolbar reveal"><input type="search" id="productSearch" placeholder="Search products by name, category or SKU…" autocomplete="off"></div>';
 
-  return stats + addForm + '<div class="prod-admin-list">' + cards + '</div>';
+  const cards = DATA.products.map(p => {
+    const lowStock = p.stock != null && p.stock <= 3;
+    const hidden = p.active === false;
+    const hay = (p.name + ' ' + p.category + ' ' + (p.sku || '')).toLowerCase();
+    return '<div class="card reveal prod-card' + (hidden ? ' is-hidden' : '') + '" data-prod-search="' + esc(hay) + '">' +
+      '<div class="prod-summary-row">' +
+        '<button type="button" class="prod-summary-toggle" data-toggle-product="' + esc(p.id) + '" aria-expanded="false" aria-controls="prod-form-' + esc(p.id) + '">' +
+          productMediaHtml(p, 'prod-thumb') +
+          '<span class="prod-summary-main">' +
+            '<b>' + esc(p.name) + '</b>' +
+            '<span class="prod-summary-badges"><span class="pill pill-neutral">' + esc(p.category) + '</span>' +
+              (hidden ? '<span class="pill pill-neutral">Hidden</span>' : '') +
+              (lowStock ? '<span class="pill pill-danger">Low stock</span>' : '') + '</span>' +
+            '<span class="prod-summary-meta">' + money(p.price) + ' · SKU ' + esc(p.sku || '—') + ' · ' + (p.stock == null ? 'Stock not tracked' : p.stock + ' in stock') + '</span>' +
+          '</span>' +
+          '<span class="prod-summary-chevron" aria-hidden="true">⌄</span>' +
+        '</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-quick-product-visibility="' + esc(p.id) + '" data-make-active="' + hidden + '">' + (hidden ? 'Show in shop' : 'Hide from shop') + '</button>' +
+      '</div>' +
+      '<div class="prod-details" id="prod-form-' + esc(p.id) + '" hidden>' +
+        '<form class="form-grid product-edit-form" data-product-id="' + esc(p.id) + '">' +
+          '<div class="field"><label>Name</label><input name="name" value="' + esc(p.name) + '" required></div>' +
+          '<div class="field"><label>Category</label><select name="category">' + catOptions(p.category) + '</select></div>' +
+          '<div class="field"><label>Price (BD)</label><input name="price" type="number" min="0" step="0.001" value="' + esc(p.price) + '" required></div>' +
+          '<div class="field"><label>SKU</label><input name="sku" value="' + esc(p.sku || '') + '"></div>' +
+          '<div class="field"><label>Stock on hand</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock == null ? '' : p.stock) + '"></div>' +
+          '<div class="field"><label>Shop visibility</label><select name="active">' +
+            '<option value="true"' + (hidden ? '' : ' selected') + '>Listed in shop</option>' +
+            '<option value="false"' + (hidden ? ' selected' : '') + '>Hidden</option></select></div>' +
+          '<div class="field full"><label>Image URL</label><input id="pe-image-' + esc(p.id) + '" name="image" value="' + esc(p.image || '') + '" placeholder="https://… (blank = placeholder tile)"></div>' +
+          (DATA.cloudinaryConfigured ? uploadWidgetHtml('pe-image-' + p.id) : '') +
+          '<div class="field full"><label>Description</label><textarea name="desc">' + esc(p.desc || '') + '</textarea></div>' +
+          '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
+            '<textarea name="specs" rows="4">' + esc(specsToText(p.specs)) + '</textarea></div>' +
+          '<div class="field full prod-card-actions">' +
+            '<button class="btn btn-primary btn-sm" type="submit">Save changes</button>' +
+            '<button class="btn btn-danger-ghost btn-sm" type="button" data-del-product="' + esc(p.id) + '">Delete</button></div>' +
+        '</form>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  return stats + addForm + toolbar + '<div class="prod-admin-list">' + cards + '</div><p class="empty-note" id="productNoMatch" hidden>No products match that search.</p>';
 }
 
 export function attachProductsHandlers() {
@@ -102,5 +117,31 @@ export function attachProductsHandlers() {
         await loadState(); renderCurrent(); toast('Product deleted');
       } catch (err) { toast(err.message); }
     });
+  });
+  // Compact-by-default list: each row expands to its full edit form only
+  // when opened, instead of every product's form rendering at once.
+  document.querySelectorAll('[data-toggle-product]').forEach(b => {
+    b.addEventListener('click', () => {
+      const panel = document.getElementById('prod-form-' + b.dataset.toggleProduct);
+      if (!panel) return;
+      panel.hidden = !panel.hidden;
+      b.setAttribute('aria-expanded', String(!panel.hidden));
+    });
+  });
+  // One-click shop visibility toggle, without opening the full form.
+  document.querySelectorAll('[data-quick-product-visibility]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const makeActive = b.dataset.makeActive === 'true';
+      b.disabled = true;
+      try {
+        await api('/api/products/' + encodeURIComponent(b.dataset.quickProductVisibility), { method: 'POST', body: JSON.stringify({ active: makeActive }) });
+        await loadState(); renderCurrent(); toast(makeActive ? 'Product shown in the shop' : 'Product hidden from the shop');
+      } catch (err) { toast(err.message); b.disabled = false; }
+    });
+  });
+  document.getElementById('productSearch')?.addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase(); let shown = 0;
+    document.querySelectorAll('[data-prod-search]').forEach(card => { card.hidden = !card.dataset.prodSearch.includes(q); if (!card.hidden) shown++; });
+    document.getElementById('productNoMatch').hidden = shown > 0;
   });
 }

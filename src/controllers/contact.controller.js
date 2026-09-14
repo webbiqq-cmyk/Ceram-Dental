@@ -1,6 +1,7 @@
 const { ok, bad } = require('../utils/respond');
 const messageModel = require('../models/message.model');
 const notificationModel = require('../models/notification.model');
+const { logAction } = require('../utils/audit');
 
 async function send(req, res) {
   const { name, email, message } = req.body || {};
@@ -10,6 +11,19 @@ async function send(req, res) {
   ok(res, { message: msg });
 }
 
-module.exports = { send };
+async function markRead(req, res) {
+  const msg = await messageModel.markRead(req.params.id);
+  if (!msg) return bad(res, 'Unknown message.');
+  ok(res, { message: msg });
+}
+
+async function remove(req, res) {
+  const done = await messageModel.remove(req.params.id);
+  if (!done) return bad(res, 'Unknown message.');
+  await logAction(req, 'message:delete', req.params.id);
+  ok(res);
+}
+
+module.exports = { send, markRead, remove };
 
 for (const [name, handler] of Object.entries(module.exports)) module.exports[name] = require('../utils/asyncHandler').asyncHandler(handler);
