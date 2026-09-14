@@ -13,6 +13,7 @@ import { closeApplyModal } from './components/applyModal.js';
 import { closeDoctorModal } from './components/doctor.js';
 import { updateNotifUI } from './components/notifications.js';
 import { attachPageHandlers } from './handlers.js';
+import { applyDocumentDir } from './i18n.js';
 
 export const PUBLIC_ROUTES = { '': 1, 'about': 1, 'services': 1, 'shop': 1, 'contact': 1, 'careers': 1, 'new-case': 1 };
 
@@ -95,6 +96,12 @@ export async function router() {
   document.body.classList.toggle('public-site', !!PUBLIC_ROUTES[route]);
   document.body.classList.toggle('workplace', !PUBLIC_ROUTES[route]);
   document.body.dataset.page = route || 'home';
+  // Staff workspaces always render English/LTR regardless of the visitor's
+  // saved language — applyDocumentDir() reads the workplace class just set
+  // above, so it has to run after it, every navigation (not just once at
+  // startup) since crossing between the public site and a workspace route
+  // is exactly when the effective language can change.
+  applyDocumentDir();
   updateCartBadge(); // show/hide the cart button for this route
   window.scrollTo(0, 0);
   if(role && !roleSatisfied) attachAuthGateHandlers();

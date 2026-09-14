@@ -1,6 +1,7 @@
 import { DATA } from '../state.js';
 import { esc } from '../utils/format.js';
 import { brandLogoCompact } from './brand.js';
+import { effectiveLang } from '../i18n.js';
 
 const NETWORKS = [
   { label: 'Instagram', url: 'https://instagram.com/ceramdental',
@@ -17,6 +18,25 @@ const NETWORKS = [
     path: 'M19.05 4.94A9.82 9.82 0 0 0 12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.73 1.2h.01c5.46 0 9.9-4.44 9.9-9.9a9.82 9.82 0 0 0-2.9-6.98ZM12.04 20.1a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.15.82.84-3.07-.2-.32a8.16 8.16 0 0 1-1.25-4.35 8.2 8.2 0 0 1 14.01-5.8 8.14 8.14 0 0 1 2.4 5.8c0 4.53-3.68 8.21-8.22 8.21Zm4.5-6.15c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.13-.55.12-.16.25-.63.8-.78.97-.14.16-.29.18-.53.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.16-.25.25-.42.08-.16.04-.31-.02-.43-.06-.12-.55-1.34-.76-1.83-.2-.48-.4-.42-.55-.42l-.47-.01c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.05 0 1.2.88 2.37 1 2.53.12.16 1.73 2.64 4.2 3.7.58.26 1.04.4 1.4.52.59.19 1.12.16 1.55.1.47-.07 1.46-.6 1.66-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28Z' }
 ];
 
+const S = {
+  en: {
+    eyebrow: 'Ceram Specialist Dental Center', headline: 'Care worth making time for.', cta: 'Book a consultation →',
+    about: 'Specialist dentistry.<br>In-house craftsmanship.<br>A personal approach to your smile.',
+    discover: 'Discover', ourDoctors: 'Our doctors', treatments: 'Treatments', shop: 'Shop', careers: 'Careers',
+    professional: 'Professional access', portal: 'Dentist Portal',
+    findUs: 'Find us in Bahrain', directions: 'Get directions ↗',
+    imagery: 'Clinic imagery is illustrative. Review examples are not patient testimonials.'
+  },
+  ar: {
+    eyebrow: 'مركز سيرام التخصصي لطب الأسنان', headline: 'عناية تستحق أن تخصص لها وقتًا.', cta: '← احجز استشارة',
+    about: 'طب أسنان تخصصي.<br>حِرفية داخل العيادة.<br>نهج شخصي لابتسامتك.',
+    discover: 'استكشف', ourDoctors: 'أطباؤنا', treatments: 'العلاجات', shop: 'المتجر', careers: 'وظائف',
+    professional: 'دخول متخصص', portal: 'بوابة الأطباء',
+    findUs: 'موقعنا في البحرين', directions: '↖ احصل على الاتجاهات',
+    imagery: 'صور العيادة توضيحية. أمثلة التقييمات ليست شهادات مرضى حقيقية.'
+  }
+};
+
 export function socialIcons() {
   return NETWORKS.map(n =>
     '<a href="' + n.url + '" target="_blank" rel="noopener" aria-label="' + n.label + '" title="' + n.label + '">' +
@@ -26,16 +46,17 @@ export function socialIcons() {
 
 export function footer() {
   const s = DATA.settings || {};
+  const t = S[effectiveLang()];
   const phone = s.phone || '+973 1713 1123';
   const email = s.email || '';
   const address = s.address || 'New Zinj, Manama, Bahrain';
   const map = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Ceram Dental ' + address);
   return '<footer class="site-footer"><div class="u">' +
-    '<div class="footer-invitation"><div><span class="eyebrow">Ceram Specialist Dental Center</span><h2 class="serif">Care worth making time for.</h2></div><a class="btn btn-white" href="#/contact">Book a consultation &rarr;</a></div>' +
-    '<div class="footer-grid"><div class="footer-identity"><a class="footer-brand" href="#/" aria-label="Ceram Dental home">' + brandLogoCompact({ cls: 'brand-logo' }) + '</a><p class="about-copy">Specialist dentistry.<br>In-house craftsmanship.<br>A personal approach to your smile.</p><div class="social-row">' + socialIcons() + '</div></div>' +
-    '<div><h4>Discover</h4><a href="#/about">Our doctors</a><a href="#/services">Treatments</a><a href="#/shop">Shop</a><a href="#/careers">Careers</a></div>' +
-    '<div><h4>Professional access</h4><a href="#/portal">Dentist Portal</a></div>' +
-    '<div class="footer-contact"><h4>Find us in Bahrain</h4><p>' + esc(address) + '</p><p>' + esc(s.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '</p><a href="tel:' + esc(phone.replace(/[^+0-9]/g, '')) + '">' + esc(phone) + '</a>' +
-    (email ? '<a href="mailto:' + esc(email) + '">' + esc(email) + '</a>' : '') + '<a href="' + esc(map) + '" target="_blank" rel="noopener">Get directions &nearr;</a></div></div>' +
-    '<div class="footer-bottom"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '</span><span>Clinic imagery is illustrative. Review examples are not patient testimonials.</span></div></div></footer>';
+    '<div class="footer-invitation"><div><span class="eyebrow">' + t.eyebrow + '</span><h2 class="serif">' + t.headline + '</h2></div><a class="btn btn-white" href="#/contact">' + t.cta + '</a></div>' +
+    '<div class="footer-grid"><div class="footer-identity"><a class="footer-brand" href="#/" aria-label="Ceram Dental home">' + brandLogoCompact({ cls: 'brand-logo' }) + '</a><p class="about-copy">' + t.about + '</p><div class="social-row">' + socialIcons() + '</div></div>' +
+    '<div><h4>' + t.discover + '</h4><a href="#/about">' + t.ourDoctors + '</a><a href="#/services">' + t.treatments + '</a><a href="#/shop">' + t.shop + '</a><a href="#/careers">' + t.careers + '</a></div>' +
+    '<div><h4>' + t.professional + '</h4><a href="#/portal">' + t.portal + '</a></div>' +
+    '<div class="footer-contact"><h4>' + t.findUs + '</h4><p>' + esc(address) + '</p><p>' + esc(s.hours || 'Sat-Thu, 9:00 AM - 7:00 PM') + '</p><a href="tel:' + esc(phone.replace(/[^+0-9]/g, '')) + '">' + esc(phone) + '</a>' +
+    (email ? '<a href="mailto:' + esc(email) + '">' + esc(email) + '</a>' : '') + '<a href="' + esc(map) + '" target="_blank" rel="noopener">' + t.directions + '</a></div></div>' +
+    '<div class="footer-bottom"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(s.clinicName || 'Ceram Dental') + '</span><span>' + t.imagery + '</span></div></div></footer>';
 }

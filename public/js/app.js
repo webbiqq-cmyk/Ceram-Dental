@@ -8,6 +8,7 @@ import { closeApplyModal } from './components/applyModal.js';
 import { closeDoctorModal } from './components/doctor.js';
 import { initNotifBell, updateNotifUI } from './components/notifications.js';
 import { openDentistSignupModal, closeDentistSignupModal } from './components/dentistSignup.js';
+import { initI18n } from './i18n.js';
 
 // How often to check for new notifications without the user navigating —
 // this is the in-app substitute for OS push (see README for why, and what
@@ -16,6 +17,7 @@ import { openDentistSignupModal, closeDentistSignupModal } from './components/de
 const NOTIFICATION_POLL_MS = 120000;
 
 document.addEventListener('DOMContentLoaded', () => {
+  initI18n();
   updateCartBadge();
   injectDrawerShell();
 
