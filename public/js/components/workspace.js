@@ -5,7 +5,7 @@ import { logout } from './authGate.js';
 import { icon } from './icons.js';
 
 const STAFF = [['receptionist','reception','Reception','inbox'],['designer','designer','Design','sliders'],['technician','technician','Production','box'],['qc','qc','Quality inspection','check']];
-const ADMIN_ICONS = {overview:'grid',enquiries:'message',appointments:'calendar',invoices:'receipt',expenses:'wallet',products:'box',orders:'clipboard',team:'users',applications:'briefcase',messages:'mail',settings:'sliders',accounts:'shield',activity:'activity',export:'download'};
+const ADMIN_ICONS = {overview:'grid',enquiries:'message',appointments:'calendar',invoices:'receipt',expenses:'wallet',products:'box',orders:'clipboard',team:'users',dentists:'user',applications:'briefcase',messages:'mail',settings:'sliders',accounts:'shield',activity:'activity',export:'download'};
 const DENTIST_ICONS = {overview:'grid',orders:'history',rejected:'alert',drafts:'clipboard',billing:'receipt',profile:'user'};
 
 // One shell for every signed-in surface — dentist portal, the lab roles, and

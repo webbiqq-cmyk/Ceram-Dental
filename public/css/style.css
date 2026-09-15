@@ -859,6 +859,22 @@ body.workplace .lang-switch{display:none;}
 .msg-actions{display:flex; gap:10px; flex-wrap:wrap;}
 @media(max-width:640px){.msg-summary-preview{display:none;}}
 
+/* ---- admin: dentist directory ---- */
+.dentist-list{display:flex; flex-direction:column; gap:10px;}
+.dentist-card.is-hidden{opacity:.65;}
+.dentist-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;}
+.dentist-card-top b{font-size:14.5px;}
+.dentist-company{margin-top:3px; font-size:12.5px; color:var(--ink-soft);}
+.dentist-cases{text-align:right; flex-shrink:0;}
+.dentist-cases b{display:block; font-family:var(--font-display); font-size:18px; line-height:1.2;}
+.dentist-cases span{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
+.dentist-card-contact{display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:12.5px; color:var(--ink-soft);}
+.dentist-card-contact span{display:inline-flex; align-items:center; gap:6px;}
+.dentist-card-contact .ws-icon{color:var(--ink-soft); flex-shrink:0;}
+.dentist-card-foot{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--line);}
+.dentist-card-foot time{font-size:11.5px; color:var(--ink-soft);}
+@media(max-width:640px){.dentist-cases{text-align:left;}}
+
 /* ================= FOOTER ================= */
 .site-footer{position:relative; background:var(--plum-surface); color:rgba(255,255,255,.86); margin-top:80px; content-visibility:auto; contain-intrinsic-size:auto 420px;}
 .site-footer::before{content:""; position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);}

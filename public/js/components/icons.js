@@ -24,7 +24,8 @@ const PATHS = {
   download: 'M12 3v13m0 0-4-4m4 4 4-4M4 21h16',
   check: 'M4 12a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm4 0 2.5 2.5L16 9',
   inbox: 'M4 4h16v16H4Zm0 9h5l2 3h2l2-3h5',
-  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5v5l3 2'
+  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5v5l3 2',
+  phone: 'M4.5 4h3.2l1.3 4-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4 1.3v3.2c0 1.1-.9 2-2 2-8 0-14.5-6.5-14.5-14.5a2 2 0 0 1 2-2Z'
 };
 export function icon(name, cls) {
   return '<svg class="ws-icon' + (cls ? ' ' + cls : '') + '" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (PATHS[name] || PATHS.grid) + '"/></svg>';

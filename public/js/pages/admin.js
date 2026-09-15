@@ -14,6 +14,7 @@ import { adminExpenses, attachExpensesHandlers } from './admin/expenses.js';
 import { adminProducts, attachProductsHandlers } from './admin/products.js';
 import { adminOrders, attachOrderHandlers } from './admin/orders.js';
 import { adminTeam, attachTeamHandlers } from './admin/team.js';
+import { adminDentists, attachDentistsHandlers } from './admin/dentists.js';
 import { adminApplications } from './admin/applications.js';
 import { adminMessages, attachMessagesHandlers } from './admin/messages.js';
 import { adminSettings, attachSettingsHandlers } from './admin/settings.js';
@@ -30,6 +31,7 @@ const TAB_BODY = {
   products: adminProducts,
   orders: adminOrders,
   team: adminTeam,
+  dentists: adminDentists,
   applications: adminApplications,
   messages: adminMessages,
   settings: adminSettings,
@@ -48,6 +50,7 @@ const TAB_HANDLERS = {
   products: attachProductsHandlers,
   messages: attachMessagesHandlers,
   team: attachTeamHandlers,
+  dentists: attachDentistsHandlers,
   settings: attachSettingsHandlers,
   accounts: attachAccountsHandlers,
   export: attachExportHandlers
