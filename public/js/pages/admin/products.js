@@ -13,13 +13,16 @@ function catOptions(selected) {
 
 export function adminProducts() {
   const listed = DATA.products.filter(p => p.active !== false).length;
+  const activeCategory = window.__productCategory || 'All';
+  const categories = ['All'].concat(PRODUCT_CATEGORIES);
+  const visibleProducts = DATA.products.filter(p => activeCategory === 'All' || p.category === activeCategory);
   const stats = '<div class="stat-strip reveal" style="margin:0 0 22px;">' +
     '<div class="chipstat"><b>' + DATA.products.length + '</b><span>Products</span></div>' +
     '<div class="chipstat"><b>' + listed + '</b><span>Listed in shop</span></div>' +
     '<div class="chipstat"><b>' + (DATA.products.length - listed) + '</b><span>Hidden</span></div>' +
   '</div>';
 
-  const addForm = '<div class="card reveal" style="margin-bottom:20px;"><span class="eyebrow" style="margin-bottom:14px;">Add a product</span>' +
+  const addForm = '<details class="card reveal product-add-panel" style="margin-bottom:20px;"><summary><span><b>Add a product</b><small>Open only when adding stock</small></span></summary>' +
     '<form id="productAddForm" class="form-grid">' +
       '<div class="field"><label>Name</label><input id="np-name" required></div>' +
       '<div class="field"><label>Category</label><select id="np-category">' + catOptions('Chairside kit') + '</select></div>' +
@@ -32,13 +35,13 @@ export function adminProducts() {
       '<div class="field full"><label>Specifications — one per line, as <span class="mono">Label: value</span></label>' +
         '<textarea id="np-specs" placeholder="Material: A-silicone&#10;Set time: 45 s&#10;Shelf life: 24 months"></textarea></div>' +
       '<div class="field full"><button class="btn btn-primary" type="submit">Add product</button></div>' +
-    '</form></div>';
+    '</form></details>';
 
   if (!DATA.products.length) return stats + addForm + '<div class="empty-note">No products yet — add your first one above.</div>';
 
-  const toolbar = '<div class="workspace-toolbar reveal"><input type="search" id="productSearch" placeholder="Search products by name, category or SKU…" autocomplete="off"></div>';
+  const toolbar = '<div class="workspace-toolbar reveal products-toolbar"><div class="segmented">' + categories.map(c => '<button type="button" data-product-category="' + esc(c) + '"' + (activeCategory === c ? ' class="is-active"' : '') + '>' + esc(c) + '</button>').join('') + '</div><input type="search" id="productSearch" placeholder="Search inventory…" autocomplete="off"></div>';
 
-  const cards = DATA.products.map(p => {
+  const cards = visibleProducts.map(p => {
     const lowStock = p.stock != null && p.stock <= 3;
     const hidden = p.active === false;
     const hay = (p.name + ' ' + p.category + ' ' + (p.sku || '')).toLowerCase();
@@ -80,11 +83,12 @@ export function adminProducts() {
     '</div>';
   }).join('');
 
-  return stats + addForm + toolbar + '<div class="prod-admin-list">' + cards + '</div><p class="empty-note" id="productNoMatch" hidden>No products match that search.</p>';
+  return stats + toolbar + '<div class="prod-admin-list">' + cards + '</div><p class="empty-note" id="productNoMatch" hidden>No products match that search.</p>' + addForm;
 }
 
 export function attachProductsHandlers() {
   if (DATA.cloudinaryConfigured) attachUploadHandlers(document, 'products');
+  document.querySelectorAll('[data-product-category]').forEach(b => b.addEventListener('click', () => { window.__productCategory = b.dataset.productCategory; renderCurrent(); }));
   const paf = document.getElementById('productAddForm');
   if (paf) paf.addEventListener('submit', async e => {
     e.preventDefault();

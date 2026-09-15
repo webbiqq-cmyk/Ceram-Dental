@@ -51,11 +51,14 @@ export async function adminOverview() {
   if (s.overdue) inbox.push('Outstanding balance is overdue — follow up on invoices.');
   if (s.newAppointments) inbox.push(s.newAppointments + ' new appointment request' + (s.newAppointments === 1 ? '' : 's') + ' to confirm.');
   if (s.newMessages) inbox.push(s.newMessages + ' contact message' + (s.newMessages === 1 ? '' : 's') + ' waiting for a reply.');
+  if (s.newEnquiries) inbox.push(s.newEnquiries + ' new website/enquiry lead' + (s.newEnquiries === 1 ? '' : 's') + ' to qualify.');
   if (s.openApplications) inbox.push(s.openApplications + ' careers application' + (s.openApplications === 1 ? '' : 's') + ' to review.');
+  const revenueEfficiency = s.revenue ? Math.round((s.net / s.revenue) * 100) : 0;
 
   return '<div class="workspace-quick-actions" aria-label="Administration shortcuts">' +
       '<button type="button" data-admin-tab="invoices">' + icon('receipt') + ' Manage invoices <span aria-hidden="true">↗</span></button>' +
       '<button type="button" data-admin-tab="orders">' + icon('clipboard') + ' Find a case <span aria-hidden="true">↗</span></button>' +
+      '<button type="button" data-admin-tab="enquiries">' + icon('message') + ' New leads <span aria-hidden="true">↗</span></button>' +
       '<button type="button" data-admin-tab="appointments">' + icon('calendar') + ' Appointments <span aria-hidden="true">↗</span></button>' +
       '<button type="button" data-admin-tab="expenses">' + icon('wallet') + ' Add an expense <span aria-hidden="true">↗</span></button>' +
     '</div>' +
@@ -72,6 +75,7 @@ export async function adminOverview() {
       '<div class="admin-hero-side">' +
         metric(money(s.outstanding), 'Outstanding', 'wallet', s.overdue ? 'Overdue — follow up' : '', s.overdue ? 'danger' : '') +
         metric(money(s.totalExpenses), 'Expenses (this week)', 'receipt', '') +
+        metric(revenueEfficiency + '%', 'Net efficiency', 'activity', s.revenue ? 'After expenses' : 'No paid revenue yet') +
         metric(money(s.shopRevenue), 'Shop orders', 'box', DATA.orders.length + ' placed') +
       '</div>' +
     '</div>' +
