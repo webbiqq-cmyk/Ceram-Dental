@@ -6,6 +6,27 @@ import { DATA, UI, api, loadNotifications, currentPortalRole } from '../state.js
 import { esc } from '../utils/format.js';
 import { icon } from './icons.js';
 import { toast } from '../toast.js';
+import { effectiveLang } from '../i18n.js';
+
+// The bell can appear on the public site itself (shop route, or anywhere
+// once there's something in the cart — see notifRelevant() below), so it
+// needs to follow the visitor's language like the rest of the public
+// chrome. effectiveLang() already forces 'en' inside a workspace route, so
+// this stays English-only there without any extra logic here.
+const S = {
+  en: {
+    notifications: 'Notifications', markAll: 'Mark all read',
+    empty: 'Nothing yet. Updates on your cases will appear here.',
+    needsAttention: 'Needs your attention', today: 'Today', earlier: 'Earlier',
+    justNow: 'just now', mAgo: m => m + 'm ago', hAgo: h => h + 'h ago', dAgo: d => d + 'd ago'
+  },
+  ar: {
+    notifications: 'الإشعارات', markAll: 'تعليم الكل كمقروء',
+    empty: 'لا شيء بعد. ستظهر هنا آخر التحديثات على حالاتك.',
+    needsAttention: 'بحاجة إلى اهتمامك', today: 'اليوم', earlier: 'سابقًا',
+    justNow: 'الآن', mAgo: m => 'قبل ' + m + ' د', hAgo: h => 'قبل ' + h + ' س', dAgo: d => 'قبل ' + d + ' ي'
+  }
+};
 
 // The bell is not a permanent nav fixture. Like the cart button, it only
 // earns a place in the topbar where notifications are actually actionable:
@@ -20,11 +41,12 @@ function notifRelevant() {
 }
 
 function timeAgo(d) {
+  const t = S[effectiveLang()];
   const s = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 1000));
-  if (s < 60) return 'just now';
-  const m = Math.round(s / 60); if (m < 60) return m + 'm ago';
-  const h = Math.round(m / 60); if (h < 24) return h + 'h ago';
-  return Math.round(h / 24) + 'd ago';
+  if (s < 60) return t.justNow;
+  const m = Math.round(s / 60); if (m < 60) return t.mAgo(m);
+  const h = Math.round(m / 60); if (h < 24) return t.hAgo(h);
+  return t.dAgo(Math.round(h / 24));
 }
 
 // Three levels, and urgent is rare on purpose. If everything is urgent
@@ -55,6 +77,7 @@ function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d
 // list buries the one notification that needed acting on under six that
 // did not.
 function groupNotifications(list) {
+  const t = S[effectiveLang()];
   const today = startOfToday();
   const action = [], now = [], earlier = [];
   for (const n of list) {
@@ -62,7 +85,7 @@ function groupNotifications(list) {
     else if (new Date(n.createdAt).getTime() >= today) now.push(n);
     else earlier.push(n);
   }
-  return [['Needs your attention', action], ['Today', now], ['Earlier', earlier]];
+  return [[t.needsAttention, action], [t.today, now], [t.earlier, earlier]];
 }
 
 function notificationRow(n) {
@@ -80,17 +103,18 @@ function notificationRow(n) {
 }
 
 function renderDropdown() {
+  const t = S[effectiveLang()];
   const list = DATA.notifications.slice(0, 30);
   if (!list.length) {
-    return '<div class="notif-head"><span>Notifications</span></div>' +
-      '<p class="notif-empty">Nothing yet. Updates on your cases will appear here.</p>';
+    return '<div class="notif-head"><span>' + t.notifications + '</span></div>' +
+      '<p class="notif-empty">' + t.empty + '</p>';
   }
   const body = groupNotifications(list)
     .filter(([, rows]) => rows.length)
-    .map(([label, rows]) => '<p class="notif-group">' + label + '</p>' + rows.map(notificationRow).join(''))
+    .map(([label, rows]) => '<p class="notif-group">' + esc(label) + '</p>' + rows.map(notificationRow).join(''))
     .join('');
-  return '<div class="notif-head"><span>Notifications</span>' +
-    (DATA.unreadNotifications ? '<button class="btn btn-ghost btn-sm" id="notifMarkAll">Mark all read</button>' : '') +
+  return '<div class="notif-head"><span>' + t.notifications + '</span>' +
+    (DATA.unreadNotifications ? '<button class="btn btn-ghost btn-sm" id="notifMarkAll">' + t.markAll + '</button>' : '') +
     '</div>' + body;
 }
 
