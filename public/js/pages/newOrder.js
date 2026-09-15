@@ -24,12 +24,12 @@ function defaultConfig(service) {
   return {};
 }
 function freshForm(seed={}) {
-  return {patientRef:seed.patientRef||'',caseKind:'New case',deliveryMethod:seed.deliveryMethod||'pickup',step:0,teeth:ALL_TEETH.map(number=>({number,service:'none',selected:false})),configs:{veneer:defaultConfig('veneer'),crown:defaultConfig('crown'),bridge:defaultConfig('bridge'),implant:defaultConfig('implant')},activeConfigIndex:0,createdOrders:[],submissionComplete:false,submissionError:''};
+  return {patientRef:seed.patientRef||'',caseKind:'New case',deliveryMethod:seed.deliveryMethod||'pickup',targetDate:'',step:0,teeth:ALL_TEETH.map(number=>({number,service:'none',selected:false})),configs:{veneer:defaultConfig('veneer'),crown:defaultConfig('crown'),bridge:defaultConfig('bridge'),implant:defaultConfig('implant')},activeConfigIndex:0,createdOrders:[],submissionComplete:false,submissionError:''};
 }
 function normalizeForm(form) {
   if(!form || !Array.isArray(form.teeth)) return freshForm(form||{});
   form.step=Number.isInteger(form.step)?Math.min(2,Math.max(0,form.step>2?1:form.step)):0;
-  form.caseKind=form.caseKind||'New case'; form.deliveryMethod=form.deliveryMethod||'pickup'; form.configs=form.configs||{};
+  form.caseKind=form.caseKind||'New case'; form.deliveryMethod=form.deliveryMethod||'pickup'; form.targetDate=form.targetDate||''; form.configs=form.configs||{};
   for(const key of ['veneer','crown','bridge','implant']) form.configs[key]={...defaultConfig(key),...(form.configs[key]||{})};
   form.createdOrders=form.createdOrders||[]; form.activeConfigIndex=form.activeConfigIndex||0; return form;
 }
@@ -37,7 +37,7 @@ function stepHeader(step) {
   return '<ol class="workspace-steps new-order-steps" aria-label="New case progress">'+STEPS.map((label,i)=>'<li'+(i===step?' aria-current="step"':'')+'><span>'+(i<step?'✓':i+1)+'</span><em>'+label+'</em></li>').join('')+'</ol>';
 }
 function caseDetails(form) {
-  return '<div class="new-order-intro"><span class="eyebrow-accent">Start with the essentials</span><h2>Who is this case for?</h2><p class="lede">Use a patient reference rather than a full name. Clinical choices come next.</p></div><div class="case-detail-panel"><div class="field full"><label for="order-patientRef">Patient reference *</label><input id="order-patientRef" data-order-field="patientRef" value="'+esc(form.patientRef)+'" maxlength="250" required autocomplete="off" placeholder="e.g. PT-1048"></div><fieldset class="segmented-field"><legend>Case type</legend><div><button type="button" data-case-kind="New case" aria-pressed="'+(form.caseKind==='New case')+'">New</button><button type="button" data-case-kind="Redo" aria-pressed="'+(form.caseKind==='Redo')+'">Redo</button></div></fieldset><div class="field full"><label for="order-deliveryMethod">Collection</label><select id="order-deliveryMethod" data-order-field="deliveryMethod"><option value="pickup"'+(form.deliveryMethod==='pickup'?' selected':'')+'>In-house pickup</option><option value="delivery"'+(form.deliveryMethod==='delivery'?' selected':'')+'>Delivery to your clinic</option></select></div></div><div class="workspace-notice">You will add the teeth, services and lab prescription in the following steps.</div>';
+  return '<div class="new-order-intro"><span class="eyebrow-accent">Start with the essentials</span><h2>Who is this case for?</h2><p class="lede">Use a patient reference rather than a full name. Clinical choices come next.</p></div><div class="case-detail-panel"><div class="field full"><label for="order-patientRef">Patient reference *</label><input id="order-patientRef" data-order-field="patientRef" value="'+esc(form.patientRef)+'" maxlength="250" required autocomplete="off" placeholder="e.g. PT-1048"></div><fieldset class="segmented-field"><legend>Case type</legend><div><button type="button" data-case-kind="New case" aria-pressed="'+(form.caseKind==='New case')+'">New</button><button type="button" data-case-kind="Redo" aria-pressed="'+(form.caseKind==='Redo')+'">Redo</button></div></fieldset><div class="field full"><label for="order-deliveryMethod">Collection</label><select id="order-deliveryMethod" data-order-field="deliveryMethod"><option value="pickup"'+(form.deliveryMethod==='pickup'?' selected':'')+'>In-house pickup</option><option value="delivery"'+(form.deliveryMethod==='delivery'?' selected':'')+'>Delivery to your clinic</option></select></div><div class="field full"><label for="order-targetDate">Requested completion <span class="field-optional">Optional</span></label><input type="date" id="order-targetDate" data-order-field="targetDate" value="'+esc(form.targetDate||'')+'" min="'+new Date().toISOString().slice(0,10)+'"><small class="field-hint">The lab works towards this date where it can. Reception will confirm what is achievable.</small></div></div><div class="workspace-notice">You will add the teeth, services and lab prescription in the following steps.</div>';
 }
 function inspector(form) {
   const selected=form.teeth.filter(t=>t.selected), groups=groupServices(form.teeth);
@@ -87,7 +87,7 @@ function serializeInstructions(form,group) {
 function orderBody(form,group) {
   const c=form.configs[group.key], implant=group.key==='implant', jobType=implant?(c.restorationType==='Implant Bridge'?'implant_bridge':'implant_crown'):SERVICE_JOB_TYPES[group.key];
   if(!JOB_TYPES.some(j=>j.key===jobType)) throw new Error('Unsupported service type.');
-  return {patientRef:form.patientRef.trim(),jobType,shade:withOther(c.shade,c.shadeOther)||'',instructions:serializeInstructions(form,group),scanBody:implant?c.scanBody:'',implantSystem:implant?c.implantSystem:'',abutmentSize:implant?c.abutmentSize:'',abutmentAvailability:implant?c.abutmentAvailability:'',deliveryMethod:form.deliveryMethod};
+  return {patientRef:form.patientRef.trim(),jobType,shade:withOther(c.shade,c.shadeOther)||'',instructions:serializeInstructions(form,group),scanBody:implant?c.scanBody:'',implantSystem:implant?c.implantSystem:'',abutmentSize:implant?c.abutmentSize:'',abutmentAvailability:implant?c.abutmentAvailability:'',deliveryMethod:form.deliveryMethod,targetDate:form.targetDate||null};
 }
 export function attachNewOrderHandlers() {
   const form=UI.newOrderForm;

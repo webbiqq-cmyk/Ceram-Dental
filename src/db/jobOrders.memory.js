@@ -27,6 +27,23 @@ const approvals = [];
 let orderSeq = 1000;
 
 function userById(id) { return require('../models/user.model').users.find(u => u.id === id) || null; }
+function nameOf(id) { return id ? (userById(id) || {}).name || null : null; }
+
+// The Postgres side resolves assignee names with a join (see
+// jobOrders.repo.js ORDER_SELECT); here it's a lookup, applied on the way
+// out so the stored row stays a faithful copy of the table's own columns
+// and nothing writes a derived name back into it.
+function decorate(row) {
+  if (!row) return row;
+  return Object.assign({}, row, {
+    dentist_name: nameOf(row.dentist_user_id),
+    designer_name: nameOf(row.assigned_designer_id),
+    technician_name: nameOf(row.assigned_technician_id),
+    qc_name: nameOf(row.assigned_qc_id)
+  });
+}
+
+const PRIORITY_RANK = { urgent: 3, priority: 2, normal: 1 };
 
 async function createOrder(fields) {
   if(jobOrders.length>=10000)throw Object.assign(new Error('Development storage is full.'),{status:503});
@@ -40,15 +57,21 @@ async function createOrder(fields) {
     abutment_size: fields.abutmentSize || null, abutment_availability: fields.abutmentAvailability || null,
     assigned_designer_id: null, assigned_technician_id: null, assigned_qc_id: null,
     rejection_note: null, delivery_method: fields.deliveryMethod || null, delivered_at: null,
-    created_at: now(), updated_at: now()
+    created_at: now(), updated_at: now(),
+    priority: fields.priority || 'normal', target_date: fields.targetDate || null,
+    blocked_reason: null, blocked_at: null, blocked_by: null, blocked_from: null,
+    stage_entered_at: now()
   };
   if (fields.clinicId) row.clinic_id = fields.clinicId;
   jobOrders.unshift(row);
-  return row;
+  return decorate(row);
 }
 
+// Internal: the raw stored row, which updateOrder has to mutate in place.
+function findRow(id) { return jobOrders.find(o => o.id === id || o.order_number === id) || null; }
+
 async function getOrder(id) {
-  return jobOrders.find(o => o.id === id || o.order_number === id) || null;
+  return decorate(findRow(id));
 }
 
 async function listOrders(role,userId,{limit=200,offset=0}={}) {
@@ -60,7 +83,7 @@ async function listOrders(role,userId,{limit=200,offset=0}={}) {
   // logins; this mirrors the pre-hardening behaviour for the offline demo.
   const byStatus = {
     designer: ['assigned_to_designer', 'in_design', 'design_done', 'doctor_approved', 'waiting_doctor_approval'],
-    technician: ['assigned_to_technician', 'in_production', 'production_done'],
+    technician: ['assigned_to_technician', 'in_production', 'production_done', 'blocked'],
     qc: ['qc_pending', 'qc_rejected', 'qc_approved'],
     doctor_approval: ['waiting_doctor_approval']
   }[role];
@@ -72,14 +95,23 @@ async function listOrders(role,userId,{limit=200,offset=0}={}) {
     const key = { dentist: 'dentist_user_id', designer: 'assigned_designer_id', technician: 'assigned_technician_id', qc: 'assigned_qc_id' }[role];
     if (key) rows = rows.filter(o => o[key] === userId);
   }
-  return rows.slice(offset, offset + limit);
+  // Same ordering rule as the SQL backend: urgent first, soonest target
+  // next, newest last — so a queue reads identically on either store.
+  rows = rows.slice().sort((a, b) =>
+    (PRIORITY_RANK[b.priority] || 1) - (PRIORITY_RANK[a.priority] || 1) ||
+    (a.target_date ? new Date(a.target_date) : Infinity) - (b.target_date ? new Date(b.target_date) : Infinity) ||
+    new Date(b.created_at) - new Date(a.created_at));
+  return rows.slice(offset, offset + limit).map(decorate);
 }
 
 async function updateOrder(id, fields) {
-  const row = await getOrder(id);
+  const row = findRow(id);
   if (!row) return null;
-  Object.assign(row, fields, { updated_at: now() });
-  return row;
+  // Mirrors the repo's stage_entered_at rule — only a genuine status
+  // change restarts the time-in-stage clock.
+  const stageMoved = Object.prototype.hasOwnProperty.call(fields, 'status') && fields.status !== row.status;
+  Object.assign(row, fields, { updated_at: now() }, stageMoved ? { stage_entered_at: now() } : {});
+  return decorate(row);
 }
 
 async function addStageHistory(orderId, { stageType, status, actorId, note }) {
@@ -110,17 +142,40 @@ async function addFile(orderId, { stageType, category, url, publicId, uploadedBy
 
 async function listFiles(orderId) { return caseFiles.filter(f => f.job_order_id === orderId); }
 
-async function addMessage(orderId, senderId, body) {
-  const row = { id: uuid(), job_order_id: orderId, sender_id: senderId, body, created_at: now(), read_at: null };
+async function addMessage(orderId, senderId, body, internal = false) {
+  const row = { id: uuid(), job_order_id: orderId, sender_id: senderId, body, internal: !!internal, created_at: now(), read_at: null };
   caseMessages.push(row);
   return row;
 }
 
-async function listMessages(orderId) {
+async function listMessages(orderId, includeInternal = true) {
   return caseMessages
-    .filter(m => m.job_order_id === orderId)
+    .filter(m => m.job_order_id === orderId && (includeInternal || !m.internal))
     .sort((a, b) => a.created_at - b.created_at)
     .map(m => { const u = userById(m.sender_id) || {}; return Object.assign({}, m, { sender_name: u.name || null, sender_role: u.role || null }); });
+}
+
+async function listApprovals(orderId) {
+  return approvals
+    .filter(a => a.job_order_id === orderId)
+    .sort((a, b) => a.created_at - b.created_at)
+    .map(a => Object.assign({}, a, { decided_by_name: nameOf(a.decided_by) }));
+}
+
+async function completionSamples(limit = 500) {
+  return jobStageHistory
+    .filter(h => h.status === 'completed')
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, limit)
+    .map(h => { const o = findRow(h.job_order_id) || {}; return { job_order_id: h.job_order_id, job_type: o.job_type, created_at: o.created_at, completed_at: h.created_at }; });
+}
+
+async function qcSamples(limit = 1000) {
+  return approvals
+    .filter(a => a.decision_type === 'qc_review')
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, limit)
+    .map(a => ({ job_order_id: a.job_order_id, outcome: a.outcome, note: a.note, created_at: a.created_at }));
 }
 
 async function listStaff(role) { return (await require('../models/user.model').list()).filter(u=>u.active && u.role===role); }
@@ -136,5 +191,6 @@ async function transaction(fn) {
 module.exports = {
   transaction, createOrder, getOrder, listOrders, updateOrder,
   addStageHistory, listStageHistory, addAssignment, addApproval,
-  addFile, listFiles, addMessage, listMessages, listStaff, getUserByRole
+  addFile, listFiles, addMessage, listMessages, listApprovals, listStaff, getUserByRole,
+  completionSamples, qcSamples
 };

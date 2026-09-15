@@ -120,7 +120,14 @@ export async function router() {
   requestAnimationFrame(() => { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });
 }
 
-export function renderCurrent() { router(); }
+// Returns router()'s promise so a caller that needs the new paint to be on
+// screen before it does anything else can await it. The Case Command
+// Center depends on this: it re-renders the queue behind itself after a
+// transition and then reopens the case, and router() removes any open
+// case dialog as part of painting — fire-and-forget would let that
+// removal land *after* the reopen and close the case the person is
+// working on.
+export function renderCurrent() { return router(); }
 
 // Re-paints the current route from whatever's already in DATA — no server
 // round trip. router()/renderCurrent() always calls loadState() first, so

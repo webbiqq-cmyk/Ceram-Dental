@@ -2,7 +2,7 @@
 // an interval from app.js (not just on navigation) so a badge appears even
 // if someone sits on one page for a while. In-app only for now (no OS
 // push) — see README for why, and what real push would need.
-import { DATA, UI, api, loadNotifications } from '../state.js';
+import { DATA, UI, api, loadNotifications, currentPortalRole } from '../state.js';
 import { esc } from '../utils/format.js';
 import { toast } from '../toast.js';
 
@@ -26,11 +26,24 @@ function timeAgo(d) {
   return Math.round(h / 24) + 'd ago';
 }
 
+// Three levels, and urgent is rare on purpose. If everything is urgent
+// the bell stops being read, and then the one notification that mattered
+// is the one nobody saw.
+const URGENT = new Set(['production-blocked', 'qc-repeat-failure']);
+const ACTION = new Set(['order-new', 'case-returned', 'design-ready', 'design-changes', 'qc-rework', 'qc-pending', 'design-assigned', 'production-assigned', 'case-message']);
+// Case notifications carry the job order's id; opening one should land on
+// that case, not on a list the person then has to search.
+const CASE_TYPES = new Set([...URGENT, ...ACTION, 'qc-passed', 'case-ready', 'case-completed', 'case-accepted', 'design-approved', 'production-resumed']);
+
+function level(type) { return URGENT.has(type) ? 'urgent' : ACTION.has(type) ? 'action' : 'info'; }
+
 function renderDropdown() {
   const list = DATA.notifications.slice(0, 20);
   const body = list.length
     ? list.map(n =>
-        '<div class="notif-item' + (n.read ? '' : ' unread') + '" data-notif-id="' + n.id + '">' +
+        '<div class="notif-item notif-' + level(n.type) + (n.read ? '' : ' unread') + '" data-notif-id="' + n.id + '"' +
+          (CASE_TYPES.has(n.type) && n.relatedId ? ' data-notif-case="' + esc(n.relatedId) + '" role="button" tabindex="0"' : '') + '>' +
+          (level(n.type) !== 'info' ? '<span class="notif-level">' + (level(n.type) === 'urgent' ? 'Urgent' : 'Action required') + '</span>' : '') +
           '<div class="notif-title">' + esc(n.title) + '</div>' +
           (n.body ? '<div class="notif-body">' + esc(n.body) + '</div>' : '') +
           '<div class="notif-time">' + timeAgo(n.createdAt) + '</div>' +
@@ -42,13 +55,16 @@ function renderDropdown() {
     '</div>' + body;
 }
 
+
 export function updateNotifUI() {
   const wrap = document.getElementById('notifWrap');
   const badge = document.getElementById('notifBadge');
   const dropdown = document.getElementById('notifDropdown');
   if (!wrap || !badge || !dropdown) return;
-  const signedIntoAny = DATA.auth.admin || DATA.auth.dentist || DATA.auth.lab;
-  const show = signedIntoAny && notifRelevant();
+  const role = currentPortalRole();
+  // Same rule as the fetch in state.js: the bell belongs to the role the
+  // server says we are, not to "signed into something, somewhere".
+  const show = !!role && !!DATA.auth[role] && notifRelevant();
   wrap.hidden = !show;
   if (!show) { dropdown.classList.remove('open'); return; }
   badge.textContent = DATA.unreadNotifications;
@@ -56,13 +72,25 @@ export function updateNotifUI() {
   dropdown.innerHTML = renderDropdown();
   const markAllBtn = document.getElementById('notifMarkAll');
   if (markAllBtn) markAllBtn.addEventListener('click', async () => {
-    try { await api('/api/notifications/read-all', { method: 'POST' }); await loadNotifications(); updateNotifUI(); }
+    try { await api('/api/notifications/read-all?asRole=' + encodeURIComponent(currentPortalRole()), { method: 'POST' }); await loadNotifications(); updateNotifUI(); }
     catch (e) { toast(e.message); }
   });
-  dropdown.querySelectorAll('[data-notif-id]').forEach(el => el.addEventListener('click', async () => {
-    try { await api('/api/notifications/' + el.dataset.notifId + '/read', { method: 'POST' }); await loadNotifications(); updateNotifUI(); }
-    catch (e) { /* non-critical */ }
-  }));
+  dropdown.querySelectorAll('[data-notif-id]').forEach(el => {
+    const open = async () => {
+      try { await api('/api/notifications/' + el.dataset.notifId + '/read?asRole=' + encodeURIComponent(currentPortalRole()), { method: 'POST' }); await loadNotifications(); updateNotifUI(); }
+      catch (e) { /* non-critical — reading the case matters more than the badge */ }
+      // A notification that can't take you to the thing it is about is
+      // just a nag. Loaded on demand so the bell costs nothing on a page
+      // that never opens a case.
+      if (el.dataset.notifCase) {
+        dropdown.classList.remove('open');
+        const { showCaseCenter } = await import('./caseCenter.js');
+        showCaseCenter(currentPortalRole() || 'lab', el.dataset.notifCase);
+      }
+    };
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  });
 }
 
 export function initNotifBell() {

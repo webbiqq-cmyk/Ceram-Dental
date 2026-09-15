@@ -2,13 +2,13 @@ import { DATA, UI, api } from '../state.js';
 import { esc, money, fmtDate, fmtDateTime, svcLabel, labelFor } from '../utils/format.js';
 import { shadeCombo } from '../utils/design.js';
 import { STAGES, STAGE_INDEX } from '../constants.js';
-import { footer } from '../components/footer.js';
 import { pillHtml } from '../components/drawer.js';
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers } from '../components/authGate.js';
-import { jobTypeLabel, statusPill, stageTrackerHtml } from '../utils/workflow.js';
+import { jobTypeLabel, stageTrackerHtml } from '../utils/workflow.js';
 import { listOrders } from '../utils/ordersApi.js';
-import { showOrderDetail } from '../components/orderDetail.js';
+import { showCaseCenter } from '../components/caseCenter.js';
+import { journeyHtml, statusChip, dueBadge, durationShort } from '../utils/caseView.js';
 import { icon } from '../components/icons.js';
 import { emptyState } from '../components/emptyState.js';
 
@@ -80,47 +80,94 @@ function portalBilling() {
 }
 
 let jobOrdersCache = [];
-const needsReview = o => o.job_type === 'veneers' && o.stage_type === 'demo' && o.status === 'waiting_doctor_approval';
-const needsAttention = o => o.status === 'rejected_by_reception' || !!o.rejection_note && o.status === 'in_design';
+// "Does this need the dentist?" is now the server's answer, not a guess
+// assembled from statuses in the browser — the same derivation the lab
+// sees, read from the clinic's side (see src/services/caseView.js).
+const needsMe = o => (o.view || {}).waiting_on === 'dentist';
+const needsReview = o => o.status === 'waiting_doctor_approval';
+const needsAttention = o => o.status === 'rejected_by_reception';
 
 function orderCard(o) {
-  // The whole card opens the case now, not just the button in the corner —
-  // it's a real <button> (not <article>) so the click target covers the
-  // entire box; the pill in the footer is now just a visual label.
-  return '<button type="button" class="case-card" data-order-detail="' + o.id + '" data-case-search="' + esc((o.order_number + ' ' + o.patient_ref + ' ' + jobTypeLabel(o.job_type)).toLowerCase()) + '"><div class="cc-top"><div><div class="cc-id">' + esc(o.order_number) + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + '</div></div>' + statusPill(o.status) + '</div><h3 class="cc-title">' + esc(o.patient_ref) + '</h3><p class="cc-sub">' + (o.job_type === 'veneers' ? (o.stage_type === 'demo' ? 'Step 1 · Demo / design' : 'Step 2 · Final production') : 'One-step case') + ' · ' + esc(o.delivery_method === 'delivery' ? 'Delivery' : 'In-house pickup') + '</p>' +
+  const v = o.view || {};
+  // The whole card opens the case, not just the button in the corner —
+  // it's a real <button> so the click target covers the entire box.
+  return '<button type="button" class="case-card' + (needsMe(o) ? ' is-attention' : '') + '" data-case-open="' + o.id + '" data-case-search="' + esc((o.order_number + ' ' + o.patient_ref + ' ' + jobTypeLabel(o.job_type)).toLowerCase()) + '">' +
+    '<div class="cc-top"><div><div class="cc-id">' + esc(o.order_number) + '</div><div class="cc-type">' + esc(jobTypeLabel(o.job_type)) + '</div></div>' +
+      '<div class="cc-badges">' + dueBadge(v) + '</div></div>' +
+    '<h3 class="cc-title">' + esc(o.patient_ref) + '</h3>' +
+    '<div class="cc-status">' + statusChip(o) + '</div>' +
     (o.rejection_note ? '<p class="workspace-notice">' + esc(o.rejection_note) + '</p>' : '') +
-    '<div class="case-progress">' + stageTrackerHtml({ jobType: o.job_type, stageType: o.stage_type, status: o.status }) + '</div>' +
-    '<div class="cc-foot"><time>' + fmtDate(o.updated_at || o.created_at) + '</time><span class="btn ' + (needsReview(o) ? 'btn-gold' : 'btn-ghost') + '">' + (needsReview(o) ? 'Review demo / design' : needsAttention(o) ? 'Read notes & next steps' : 'Open case') + '</span></div></button>';
+    '<div class="case-progress">' + (v.journey ? journeyHtml(v) : stageTrackerHtml({ jobType: o.job_type, stageType: o.stage_type, status: o.status })) + '</div>' +
+    '<div class="cc-foot"><time>' + fmtDate(o.updated_at || o.created_at) + '</time>' +
+      '<span class="btn ' + (needsReview(o) ? 'btn-gold' : 'btn-ghost') + '">' +
+      (needsReview(o) ? 'Review design' : needsAttention(o) ? 'Read notes &amp; next steps' : 'Open case') + '</span></div></button>';
+}
+
+// The single most important block in the dentist portal: the cases that
+// cannot move until this clinic does something. Stated as the action,
+// with how long it has been waiting — not as a status to interpret.
+function requiresActionHtml(rows) {
+  if (!rows.length) {
+    return emptyState({ iconName: 'check', title: 'You\'re all caught up', text: 'Nothing is waiting on you. We\'ll let you know the moment something needs your attention.' });
+  }
+  return '<div class="action-required">' + rows.map(o => {
+    const v = o.view || {};
+    return '<button type="button" class="action-required-row" data-case-open="' + o.id + '">' +
+      '<span class="ar-mark">' + icon('alert') + '</span>' +
+      '<span class="ar-body">' +
+        '<span class="ar-id">' + esc(o.order_number) + ' · ' + esc(jobTypeLabel(o.job_type)) + '</span>' +
+        '<span class="ar-action">' + esc(v.next_action || 'Needs your attention') + '</span>' +
+        '<span class="ar-meta">' + esc(o.patient_ref || '') +
+          (v.time_in_stage_ms ? ' · waiting ' + esc(durationShort(v.time_in_stage_ms)) : '') + '</span>' +
+      '</span>' +
+      '<span class="ar-go">' + (needsReview(o) ? 'Review design' : 'Open') + ' →</span></button>';
+  }).join('') + '</div>';
 }
 function ordersSection(rows, empty, emptyIcon) {
   return rows.length ? '<div class="case-list">' + rows.map(orderCard).join('') + '</div>' :
     emptyState({ iconName: emptyIcon || 'inbox', title: 'Nothing here yet', text: empty });
 }
 function overview() {
-  const active = jobOrdersCache.filter(o => !['completed','delivered','rejected_by_reception'].includes(o.status));
+  const active = jobOrdersCache.filter(o => !(o.view || {}).is_closed && o.status !== 'rejected_by_reception');
+  const mine = jobOrdersCache.filter(needsMe);
   const waiting = jobOrdersCache.filter(needsReview);
   const rejected = jobOrdersCache.filter(needsAttention);
-  const completed = jobOrdersCache.filter(o => ['completed','delivered'].includes(o.status));
-  const inProduction = active.filter(o => o.status === 'in_production').length;
+  const completed = jobOrdersCache.filter(o => (o.view || {}).is_closed);
+  const inProduction = active.filter(o => (o.view || {}).stage === 'production').length;
+  const ready = active.filter(o => (o.view || {}).stage === 'collection').length;
   const metric = (count,label,filter,iconName,meta,tone) => '<button class="stat-card stat-card-v2' + (tone ? ' tone-' + tone : '') + '" data-portal-filter="' + filter + '"><div class="stat-card-icon">' + icon(iconName) + '</div><div class="stat-card-body"><div class="n">' + count + '</div><div class="l">' + label + '</div>' + (meta ? '<div class="stat-card-meta' + (tone === 'danger' ? ' is-action' : '') + '">' + meta + '</div>' : '') + '</div></button>';
-  return '<div class="stat-row reveal">' +
-      metric(active.length,'Active Cases','active','clipboard', inProduction ? inProduction + ' in production today' : '') +
-      metric(waiting.length,'Demo Approvals','approval','check', waiting.length ? 'Awaiting your review' : '', waiting.length ? 'gold' : '') +
-      metric(rejected.length,'Needs Attention','attention','alert', rejected.length ? 'Action required' : '', rejected.length ? 'danger' : '') +
+
+  // Requires-your-action comes first, above the metrics. A number is
+  // something to read; this is something to do.
+  return '<section class="reveal action-required-panel' + (mine.length ? ' is-live' : '') + '">' +
+      '<div class="section-head"><h2>' + (mine.length ? 'Requires your action' : 'Nothing needs you right now') + '</h2>' +
+      (mine.length ? '<span class="case-badge case-badge-danger">' + mine.length + ' waiting</span>' : '') + '</div>' +
+      requiresActionHtml(mine) +
+    '</section>' +
+
+    '<div class="stat-row reveal">' +
+      metric(active.length,'Active cases','active','clipboard', inProduction ? inProduction + ' being made now' : (ready ? ready + ' ready for collection' : '')) +
+      metric(waiting.length,'Awaiting your approval','approval','check', waiting.length ? 'Review the design' : '', waiting.length ? 'gold' : '') +
+      metric(rejected.length,'Returned to you','attention','alert', rejected.length ? 'Action required' : '', rejected.length ? 'danger' : '') +
       metric(completed.length,'Completed','completed','history', completed.length ? 'View history' : '') +
     '</div>' +
     (UI.workflowHasMore || UI.dataPage > 1 ? '<p class="cc-sub">Summary of cases on this page. Use the page controls for earlier cases.</p>' : '') +
-    '<div class="section-head reveal"><h2>' + (waiting.length ? 'Ready for your review' : 'Your current cases') + '</h2><button class="btn btn-ghost" data-portal-tab="orders">View case history</button></div>' +
-    '<div class="reveal">' + ordersSection((waiting.length ? waiting : active).slice(0,4),'Your current lab cases will appear here once you send an order to the lab.','inbox') + '</div>' +
+    '<div class="section-head reveal"><h2>Your current cases</h2><button class="btn btn-ghost" data-portal-tab="orders">View case history</button></div>' +
+    '<div class="reveal">' + ordersSection(active.slice(0,4),'Your current lab cases will appear here once you send an order to the lab.','inbox') + '</div>' +
     '<div class="workspace-two-col reveal" style="margin-top:16px"><section class="card"><h3>Recent activity</h3>' + (jobOrdersCache.length ?
       '<div>' + [...jobOrdersCache].sort((a,b)=>new Date(b.updated_at || b.created_at)-new Date(a.updated_at || a.created_at)).slice(0,5).map(o =>
-        '<div class="activity-item"><div class="activity-dot">' + icon(ACTIVITY_ICON[o.status] || 'history') + '</div><div class="activity-body"><button class="link-btn" data-order-detail="' + o.id + '"><b>' + esc(o.order_number) + '</b> · ' + esc(o.patient_ref) + '</button><p style="margin:4px 0;">' + statusPill(o.status) + '</p><time>' + fmtDateTime(o.updated_at || o.created_at) + '</time></div></div>'
+        '<div class="activity-item"><div class="activity-dot">' + icon(ACTIVITY_ICON[o.status] || 'history') + '</div><div class="activity-body"><button class="link-btn" data-case-open="' + o.id + '"><b>' + esc(o.order_number) + '</b> · ' + esc(o.patient_ref) + '</button><p style="margin:4px 0;">' + statusChip(o) + '</p><time>' + fmtDateTime(o.updated_at || o.created_at) + '</time></div></div>'
       ).join('') + '</div>' : emptyState({ iconName:'history', title:'No activity yet', text:'Updates on your cases will appear here as the lab works on them.' })
     ) + '</section><section class="card"><span class="eyebrow-accent">A clear path to completion</span><h3>One case. Every detail.</h3><p class="lede">Keep instructions, files and conversations together. Open any case to contact your lab team.</p><div class="workspace-notice"><strong>Veneer approval is final.</strong><br>Review the demo/design carefully. After approval, changes require a new job order.</div></section></div>';
 }
 function history(attentionOnly) {
   const filter = attentionOnly ? 'attention' : UI.portalFilter || 'all';
-  const rows = jobOrdersCache.filter(o => filter === 'all' || filter === 'approval' && needsReview(o) || filter === 'attention' && needsAttention(o) || filter === 'completed' && ['completed','delivered'].includes(o.status) || filter === 'active' && !['completed','delivered','rejected_by_reception'].includes(o.status));
+  const rows = jobOrdersCache.filter(o =>
+    filter === 'all' ||
+    filter === 'approval' && needsReview(o) ||
+    filter === 'attention' && needsMe(o) ||
+    filter === 'completed' && (o.view || {}).is_closed ||
+    filter === 'active' && !(o.view || {}).is_closed && o.status !== 'rejected_by_reception');
   return '<div class="workspace-toolbar"><input type="search" id="orderSearch" aria-label="Search cases on this page" placeholder="Search case number, patient or job type…">' + (attentionOnly ? '' : '<div class="workspace-tabs" aria-label="Filter cases">' + [['all','All'],['active','Active'],['approval','Approvals'],['completed','Completed']].map(([key,label])=>'<button data-portal-filter="' + key + '" aria-pressed="' + (filter===key) + '">' + label + '</button>').join('') + '</div>') + '</div>' + ordersSection(rows,attentionOnly ? 'No cases need your attention right now.' : 'No cases in this view.', attentionOnly ? 'check' : 'history') + '<p class="empty-note" id="orderNoMatch" hidden>No cases match your search on this page.</p>';
 }
 export async function renderPortal() {
@@ -145,7 +192,7 @@ export function attachPortalHandlers() {
   if (!isSignedIn()) { attachAuthGateHandlers(); return; }
   document.querySelectorAll('[data-portal-tab]').forEach(b => b.addEventListener('click', () => { UI.portalTab=b.dataset.portalTab; UI.dataPage=1; renderCurrent(); }));
   document.querySelectorAll('[data-portal-filter]').forEach(b => b.addEventListener('click', () => { UI.portalFilter=b.dataset.portalFilter; UI.portalTab=UI.portalFilter==='attention' ? 'rejected' : 'orders'; renderCurrent(); }));
-  document.querySelectorAll('[data-order-detail]').forEach(b => b.addEventListener('click', () => showOrderDetail('dentist',b.dataset.orderDetail)));
+  document.querySelectorAll('[data-case-open]').forEach(b => b.addEventListener('click', () => showCaseCenter('dentist', b.dataset.caseOpen)));
   document.getElementById('orderSearch')?.addEventListener('input', e => {
     const q=e.target.value.trim().toLowerCase(); let shown=0;
     document.querySelectorAll('[data-case-search]').forEach(card => { card.hidden=!card.dataset.caseSearch.includes(q); if(!card.hidden)shown++; });

@@ -1,0 +1,13 @@
+-- A technician who hits a real blocker (missing material, an unusable
+-- scan, a broken mill) currently has nowhere to put that: the order stays
+-- 'in_production' and looks like work in progress to everyone else, so a
+-- stalled case is invisible until someone chases it. 'blocked' is its own
+-- status rather than a boolean flag on the row because the pipeline views
+-- and every per-station queue filter already switch on status — a flag
+-- would have to be threaded through all of them separately.
+--
+-- Alone in its own migration on purpose: Postgres allows ALTER TYPE ...
+-- ADD VALUE inside a transaction, but the new label cannot be *used* until
+-- that transaction commits, and migrate.js wraps each file in one. The
+-- columns that reference blocked cases land in 017.
+ALTER TYPE job_status ADD VALUE IF NOT EXISTS 'blocked';

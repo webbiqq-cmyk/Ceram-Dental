@@ -6,7 +6,7 @@ import { esc } from '../utils/format.js';
 import { ADMIN_TABS } from '../constants.js';
 import { renderCurrent } from '../router.js';
 import { renderLoginGate, attachAuthGateHandlers } from '../components/authGate.js';
-import { adminOverview } from './admin/overview.js';
+import { adminOverview, attachOverviewHandlers } from './admin/overview.js';
 import { adminEnquiries, attachEnquiriesHandlers } from './admin/enquiries.js';
 import { adminAppointments, attachAppointmentsHandlers } from './admin/appointments.js';
 import { adminInvoices, attachInvoicesHandlers } from './admin/invoices.js';
@@ -39,6 +39,7 @@ const TAB_BODY = {
 };
 
 const TAB_HANDLERS = {
+  overview: attachOverviewHandlers,
   orders: attachOrderHandlers,
   enquiries: attachEnquiriesHandlers,
   appointments: attachAppointmentsHandlers,

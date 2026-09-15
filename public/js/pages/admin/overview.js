@@ -1,6 +1,10 @@
 import { DATA } from '../../state.js';
-import { money } from '../../utils/format.js';
+import { money, esc } from '../../utils/format.js';
 import { icon } from '../../components/icons.js';
+import { labOverview } from '../../utils/ordersApi.js';
+import { todayStrip, pipelineHtml, attentionHtml, workloadHtml, analyticsHtml } from '../../components/labOps.js';
+import { showCaseCenter } from '../../components/caseCenter.js';
+import { attachCaseQueue } from '../../components/caseQueue.js';
 
 function sparkline(trend) {
   trend=Array.isArray(trend)&&trend.length?trend:[{label:'Today',total:0}];
@@ -23,34 +27,52 @@ function metric(count, label, iconName, meta, tone) {
   return '<div class="stat-card stat-card-v2' + (tone ? ' tone-' + tone : '') + '"><div class="stat-card-icon">' + icon(iconName) + '</div><div class="stat-card-body"><div class="n">' + count + '</div><div class="l">' + label + '</div>' + (meta ? '<div class="stat-card-meta' + (tone === 'danger' ? ' is-action' : '') + '">' + meta + '</div>' : '') + '</div></div>';
 }
 
-export function adminOverview() {
+// Administration is deliberately exception-first: the operational read
+// comes before the financial one, because the cases that are going wrong
+// today are what an administrator can still do something about. Revenue
+// is a consequence of the board, and it sits directly underneath it.
+export async function adminOverview() {
   const s = DATA.summary;
-  // Primary financial card (Revenue + Net + trend) plus supporting tiles —
-  // one hierarchy instead of five near-identical boxes.
-  const attention = [];
-  if (s.overdue) attention.push('Outstanding balance is overdue — follow up on invoices.');
-  if (s.newAppointments) attention.push(s.newAppointments + ' new appointment request' + (s.newAppointments === 1 ? '' : 's') + ' to confirm.');
-  if (s.newMessages) attention.push(s.newMessages + ' contact message' + (s.newMessages === 1 ? '' : 's') + ' waiting for a reply.');
-  if (s.openApplications) attention.push(s.openApplications + ' careers application' + (s.openApplications === 1 ? '' : 's') + ' to review.');
+  let lab = null;
+  try { lab = await labOverview('admin'); } catch { /* the finance view still stands without it */ }
 
-  return '<div class="workspace-quick-actions" aria-label="Administration shortcuts"><button type="button" data-admin-tab="invoices">' + icon('receipt') + ' Manage invoices <span aria-hidden="true">↗</span></button><button type="button" data-admin-tab="orders">' + icon('clipboard') + ' Track orders <span aria-hidden="true">↗</span></button><button type="button" data-admin-tab="appointments">' + icon('calendar') + ' Appointments <span aria-hidden="true">↗</span></button></div><div class="admin-hero reveal">' +
+  const inbox = [];
+  if (s.overdue) inbox.push('Outstanding balance is overdue — follow up on invoices.');
+  if (s.newAppointments) inbox.push(s.newAppointments + ' new appointment request' + (s.newAppointments === 1 ? '' : 's') + ' to confirm.');
+  if (s.newMessages) inbox.push(s.newMessages + ' contact message' + (s.newMessages === 1 ? '' : 's') + ' waiting for a reply.');
+  if (s.openApplications) inbox.push(s.openApplications + ' careers application' + (s.openApplications === 1 ? '' : 's') + ' to review.');
+
+  return '<div class="workspace-quick-actions" aria-label="Administration shortcuts">' +
+      '<button type="button" data-admin-tab="invoices">' + icon('receipt') + ' Manage invoices <span aria-hidden="true">↗</span></button>' +
+      '<button type="button" data-admin-tab="orders">' + icon('clipboard') + ' Find a case <span aria-hidden="true">↗</span></button>' +
+      '<button type="button" data-admin-tab="appointments">' + icon('calendar') + ' Appointments <span aria-hidden="true">↗</span></button>' +
+      '<button type="button" data-admin-tab="expenses">' + icon('wallet') + ' Add an expense <span aria-hidden="true">↗</span></button>' +
+    '</div>' +
+
+    (lab ? '<div class="section-head reveal"><h2>The lab today</h2></div>' + todayStrip(lab.today) : '') +
+    (lab ? '<div class="lab-ops-grid reveal">' + attentionHtml(lab.attention) + workloadHtml(lab.workload) + '</div>' : '') +
+    (lab ? '<div class="section-head reveal"><h2>Pipeline</h2><span class="workspace-context">Open a stage to work it</span></div>' + pipelineHtml(lab.stations) : '') +
+
+    '<div class="section-head reveal"><h2>Business</h2></div>' +
+    '<div class="admin-hero reveal">' +
       '<div class="admin-hero-primary"><span class="eyebrow-accent">Revenue, last 7 days</span><div class="admin-hero-figure">' + money(s.revenue) + '</div>' +
         '<p class="lede">Net ' + money(s.net) + (s.net >= 0 ? ' after ' + money(s.totalExpenses) + ' in expenses this week.' : ' — expenses outpaced revenue this week.') + '</p>' +
         '<div style="margin-top:10px;">' + sparkline(s.trend) + '</div></div>' +
       '<div class="admin-hero-side">' +
         metric(money(s.outstanding), 'Outstanding', 'wallet', s.overdue ? 'Overdue — follow up' : '', s.overdue ? 'danger' : '') +
         metric(money(s.totalExpenses), 'Expenses (this week)', 'receipt', '') +
-        metric(s.activeCases, 'Active Cases', 'clipboard', s.readyCases ? s.readyCases + ' ready for pickup' : '') +
+        metric(money(s.shopRevenue), 'Shop orders', 'box', DATA.orders.length + ' placed') +
       '</div>' +
     '</div>' +
-    (attention.length ?
-      '<div class="card reveal" style="margin-bottom:20px;"><h3 style="display:flex;align-items:center;gap:8px;">' + icon('alert') + ' Needs your attention</h3>' +
-        '<ul class="workspace-list" style="margin-top:8px;">' + attention.map(a => '<li>' + a + '</li>').join('') + '</ul></div>'
-      : '') +
-    '<div class="grid-2">' +
-      '<div class="card reveal"><span class="eyebrow">Appointments</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.newAppointments + ' new request' + (s.newAppointments === 1 ? '' : 's') + '</div><p style="margin-top:6px;">' + s.totalAppointments + ' total booking requests on file.</p></div>' +
-      '<div class="card reveal"><span class="eyebrow">Shop</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + money(s.shopRevenue) + ' in orders</div><p style="margin-top:6px;">' + DATA.orders.length + ' orders placed via the shop.</p></div>' +
-      '<div class="card reveal"><span class="eyebrow">Pipeline</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.readyCases + ' ready for pickup</div><p style="margin-top:6px;">' + s.activeCases + ' cases still in production.</p></div>' +
-      '<div class="card reveal"><span class="eyebrow">Inbox</span><div class="val" style="font-family:var(--font-display); font-size:22px; margin-top:8px;">' + s.openApplications + ' applications</div><p style="margin-top:6px;">' + s.newMessages + ' contact messages waiting.</p></div>' +
-    '</div>';
+
+    (lab ? analyticsHtml(lab.turnaround, lab.quality, lab.treatments) : '') +
+
+    (inbox.length ?
+      '<section class="card reveal"><h3>' + icon('mail') + ' Inbox</h3>' +
+        '<ul class="workspace-list" style="margin-top:8px;">' + inbox.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul></section>'
+      : '');
+}
+
+export function attachOverviewHandlers() {
+  attachCaseQueue('admin', id => showCaseCenter('admin', id));
 }

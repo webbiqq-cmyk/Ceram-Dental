@@ -116,11 +116,40 @@ export async function loadState() {
 // Notifications are fetched on their own, lighter cycle (see app.js's
 // polling interval) rather than only on navigation — someone sitting on
 // one page for a while should still see the badge update.
+// Which workflow role the open workspace is acting as. The bell, like
+// every other case-aware call, has to say so: a lab manager who is also
+// signed into the dentist portal holds two valid sessions, and "whichever
+// cookie matched first" is not an answer to "whose notifications are
+// these?".
+const LAB_ROLE_OF = { manager: 'lab', reception: 'receptionist', designer: 'designer', technician: 'technician', qc: 'qc' };
+const ROLE_OF_ROUTE = { reception: 'receptionist', designer: 'designer', technician: 'technician', qc: 'qc', admin: 'admin', portal: 'dentist', 'new-order': 'dentist' };
+
+export function currentPortalRole() {
+  const route = (location.hash || '#/').slice(2).split(/[/?]/)[0];
+  if (ROLE_OF_ROUTE[route]) return ROLE_OF_ROUTE[route];
+  // On #/studio the route alone can't say which station this is: the
+  // manager and every station sign in through the same screen, and the
+  // station is only known from the pick. Reading UI.labRole first stops
+  // a receptionist's bell asking for the lab manager's notifications in
+  // the moment between signing in and the station redirect.
+  // Lab Studio's role picker is not yet any station — nothing has been
+  // chosen, so there is no queue whose notifications would be the right
+  // ones to show. An empty role means "don't ask", which is the honest
+  // answer rather than guessing the manager.
+  if (route === 'studio') return UI.labRole ? (LAB_ROLE_OF[UI.labRole] || 'lab') : '';
+  if (UI.labRole) return LAB_ROLE_OF[UI.labRole] || 'lab';
+  return DATA.auth.admin ? 'admin' : DATA.auth.dentist ? 'dentist' : DATA.auth.lab ? 'lab' : '';
+}
+
 export async function loadNotifications() {
-  const signedIntoAny = DATA.auth.admin || DATA.auth.dentist || DATA.auth.lab;
-  if (!signedIntoAny) { DATA.notifications = []; DATA.unreadNotifications = 0; return; }
+  const role = currentPortalRole();
+  // Only ask for the notifications of the role the server says we actually
+  // are. A broader "signed into anything" test looks equivalent and isn't:
+  // it lets a receptionist's bell request the lab manager's queue and take
+  // a 401 for it on every poll.
+  if (!role || !DATA.auth[role]) { DATA.notifications = []; DATA.unreadNotifications = 0; return; }
   try {
-    const res = await api('/api/notifications');
+    const res = await api('/api/notifications?asRole=' + encodeURIComponent(role));
     DATA.notifications = res.notifications;
     DATA.unreadNotifications = res.unread;
   } catch (e) { /* not signed in / transient error — keep last known state */ }

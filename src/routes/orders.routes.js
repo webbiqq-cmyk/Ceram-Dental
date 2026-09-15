@@ -37,6 +37,14 @@ router.post('/orders/:id/confirm-completion', requireAnyRole(['receptionist','la
 router.post('/orders/:id/mark-delivered', requireAnyRole(['receptionist','lab']), requireClinicIP, idempotent('orders:mark-delivered'), orders.markDelivered);
 router.post('/orders/:id/mark-completed', requireAnyRole(['receptionist','lab']), requireClinicIP, idempotent('orders:mark-completed'), orders.markCompleted);
 
+// Priority and target dates coordinate the floor, so they are reception's
+// and management's to set — never a station's own (see setScheduling).
+router.post('/orders/:id/scheduling', requireAnyRole(['receptionist','lab','admin']), requireClinicIP, idempotent('orders:scheduling'), orders.setScheduling);
+// Blocking is a production-floor call; the lab manager can also clear one.
+router.post('/orders/:id/block', requireAnyRole(['technician','lab']), requireClinicIP, idempotent('orders:block'), orders.blockCase);
+router.post('/orders/:id/resume', requireAnyRole(['technician','lab','receptionist']), requireClinicIP, idempotent('orders:resume'), orders.resumeCase);
+
+router.get('/orders/:id/approvals', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.listApprovals);
 router.get('/orders/:id/messages', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.listMessages);
 router.post('/orders/:id/messages', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.postMessage);
 router.get('/orders/:id/files', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.listFiles);
@@ -44,6 +52,16 @@ router.post('/orders/:id/files', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders
 
 // Assignment rosters — who reception/designers can hand an order to. Lab-only.
 router.get('/staff', requireWorkflowRole(['receptionist', 'designer', 'technician', 'admin', 'lab']), requireClinicIP, orders.listStaff);
+
+// The lab-wide operational read (station counts, exceptions, and — for
+// admin — workload and turnaround). Never exposed to dentists: it
+// aggregates every clinic's work, which no single clinic may see.
+router.get('/lab/overview', requireWorkflowRole(['receptionist', 'designer', 'technician', 'qc', 'admin', 'lab']), async (req, res, next) => {
+  try {
+    const scope = ['admin', 'lab'].includes(req.user.role) ? 'admin' : 'lab';
+    res.json(Object.assign({ ok: true }, await require('../services/labOps.service').overview(scope)));
+  } catch (err) { next(err); }
+});
 
 // Signed Cloudinary upload for case scans/photos/design files/QC photos —
 // same controller as the admin-only product/team uploader

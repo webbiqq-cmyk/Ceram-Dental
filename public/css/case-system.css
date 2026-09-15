@@ -1,0 +1,322 @@
+/* The case system — the shared visual language for everything that
+   describes a case: its status, its progress, who owns it, what happens
+   next, and the queues and panels built from those pieces.
+
+   One set of tokens, used by every station. Plum carries action and
+   identity; bronze/champagne marks completion and editorial accents;
+   ivory and warm white carry the surfaces. Colour never carries status on
+   its own — every chip, badge and journey step states its meaning in
+   text, because a lab is not a place to guess from a shade of amber. */
+
+body.workplace{
+  --case-surface:#fff;
+  --case-surface-soft:#faf8fb;
+  --case-surface-warm:#fcfaf6;
+  --case-line:#e7e0e9;
+  --case-line-soft:#f0ebf2;
+  --case-ink:#2d1142;
+  --case-ink-soft:#66596d;
+  --case-ink-faint:#8e8395;
+
+  --case-progress:#f1eaf5;   --case-progress-ink:#48245f;
+  --case-success:#edf5ef;    --case-success-ink:#275838;
+  --case-warning:#faf3e6;    --case-warning-ink:#6c491d;
+  --case-danger:#fbecf0;     --case-danger-ink:#922d45;
+  --case-info:#eceff7;       --case-info-ink:#3c5484;
+  --case-muted:#f4f1f6;      --case-muted-ink:#66596d;
+
+  --case-radius:13px;
+  --case-radius-sm:8px;
+  --case-shadow:0 3px 16px #2d114204;
+  --case-shadow-lift:0 10px 30px -18px #2d114240;
+  --case-motion:170ms cubic-bezier(.4,0,.2,1);
+}
+
+/* Status communicated to assistive technology without being drawn twice. */
+.u-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------------------------------------------------------- chips & badges */
+
+.case-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border-radius:100px;font-size:11.5px;font-weight:600;line-height:1.45;background:var(--case-muted);color:var(--case-muted-ink);max-width:100%}
+.case-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;opacity:.75}
+.case-chip-progress{background:var(--case-progress);color:var(--case-progress-ink)}
+.case-chip-success{background:var(--case-success);color:var(--case-success-ink)}
+.case-chip-warning{background:var(--case-warning);color:var(--case-warning-ink)}
+.case-chip-danger{background:var(--case-danger);color:var(--case-danger-ink)}
+.case-chip-info{background:var(--case-info);color:var(--case-info-ink)}
+
+.case-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:10.5px;font-weight:700;letter-spacing:.02em;line-height:1.6;white-space:nowrap;background:var(--case-muted);color:var(--case-muted-ink)}
+.case-badge-warning{background:var(--case-warning);color:var(--case-warning-ink)}
+.case-badge-danger{background:var(--case-danger);color:var(--case-danger-ink)}
+.case-badge-info{background:var(--case-info);color:var(--case-info-ink)}
+.case-badge-muted{background:var(--case-muted);color:var(--case-ink-soft);font-weight:600}
+.case-flags{display:inline-flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+
+.case-muted{color:var(--case-ink-soft);font-size:12.5px;line-height:1.6}
+.case-error{color:var(--case-danger-ink);font-size:12.5px;margin-top:8px;min-height:1px}
+.case-lede{color:var(--case-ink-soft);font-size:13.5px;line-height:1.65;margin-bottom:14px}
+.case-prose{white-space:pre-wrap;font-size:13.5px;line-height:1.7;color:var(--case-ink)}
+
+/* ------------------------------------------------------------- the journey */
+
+/* Compact by design. A case rail is a glance, not a diagram — it earns
+   about forty pixels of vertical space and no more. */
+.case-journey{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.case-journey-split{gap:10px}
+.case-journey-label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--case-ink-faint);margin-bottom:5px}
+.case-journey-steps{display:flex;align-items:flex-start;gap:0;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.jstep{position:relative;flex:1 1 0;min-width:62px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+/* The connector is drawn from each step back to the one before it, so it
+   inherits that step's own done/current state and no separate rail
+   element has to be kept in sync. */
+.jstep+.jstep::before{content:"";position:absolute;top:8px;right:50%;width:100%;height:2px;background:var(--case-line);z-index:0}
+.jstep.is-done+.jstep::before,.jstep.is-current::before{background:#c7aa7c}
+.jstep-mark{position:relative;z-index:1;width:18px;height:18px;border-radius:50%;border:2px solid var(--case-line);background:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;line-height:1}
+.jstep-label{font-size:10.5px;line-height:1.35;color:var(--case-ink-faint);font-weight:500;overflow-wrap:anywhere}
+.jstep.is-done .jstep-mark{background:#6c491d;border-color:#6c491d}
+.jstep.is-done .jstep-label{color:var(--case-ink-soft)}
+.jstep.is-current .jstep-mark{background:var(--case-ink);border-color:var(--case-ink);box-shadow:0 0 0 4px #2d114214}
+.jstep.is-current .jstep-label{color:var(--case-ink);font-weight:700}
+
+/* ----------------------------------------------------------- next action */
+
+/* The most important element in the product: what happens next and who
+   owns it. Reads as information when it is somebody else's move, and
+   takes the eye only when it is the reader's. */
+.next-action{display:flex;gap:13px;align-items:flex-start;padding:14px 16px;border-radius:var(--case-radius);background:var(--case-surface-soft);border:1px solid var(--case-line);margin:4px 0 2px}
+.next-action.is-mine{background:linear-gradient(120deg,#fdf8ef,#fcfaf6);border-color:#e3cfa8}
+.next-action-mark{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--case-line);color:var(--case-ink-soft)}
+.next-action.is-mine .next-action-mark{background:#fff;border-color:#e3cfa8;color:#6c491d}
+.next-action-body{min-width:0}
+.next-action-eyebrow{display:block;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--case-ink-faint)}
+.next-action.is-mine .next-action-eyebrow{color:#6c491d}
+.next-action-text{margin:3px 0 0;font-size:14px;font-weight:600;line-height:1.45;color:var(--case-ink)}
+.next-action-meta{margin:3px 0 0;font-size:11.5px;color:var(--case-ink-soft)}
+
+.case-owner{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:var(--case-radius);background:var(--case-surface-warm);border:1px solid var(--case-line)}
+.case-owner-eyebrow{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--case-ink-faint)}
+.case-owner strong{font-size:16px;font-weight:600;color:var(--case-ink);margin-top:3px}
+.case-owner-role{font-size:12px;color:var(--case-ink-soft)}
+.case-owner-time{font-size:11px;color:var(--case-ink-faint);margin-top:5px;font-variant-numeric:tabular-nums}
+
+/* ------------------------------------------------------------- the queues */
+
+.workplace .case-card.is-attention{border-left:3px solid #b8945f}
+.workplace .case-card[data-case-open]{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color var(--case-motion),box-shadow var(--case-motion),transform var(--case-motion)}
+.workplace .case-card[data-case-open]:hover{border-color:#c9b5d5;box-shadow:var(--case-shadow-lift);transform:translateY(-1px)}
+.cc-badges{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}
+.cc-status{margin:10px 0 0}
+.cc-next{margin:9px 0 0;font-size:12.5px;line-height:1.55;color:var(--case-ink-soft)}
+.cc-owner{font-size:11.5px;color:var(--case-ink-faint);font-variant-numeric:tabular-nums}
+.cc-open{font-size:12px;font-weight:600;color:#6c491d;white-space:nowrap}
+.tab-count{display:inline-block;margin-left:7px;padding:1px 6px;border-radius:100px;background:#00000010;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.workspace-tabs button[aria-pressed=true] .tab-count{background:#ffffff28}
+
+/* Past a handful of cases a queue stops being something you read and
+   becomes something you scan — so it becomes a table. */
+.queue-table{width:100%;border-collapse:collapse;font-size:13px}
+.queue-table th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--case-ink-faint);font-weight:700;padding:11px 12px;border-bottom:1px solid var(--case-line);white-space:nowrap}
+.queue-table td{padding:12px;border-bottom:1px solid var(--case-line-soft);vertical-align:middle}
+.queue-table tr:last-child td{border-bottom:0}
+.queue-table tbody tr{cursor:pointer;transition:background var(--case-motion)}
+.queue-table tbody tr:hover{background:var(--case-surface-soft)}
+.queue-table tbody tr.is-attention{box-shadow:inset 3px 0 0 #b8945f}
+.queue-table .cid-cell{font-family:var(--font-mono);font-weight:600;white-space:nowrap}
+.queue-table .cid-cell .case-badge{margin-left:7px}
+
+/* --------------------------------------------------- the command center */
+
+/* Selectors here are deliberately doubled up (.workspace-dialog.case-center,
+   .case-center .case-center-head). The command center reuses the existing
+   <dialog class="workspace-dialog"> chrome, and workspace.css styles that
+   dialog's own padding, its <header> as a centred flex row and its
+   <section> margins. Matching that specificity is what lets this layout
+   win without reaching for !important or renaming the shared class the
+   rest of the app depends on. */
+.workspace-dialog.case-center{width:min(980px,96vw);max-height:92vh;padding:0;border:0;border-radius:16px;overflow:auto;background:var(--case-surface)}
+.case-center::backdrop{background:#1e133066;backdrop-filter:blur(2px)}
+.case-center .case-center-head{display:block;position:sticky;top:0;z-index:5;padding:20px 24px 14px;margin:0;background:linear-gradient(180deg,#fff 70%,#ffffffe8);border-bottom:1px solid var(--case-line)}
+.case-center .case-center-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+/* The text block takes the row so the close button lands at the far
+   right rather than tucked against the case number. */
+.case-center .case-center-title>div:first-child{flex:1 1 260px;min-width:0}
+.case-center-title h2{font-family:var(--font-mono);font-size:24px;font-weight:600;letter-spacing:-.01em;margin:4px 0 0}
+.case-center-sub{margin:4px 0 0;font-size:13px;color:var(--case-ink-soft)}
+.case-center-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.case-center>.next-action,.case-center>.case-journey{margin-left:24px;margin-right:24px}
+.case-center>.case-journey{margin-top:16px;margin-bottom:4px}
+
+.case-tabs{display:flex;gap:2px;padding:12px 24px 0;overflow-x:auto;border-bottom:1px solid var(--case-line);scrollbar-width:thin}
+.case-tabs button{flex-shrink:0;min-height:40px;padding:9px 14px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--case-ink-soft);font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:color var(--case-motion),border-color var(--case-motion)}
+.case-tabs button:hover{color:var(--case-ink)}
+.case-tabs button[aria-selected=true]{color:var(--case-ink);font-weight:700;border-bottom-color:var(--case-ink)}
+.case-center .case-panel{padding:20px 24px 28px;margin:0}
+
+.case-center .case-sec{margin:20px 0 0;padding-top:18px;border-top:1px solid var(--case-line-soft)}
+.case-center .case-panel>.case-sec:first-child{margin-top:0;padding-top:0;border-top:0}
+.case-center .case-sec h3{font-size:14px;font-weight:700;letter-spacing:.01em;margin-bottom:9px}
+.case-center .case-sec-quiet{background:var(--case-surface-soft);border:1px solid var(--case-line);border-radius:var(--case-radius);padding:16px 18px;border-top:1px solid var(--case-line)}
+.case-center .case-sec-action{background:var(--case-surface-warm);border:1px solid #e9dcc4;border-radius:var(--case-radius);padding:16px 18px;border-top:1px solid #e9dcc4}
+.case-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.case-field{display:flex;flex-direction:column;gap:5px;margin-top:12px;max-width:460px}
+.case-field>span{font-size:12px;font-weight:600;color:var(--case-ink-soft)}
+.case-inline-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.case-inline-form .case-field{margin-top:0;flex:1 1 180px;max-width:260px}
+.case-overview-grid{display:grid;grid-template-columns:minmax(200px,260px) minmax(0,1fr);gap:18px;align-items:start}
+
+/* One alert component, four meanings, each stating its own. */
+.case-alert{padding:13px 16px;border-radius:0 var(--case-radius-sm) var(--case-radius-sm) 0;border-left:3px solid;margin:0 0 14px;font-size:13px;line-height:1.6}
+.case-alert strong{display:block;margin-bottom:3px}
+.case-alert p{margin:0}
+.case-alert ul{margin:6px 0 0;padding-left:18px}
+.case-alert li{margin:2px 0}
+.case-alert small{display:block;margin-top:6px;opacity:.75;font-size:11px}
+.case-alert-danger{background:var(--case-danger);border-color:#922d45;color:#6f2135}
+.case-alert-warning{background:var(--case-warning);border-color:#b8945f;color:#60431e}
+.case-alert-success{background:var(--case-success);border-color:#3f7a55;color:#265336}
+.case-alert-info{background:var(--case-info);border-color:#3c5484;color:#33466e}
+
+/* ------------------------------------------------ design versions & QC log */
+
+.design-versions{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.design-version{padding:13px;border:1px solid var(--case-line);border-radius:var(--case-radius-sm);background:var(--case-surface-soft)}
+.design-version.is-current{border-color:#d9bd88;background:var(--case-surface-warm)}
+.design-version-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.design-version time{display:block;font-size:11px;color:var(--case-ink-faint);margin-top:3px}
+.design-version .case-image-button{margin-top:9px}
+
+.qc-history{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.qc-history-item{display:flex;gap:12px;padding:12px 14px;border-radius:var(--case-radius-sm);border:1px solid var(--case-line);background:var(--case-surface-soft)}
+.qc-history-item.is-fail{border-left:3px solid #922d45}
+.qc-history-item.is-pass{border-left:3px solid #3f7a55}
+.qc-history-mark{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--case-ink-faint);white-space:nowrap}
+.qc-history-item strong{display:block;font-size:13px}
+.qc-history-item time{display:block;font-size:11px;color:var(--case-ink-faint);margin:2px 0}
+.qc-history-item p{margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--case-ink-soft)}
+.qc-history-item small{display:block;margin-top:4px;font-size:11px;color:var(--case-ink-faint)}
+
+.workload-hint{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.workload-chip{padding:4px 10px;border-radius:100px;background:var(--case-muted);font-size:11.5px;color:var(--case-ink-soft)}
+.workload-chip b{color:var(--case-ink);font-weight:600}
+
+/* ----------------------------------------------------------- lab overview */
+
+.lab-today{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.lab-today-tile{padding:16px 17px;border-radius:var(--case-radius);border:1px solid var(--case-line);background:#fff;box-shadow:var(--case-shadow)}
+.lab-today-tile .n{font-family:var(--font-display);font-size:28px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--case-ink)}
+.lab-today-tile .l{font-size:11.5px;color:var(--case-ink-soft);margin-top:5px;line-height:1.4}
+.lab-today-tile .m{font-size:10.5px;color:var(--case-ink-faint);margin-top:5px}
+.lab-today-tile.tone-danger{border-top:3px solid #9a2944}
+.lab-today-tile.tone-gold{border-top:3px solid #b8945f}
+
+/* The pipeline. Width is share of the active board, so a bottleneck is a
+   shape rather than a number to compare against five others. */
+.lab-pipeline-v2{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.pipe-stage{display:block;padding:14px;border-radius:var(--case-radius);border:1px solid var(--case-line);background:#fff;text-decoration:none;color:inherit;transition:border-color var(--case-motion),transform var(--case-motion)}
+a.pipe-stage:hover{border-color:#c9b5d5;transform:translateY(-1px)}
+.pipe-stage.has-attention{border-color:#e0bfc8}
+.pipe-stage-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.pipe-label{font-size:11.5px;font-weight:600;color:var(--case-ink-soft);overflow-wrap:anywhere}
+.pipe-count{font-family:var(--font-display);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--case-ink)}
+.pipe-bar{height:5px;border-radius:100px;background:var(--case-line-soft);margin:10px 0 9px;overflow:hidden}
+.pipe-bar span{display:block;height:100%;border-radius:100px;background:linear-gradient(90deg,#2d1142,#6e5570)}
+.pipe-stage.has-attention .pipe-bar span{background:linear-gradient(90deg,#922d45,#b8945f)}
+.pipe-meta{display:flex;flex-wrap:wrap;gap:4px;min-height:18px}
+
+.lab-ops-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,1fr);gap:18px;margin-bottom:22px;align-items:start}
+.attention-card h3{display:flex;align-items:center;gap:8px;font-size:15px}
+.attention-list{list-style:none;margin:10px 0 0;padding:0}
+.attention-list li{border-bottom:1px solid var(--case-line-soft)}
+.attention-list li:last-child{border-bottom:0}
+.attention-row{display:grid;grid-template-columns:minmax(90px,auto) minmax(0,1fr) auto;gap:6px 14px;align-items:center;width:100%;padding:12px 4px;background:none;border:0;text-align:left;font:inherit;cursor:pointer;border-radius:var(--case-radius-sm);transition:background var(--case-motion)}
+.attention-row:hover{background:var(--case-surface-soft)}
+.attention-id{font-family:var(--font-mono);font-size:12.5px;font-weight:600;color:var(--case-ink)}
+.attention-why{display:flex;flex-wrap:wrap;gap:4px}
+.attention-detail{grid-column:1/-1;font-size:12px;color:var(--case-ink-soft);line-height:1.5}
+.attention-owner{font-size:11.5px;color:var(--case-ink-faint);white-space:nowrap}
+
+.workload-grid{display:flex;flex-direction:column;gap:16px;margin-top:10px}
+.workload-group .eyebrow{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#6c491d;margin-bottom:6px;font-weight:700}
+.workload-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px;border-bottom:1px solid var(--case-line-soft)}
+.workload-row:last-child{border-bottom:0}
+.workload-count{font-size:11.5px;color:var(--case-ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.workload-count.has-urgent{color:#922d45;font-weight:600}
+
+.analytic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:10px}
+.analytic{padding:14px 16px;border-radius:var(--case-radius-sm);background:var(--case-surface-soft);border:1px solid var(--case-line)}
+.analytic .eyebrow{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--case-ink-faint);font-weight:700}
+.analytic strong{display:block;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.2;margin-top:6px;color:var(--case-ink);font-variant-numeric:tabular-nums}
+/* An honest "we don't know yet" must not look like a headline figure. */
+.analytic strong.is-muted{font-size:14px;font-weight:500;color:var(--case-ink-faint);font-family:var(--font-body)}
+.analytic strong.is-text{font-size:14px;font-family:var(--font-body);line-height:1.5}
+.analytic-wide{grid-column:1/-1}
+.mix-bars{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.mix-row{display:grid;grid-template-columns:minmax(90px,140px) minmax(0,1fr) 28px;gap:10px;align-items:center;font-size:12px}
+.mix-bar{height:7px;border-radius:100px;background:var(--case-line-soft);overflow:hidden}
+.mix-bar i{display:block;height:100%;background:linear-gradient(90deg,#2d1142,#8a6f95);border-radius:100px}
+.mix-row b{text-align:right;font-variant-numeric:tabular-nums;font-size:12px}
+
+/* ---------------------------------------------------- dentist: needs you */
+
+.action-required-panel{margin-bottom:20px}
+.action-required-panel.is-live .section-head h2{color:#6c491d}
+.action-required{display:flex;flex-direction:column;gap:10px}
+.action-required-row{display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border-radius:var(--case-radius);border:1px solid #e3cfa8;background:linear-gradient(120deg,#fdf8ef,#fffdf9);text-align:left;font:inherit;cursor:pointer;transition:transform var(--case-motion),box-shadow var(--case-motion)}
+.action-required-row:hover{transform:translateY(-1px);box-shadow:var(--case-shadow-lift)}
+.ar-mark{flex-shrink:0;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e3cfa8;color:#6c491d}
+.ar-body{min-width:0;flex:1}
+.ar-id{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--case-ink-soft)}
+.ar-action{display:block;font-size:15px;font-weight:600;line-height:1.4;margin-top:2px;color:var(--case-ink)}
+.ar-meta{display:block;font-size:11.5px;color:var(--case-ink-faint);margin-top:3px}
+.ar-go{flex-shrink:0;font-size:12.5px;font-weight:700;color:#6c491d;white-space:nowrap}
+
+/* -------------------------------------------------------- notifications */
+
+.notif-level{display:inline-block;margin-bottom:4px;padding:2px 7px;border-radius:5px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.notif-action .notif-level{background:var(--case-warning);color:var(--case-warning-ink)}
+.notif-urgent .notif-level{background:var(--case-danger);color:var(--case-danger-ink)}
+.notif-item[data-notif-case]{cursor:pointer}
+
+/* --------------------------------------------------------- chat & notes */
+
+.chat-msg.is-internal .chat-bubble{background:var(--case-warning);color:#4c3617;border:1px dashed #d9bd88}
+.chat-empty{padding:18px;text-align:center;color:var(--case-ink-faint);font-size:13px}
+
+/* ------------------------------------------------------------- form bits */
+
+.field-optional{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--case-ink-faint);margin-left:6px}
+.field-hint{display:block;margin-top:5px;font-size:11.5px;color:var(--case-ink-faint);line-height:1.5}
+
+/* ------------------------------------------------------------ responsive */
+
+@media (max-width:1100px){
+  .lab-today{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lab-pipeline-v2{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lab-ops-grid{grid-template-columns:minmax(0,1fr)}
+  .case-overview-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:720px){
+  .lab-today{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lab-pipeline-v2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .workspace-dialog.case-center{width:100vw;max-width:100vw;max-height:100vh;border-radius:0;padding:0}
+  .case-center .case-center-head,.case-center .case-panel{padding-left:16px;padding-right:16px}
+  .case-tabs{padding-left:16px;padding-right:16px}
+  .case-center>.next-action,.case-center>.case-journey{margin-left:16px;margin-right:16px}
+  .case-center .case-center-title h2{font-size:20px}
+  .action-required-row{flex-wrap:wrap}
+  .ar-go{width:100%;text-align:right}
+  .attention-row{grid-template-columns:minmax(0,1fr)}
+  .attention-owner{text-align:left}
+}
+@media (max-width:460px){
+  .lab-today{grid-template-columns:minmax(0,1fr)}
+  .jstep{min-width:52px}
+  .jstep-label{font-size:9.5px}
+}
+
+/* Movement here is feedback, never decoration — so it all goes away for
+   anyone who has asked for less of it. */
+@media (prefers-reduced-motion:reduce){
+  .workplace .case-card[data-case-open],.action-required-row,a.pipe-stage,.queue-table tbody tr,.case-tabs button,.attention-row{transition:none}
+  .workplace .case-card[data-case-open]:hover,.action-required-row:hover,a.pipe-stage:hover{transform:none}
+}

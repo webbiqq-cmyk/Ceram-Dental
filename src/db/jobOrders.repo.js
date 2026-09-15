@@ -10,22 +10,48 @@ const ORDER_COLUMNS = `
   id, order_number, clinic_id, dentist_user_id, patient_ref, job_type, stage_type, status,
   shade, instructions, scan_body, implant_system, abutment_size, abutment_availability,
   assigned_designer_id, assigned_technician_id, assigned_qc_id, rejection_note,
-  delivery_method, delivered_at, created_at, updated_at
+  delivery_method, delivered_at, created_at, updated_at,
+  priority, target_date, blocked_reason, blocked_at, blocked_by, blocked_from, stage_entered_at
+`;
+
+// Same columns qualified to the `o` alias, plus the names behind the four
+// assigned_*_id columns. Every queue in the product answers "who has this
+// right now?" — resolving that in the UI meant either shipping the whole
+// staff roster to the browser or an N+1 fetch per row, so the join happens
+// here once. Kept as a separate constant from ORDER_COLUMNS because
+// createOrder/updateOrder's RETURNING clause has no joins to name.
+const ORDER_SELECT = `
+  ${ORDER_COLUMNS.trim().split(/\s*,\s*/).map(c => 'o.' + c).join(', ')},
+  d.name AS dentist_name, des.name AS designer_name,
+  tech.name AS technician_name, q.name AS qc_name
+`;
+const ORDER_JOINS = `
+  FROM job_orders o
+  LEFT JOIN users d ON d.id = o.dentist_user_id
+  LEFT JOIN users des ON des.id = o.assigned_designer_id
+  LEFT JOIN users tech ON tech.id = o.assigned_technician_id
+  LEFT JOIN users q ON q.id = o.assigned_qc_id
 `;
 
 async function createOrder(fields) {
   const {
     clinicId, dentistUserId, patientRef, jobType, stageType, shade, instructions,
-    scanBody, implantSystem, abutmentSize, abutmentAvailability, deliveryMethod
+    scanBody, implantSystem, abutmentSize, abutmentAvailability, deliveryMethod,
+    targetDate, priority
   } = fields;
   const { rows } = await query(
     `INSERT INTO job_orders
       (clinic_id, dentist_user_id, patient_ref, job_type, stage_type, shade, instructions,
-       scan_body, implant_system, abutment_size, abutment_availability, delivery_method)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       scan_body, implant_system, abutment_size, abutment_availability, delivery_method,
+       target_date, priority)
+     -- Both cast explicitly: Postgres cannot infer a bare parameter's type
+     -- against an enum column or a DATE, and an untyped one fails at
+     -- execution with a datatype mismatch rather than at parse time.
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::date,$14::job_priority)
      RETURNING ${ORDER_COLUMNS}`,
     [clinicId || null, dentistUserId, patientRef, jobType, stageType || 'final', shade || null, instructions || null,
-     scanBody || null, implantSystem || null, abutmentSize || null, abutmentAvailability || null, deliveryMethod || null]
+     scanBody || null, implantSystem || null, abutmentSize || null, abutmentAvailability || null, deliveryMethod || null,
+     targetDate || null, priority || 'normal']
   );
   return rows[0];
 }
@@ -36,7 +62,10 @@ async function getOrder(id, lock = false) {
   // same type; without it Postgres can't infer $1's type unambiguously
   // against a uuid column and a text column in the same query.
   const column = /^[0-9a-f-]{36}$/i.test(String(id)) ? 'id' : 'order_number';
-  const { rows } = await query(`SELECT ${ORDER_COLUMNS} FROM job_orders WHERE ${column} = $1${lock ? ' FOR UPDATE' : ''}`, [String(id)]);
+  // FOR UPDATE OF o, not a bare FOR UPDATE: the joins above are only there
+  // to read assignee names, and locking those users rows too would let two
+  // unrelated orders that share a designer serialise against each other.
+  const { rows } = await query(`SELECT ${ORDER_SELECT} ${ORDER_JOINS} WHERE o.${column} = $1${lock ? ' FOR UPDATE OF o' : ''}`, [String(id)]);
   return rows[0] || null;
 }
 
@@ -47,20 +76,37 @@ async function getOrder(id, lock = false) {
 // shared shape, not five unrelated queries.
 async function listOrders(role, userId, {limit=200,offset=0}={}) {
   const column={dentist:'dentist_user_id',designer:'assigned_designer_id',technician:'assigned_technician_id',qc:'assigned_qc_id'}[role];
-  const params=[Math.min(201,Math.max(1,Number(limit)||200)),Math.max(0,Math.floor(Number(offset)||0))];
+  const params=[Math.min(1000,Math.max(1,Number(limit)||200)),Math.max(0,Math.floor(Number(offset)||0))];
   if(column)params.push(userId);
-  const {rows}=await query(`SELECT ${ORDER_COLUMNS} FROM job_orders ${column ? 'WHERE '+column+'=$3' : ''} ORDER BY created_at DESC,id LIMIT $1 OFFSET $2`,params);
+  // Urgent first, then whatever is due soonest, then newest — the order a
+  // person working a queue top-to-bottom would pick things up in anyway.
+  // Undated cases sort after dated ones rather than ahead of them, so
+  // adding a target date moves work up the list, never down.
+  const {rows}=await query(
+    `SELECT ${ORDER_SELECT} ${ORDER_JOINS} ${column ? 'WHERE o.'+column+'=$3' : ''}
+     ORDER BY o.priority DESC, o.target_date ASC NULLS LAST, o.created_at DESC, o.id LIMIT $1 OFFSET $2`, params);
   return rows;
 }
 
+const UPDATABLE = new Set([
+  'status','stage_type','assigned_designer_id','assigned_technician_id','assigned_qc_id','rejection_note','delivered_at',
+  'priority','target_date','blocked_reason','blocked_at','blocked_by','blocked_from'
+]);
+
 async function updateOrder(id, fields) {
-  const allowed=new Set(['status','stage_type','assigned_designer_id','assigned_technician_id','assigned_qc_id','rejection_note','delivered_at']);
   const keys = Object.keys(fields);
-  if(keys.some(k=>!allowed.has(k)))throw new Error('Unsupported order update.');
+  if(keys.some(k=>!UPDATABLE.has(k)))throw new Error('Unsupported order update.');
   if (!keys.length) return getOrder(id);
   const set = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
+  // stage_entered_at is maintained here rather than at every call site:
+  // the workflow service writes a status a couple of dozen times across
+  // its transitions and any one of them forgetting would quietly corrupt
+  // every time-in-stage figure in the product. `IS DISTINCT FROM` so it
+  // only moves on a genuine change — a no-op re-write of the same status
+  // must not reset the clock.
+  const touchStage = keys.includes('status') ? ', stage_entered_at = CASE WHEN status IS DISTINCT FROM $' + (keys.indexOf('status') + 2) + ' THEN now() ELSE stage_entered_at END' : '';
   const { rows } = await query(
-    `UPDATE job_orders SET ${set}, updated_at = now() WHERE id = $1 RETURNING ${ORDER_COLUMNS}`,
+    `UPDATE job_orders SET ${set}${touchStage}, updated_at = now() WHERE id = $1 RETURNING ${ORDER_COLUMNS}`,
     [id, ...keys.map(k => fields[k])]
   );
   return rows[0] || null;
@@ -110,18 +156,38 @@ async function listFiles(orderId) {
   return rows;
 }
 
-async function addMessage(orderId, senderId, body) {
+async function addMessage(orderId, senderId, body, internal = false) {
   const { rows } = await query(
-    `INSERT INTO case_messages (job_order_id, sender_id, body) VALUES ($1,$2,$3) RETURNING *`,
-    [orderId, senderId, body]
+    `INSERT INTO case_messages (job_order_id, sender_id, body, internal) VALUES ($1,$2,$3,$4) RETURNING *`,
+    [orderId, senderId, body, !!internal]
   );
   return rows[0];
 }
 
-async function listMessages(orderId) {
+// includeInternal is a caller decision, but a false value is enforced in
+// SQL rather than by filtering the result afterwards — an internal note
+// must never travel to a dentist's browser even inside a payload the UI
+// intends to hide.
+async function listMessages(orderId, includeInternal = true) {
   const { rows } = await query(
     `SELECT m.*, u.name AS sender_name, u.role AS sender_role FROM case_messages m
-     JOIN users u ON u.id = m.sender_id WHERE job_order_id = $1 ORDER BY created_at ASC LIMIT 1000`,
+     JOIN users u ON u.id = m.sender_id
+     WHERE job_order_id = $1${includeInternal ? '' : ' AND m.internal = false'}
+     ORDER BY created_at ASC LIMIT 1000`,
+    [orderId]
+  );
+  return rows;
+}
+
+// Every gated decision taken on a case: reception's accept/reject, the
+// doctor's demo verdict, and each QC pass/fail. The QC rows are what make
+// "failed twice, here's why" answerable without re-reading free text out
+// of the timeline.
+async function listApprovals(orderId) {
+  const { rows } = await query(
+    `SELECT a.*, u.name AS decided_by_name FROM approvals a
+     LEFT JOIN users u ON u.id = a.decided_by
+     WHERE job_order_id = $1 ORDER BY created_at ASC LIMIT 500`,
     [orderId]
   );
   return rows;
@@ -137,9 +203,29 @@ async function getUserByRole(role) {
   return rows[0] || null;
 }
 
+// Two aggregates for the admin/lab analytics panels. Both are deliberately
+// single queries over indexed columns rather than "fetch every case and
+// its history, then reduce in Node" — the second shape is what turns an
+// analytics tab into the slowest page in an application.
+async function completionSamples(limit = 500) {
+  const { rows } = await query(
+    `SELECT h.job_order_id, o.job_type, o.created_at, h.created_at AS completed_at
+     FROM job_stage_history h JOIN job_orders o ON o.id = h.job_order_id
+     WHERE h.status = 'completed' ORDER BY h.created_at DESC LIMIT $1`, [Math.min(2000, limit)]);
+  return rows;
+}
+
+async function qcSamples(limit = 1000) {
+  const { rows } = await query(
+    `SELECT job_order_id, outcome, note, created_at FROM approvals
+     WHERE decision_type = 'qc_review' ORDER BY created_at DESC LIMIT $1`, [Math.min(5000, limit)]);
+  return rows;
+}
+
 module.exports = {
   createOrder, getOrder, listOrders, updateOrder,
   addStageHistory, listStageHistory, addAssignment, addApproval,
-  addFile, listFiles, addMessage, listMessages, listStaff, getUserByRole,
+  addFile, listFiles, addMessage, listMessages, listApprovals, listStaff, getUserByRole,
+  completionSamples, qcSamples,
   getClient, transaction
 };

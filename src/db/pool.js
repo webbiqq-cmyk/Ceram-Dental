@@ -1,5 +1,14 @@
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 const { AsyncLocalStorage } = require('node:async_hooks');
+
+// A DATE column is a calendar day, not an instant. node-postgres decodes
+// it into a JS Date at local midnight by default, which then serialises
+// as a UTC timestamp — so a target date of the 18th can reach a browser
+// west of UTC as "2026-09-17T21:00:00.000Z" and be read back as the 17th.
+// Handing DATE back as the plain 'YYYY-MM-DD' text Postgres stored keeps
+// it a calendar day end to end, and matches exactly what the in-memory
+// store returns, so both backends agree.
+types.setTypeParser(1082, value => value);
 const { integer } = require('../config/env');
 const context = new AsyncLocalStorage();
 const connectionString = process.env.DATABASE_URL;

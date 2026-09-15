@@ -30,7 +30,8 @@ async function create(req, res) {
   const order = await wf.createOrder({
     clinicId: b.clinicId, patientRef: b.patientRef, jobType: b.jobType, shade: b.shade,
     instructions: b.instructions, scanBody: b.scanBody, implantSystem: b.implantSystem,
-    abutmentSize: b.abutmentSize, abutmentAvailability: b.abutmentAvailability, deliveryMethod: b.deliveryMethod
+    abutmentSize: b.abutmentSize, abutmentAvailability: b.abutmentAvailability, deliveryMethod: b.deliveryMethod,
+    targetDate: b.targetDate
   });
   ok(res, { order });
 }
@@ -48,8 +49,22 @@ async function detail(req, res) {
 
 async function receptionReview(req, res) {
   const b = req.body || {};
-  const result = await wf.receptionReview(req.params.id, { decision: b.decision, note: b.note, designerId: b.designerId, technicianId: b.technicianId, paymentChecked: b.paymentChecked, detailsChecked: b.detailsChecked });
+  const result = await wf.receptionReview(req.params.id, { decision: b.decision, note: b.note, reason: b.reason, designerId: b.designerId, technicianId: b.technicianId, paymentChecked: b.paymentChecked, detailsChecked: b.detailsChecked });
   ok(res, result);
+}
+
+async function setScheduling(req, res) {
+  const b = req.body || {};
+  ok(res, await wf.setScheduling(req.params.id, { priority: b.priority, targetDate: b.targetDate }));
+}
+
+async function blockCase(req, res) {
+  const b = req.body || {};
+  ok(res, await wf.blockCase(req.params.id, { reason: b.reason, note: b.note }));
+}
+
+async function resumeCase(req, res) {
+  ok(res, await wf.resumeCase(req.params.id, { note: (req.body || {}).note }));
 }
 
 async function designDone(req, res) {
@@ -90,13 +105,22 @@ async function markCompleted(req, res) {
 }
 
 async function postMessage(req, res) {
-  const message = await wf.postMessage(req.params.id, req.user.role, (req.body || {}).body);
+  const b = req.body || {};
+  const message = await wf.postMessage(req.params.id, req.user.role, b.body, b.internal === true);
   ok(res, { message });
 }
 
+// The audience is the signed-in role, never a request parameter: a dentist
+// asking for this order's messages gets the dentist-visible thread from
+// the query itself, so no internal note is ever serialised to a clinic.
 async function listMessages(req, res) {
-  const messages = await repo.listMessages(req.params.id);
+  const messages = await repo.listMessages(req.params.id, req.user.role !== 'dentist');
   ok(res, { messages });
+}
+
+async function listApprovals(req, res) {
+  const approvals = await repo.listApprovals(req.params.id);
+  ok(res, { approvals: req.user.role === 'dentist' ? approvals.filter(a => a.decision_type === 'doctor_approval') : approvals });
 }
 
 async function recordFile(req, res) {
@@ -130,7 +154,8 @@ module.exports = {
   productionDone: guarded(productionDone), qcDecision: guarded(qcDecision),
   doctorDecision: guarded(doctorDecision), confirmCompletion: guarded(confirmCompletion),
   markDelivered: guarded(markDelivered), markCompleted: guarded(markCompleted),
-  postMessage: guarded(postMessage), listMessages: guarded(listMessages),
+  postMessage: guarded(postMessage), listMessages: guarded(listMessages), listApprovals: guarded(listApprovals),
+  setScheduling: guarded(setScheduling), blockCase: guarded(blockCase), resumeCase: guarded(resumeCase),
   recordFile: guarded(recordFile), listFiles: guarded(listFiles), listStaff: guarded(listStaff)
 };
 

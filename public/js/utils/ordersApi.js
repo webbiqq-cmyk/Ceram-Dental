@@ -29,7 +29,16 @@ export function confirmCompletion(id) { return api(withRole('/api/orders/' + id 
 export function markDelivered(id) { return api(withRole('/api/orders/' + id + '/mark-delivered', 'receptionist'), { method: 'POST', body: '{}' }); }
 export function markCompleted(id) { return api(withRole('/api/orders/' + id + '/mark-completed', 'receptionist'), { method: 'POST', body: '{}' }); }
 
+export function setScheduling(role, id, body) { return api(withRole('/api/orders/' + id + '/scheduling', role), { method: 'POST', body: JSON.stringify(body) }); }
+export function blockCase(role, id, body) { return api(withRole('/api/orders/' + id + '/block', role), { method: 'POST', body: JSON.stringify(body) }); }
+export function resumeCase(role, id, body) { return api(withRole('/api/orders/' + id + '/resume', role), { method: 'POST', body: JSON.stringify(body || {}) }); }
+export function listApprovals(role, id) { return api(withRole('/api/orders/' + id + '/approvals', role)); }
+// The lab-wide operational read. Dentists have no route to this by design.
+export function labOverview(role) { return api(withRole('/api/lab/overview', role)); }
+
 export function listMessages(role, id) { return api(withRole('/api/orders/' + id + '/messages', role)); }
-export function postMessage(role, id, body) { return api(withRole('/api/orders/' + id + '/messages', role), { method: 'POST', body: JSON.stringify({ body }) }); }
+// `internal: true` posts a note the clinic can never see — the server
+// refuses it outright from a dentist and excludes it from their reads.
+export function postMessage(role, id, body, internal) { return api(withRole('/api/orders/' + id + '/messages', role), { method: 'POST', body: JSON.stringify({ body, internal: internal === true }) }); }
 export function listFiles(role, id) { return api(withRole('/api/orders/' + id + '/files', role)); }
 export function recordFile(role, id, body) { return api(withRole('/api/orders/' + id + '/files', role), { method: 'POST', body: JSON.stringify(body) }); }
