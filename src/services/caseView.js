@@ -207,12 +207,20 @@ function flagsFor(order, derived, now, thresholds, voice) {
   // generous. See THRESHOLDS below.
   const limit = thresholds[derived.stage];
   if (limit && !CLOSED.has(order.status) && derived.time_in_stage_ms > limit) {
-    flags.push({ key: 'stalled', label: 'Stalled in ' + derived.stage_label.toLowerCase(), tone: 'warning' });
+    // Neutral wording on purpose. The thresholds below are sensible
+    // defaults, not Ceram's agreed turnaround times, and calling a case
+    // "stalled" on the strength of a guessed number states a judgement
+    // the software has not earned. "Longer than expected" says exactly
+    // what is known: it has been here longer than the configured
+    // expectation. Once real SLAs are set via CASE_STAGE_HOURS the
+    // wording is still true, and stronger.
+    flags.push({ key: 'slow', label: 'Longer than expected', tone: 'warning' });
   }
   return flags;
 }
 
-// Hours a case may sit in each stage before it counts as stalled. Chosen
+// Hours a case may sit in each stage before it is flagged as taking
+// longer than expected. Chosen
 // to be uncontroversially long rather than aspirational: these exist to
 // catch cases nobody is looking at, not to grade anyone's speed. Override
 // per deployment with CASE_STAGE_HOURS="reception=8,design=48".
@@ -273,7 +281,7 @@ function describe(order, { audience = 'lab', now = new Date() } = {}) {
   derived.due = dueState(order, now);
   derived.journey = journeyFor(order, step);
   derived.flags = flagsFor(order, derived, now, THRESHOLDS, voice);
-  derived.needs_attention = derived.flags.some(f => ['blocked', 'overdue', 'returned', 'rework', 'stalled'].includes(f.key));
+  derived.needs_attention = derived.flags.some(f => ['blocked', 'overdue', 'returned', 'rework', 'slow'].includes(f.key));
   return derived;
 }
 

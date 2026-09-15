@@ -6,7 +6,7 @@ import { icon } from './icons.js';
 
 const STAFF = [['receptionist','reception','Reception','inbox'],['designer','designer','Design','sliders'],['technician','technician','Production','box'],['qc','qc','Quality inspection','check']];
 const ADMIN_ICONS = {overview:'grid',enquiries:'message',appointments:'calendar',invoices:'receipt',expenses:'wallet',products:'box',orders:'clipboard',team:'users',applications:'briefcase',messages:'mail',settings:'sliders',accounts:'shield',activity:'activity',export:'download'};
-const DENTIST_ICONS = {overview:'grid',orders:'history',rejected:'alert',billing:'receipt',profile:'user'};
+const DENTIST_ICONS = {overview:'grid',orders:'history',rejected:'alert',drafts:'clipboard',billing:'receipt',profile:'user'};
 
 // One shell for every signed-in surface — dentist portal, the lab roles, and
 // Administration. Administration keeps its own nav and page; it just shares
@@ -47,7 +47,14 @@ export function workspaceShell(route, html) {
 
   const dentist = ['portal','new-order'].includes(route);
   if (dentist) {
-    let links = ['overview','orders','rejected','billing','profile'].map((tab,i) => '<button type="button" data-workspace-tab="' + tab + '"' + (route === 'portal' && UI.portalTab === tab ? ' aria-current="page"' : '') + '>' + icon(DENTIST_ICONS[tab]) + '<span>' + ['Overview','Case history','Needs attention','Billing','My profile'][i] + '</span></button>').join('');
+    // Drafts get their own nav entry rather than living only behind the
+    // overview strip: with a single draft there was otherwise no route to
+    // it at all once the strip's "See all" (which needs two) was gone.
+    const tabs = ['overview','orders','rejected','drafts','billing','profile'];
+    const labels = ['Overview','Case history','Needs attention','Drafts','Billing','My profile'];
+    let links = tabs.map((tab,i) => '<button type="button" data-workspace-tab="' + tab + '"' + (route === 'portal' && UI.portalTab === tab ? ' aria-current="page"' : '') + '>' +
+      '<span class="ws-nav-label">' + icon(DENTIST_ICONS[tab]) + '<span class="ws-nav-text">' + labels[i] + '</span></span>' +
+      (tab === 'drafts' && UI.draftCount ? '<span class="ws-badge">' + UI.draftCount + '</span>' : '') + '</button>').join('');
     links += nav('new-order','New case',route === 'new-order','plus');
     return shell('portal', 'Dentist portal', 'Your workspace', links, html, undefined, 'dentist');
   }

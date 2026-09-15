@@ -203,6 +203,47 @@ async function getUserByRole(role) {
   return rows[0] || null;
 }
 
+// Search, scoped by the same rule that scopes a role's queue: a dentist
+// can only ever match their own cases, and no caller can widen that from
+// the request. Matching is on the two things people actually search by —
+// the case number and the patient reference — plus the clinic's name for
+// lab-side roles, who think in doctors rather than references.
+//
+// The result count is capped low on purpose. This is a "find the case I
+// am thinking of" box, not a reporting tool, and an unbounded LIKE over a
+// growing table is how a search box becomes the slowest page in an app.
+async function searchOrders(role, userId, term, limit = 8) {
+  const q = String(term || '').trim();
+  if (q.length < 2) return [];
+  const like = '%' + q.replace(/[%_\\]/g, ch => '\\' + ch) + '%';
+  const prefix = q.replace(/[%_\\]/g, ch => '\\' + ch) + '%';
+  const scope = role === 'dentist' ? 'AND o.dentist_user_id = $4' : '';
+  const params = [like, prefix, Math.min(20, Math.max(1, limit))];
+  if (role === 'dentist') params.push(userId);
+  const { rows } = await query(
+    `SELECT ${ORDER_SELECT} ${ORDER_JOINS}
+     WHERE (o.order_number ILIKE $2 OR o.patient_ref ILIKE $1
+            ${role === 'dentist' ? '' : "OR d.name ILIKE $1"})
+       ${scope}
+     ORDER BY o.updated_at DESC LIMIT $3`, params);
+  return rows;
+}
+
+// People, for the roles allowed to look them up. Admin searches clinics;
+// nobody else gets a directory.
+async function searchDentists(term, limit = 5) {
+  const q = String(term || '').trim();
+  if (q.length < 2) return [];
+  const like = '%' + q.replace(/[%_\\]/g, ch => '\\' + ch) + '%';
+  const { rows } = await query(
+    `SELECT u.id, u.name, u.username,
+            count(o.id) FILTER (WHERE o.status NOT IN ('completed')) AS active_cases
+     FROM users u LEFT JOIN job_orders o ON o.dentist_user_id = u.id
+     WHERE u.role = 'dentist' AND u.active AND u.name ILIKE $1
+     GROUP BY u.id, u.name, u.username ORDER BY u.name LIMIT $2`, [like, Math.min(10, limit)]);
+  return rows.map(r => ({ ...r, active_cases: Number(r.active_cases) }));
+}
+
 // Two aggregates for the admin/lab analytics panels. Both are deliberately
 // single queries over indexed columns rather than "fetch every case and
 // its history, then reduce in Node" — the second shape is what turns an
@@ -226,6 +267,6 @@ module.exports = {
   createOrder, getOrder, listOrders, updateOrder,
   addStageHistory, listStageHistory, addAssignment, addApproval,
   addFile, listFiles, addMessage, listMessages, listApprovals, listStaff, getUserByRole,
-  completionSamples, qcSamples,
+  completionSamples, qcSamples, searchOrders, searchDentists,
   getClient, transaction
 };

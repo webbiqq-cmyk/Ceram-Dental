@@ -59,7 +59,7 @@ export async function renderDesigner() {
       metricCard(counts.active, 'To work on', { iconName: 'sliders', filter: 'active' }) +
       metricCard(counts.changes, 'Changes requested', { iconName: 'alert', tone: counts.changes ? 'danger' : '', meta: counts.changes ? 'Action required' : '', filter: 'changes' }) +
       metricCard(counts.waiting, 'With the dentist', { iconName: 'clock', filter: 'waiting' }) +
-      metricCard(attention, 'Needs attention', { iconName: 'alert', tone: attention ? 'danger' : '', meta: attention ? 'Overdue or stalled' : 'Nothing overdue' }) +
+      metricCard(attention, 'Needs attention', { iconName: 'alert', tone: attention ? 'danger' : '', meta: attention ? 'Overdue or waiting' : 'Nothing overdue' }) +
     '</div>' +
 
     queueTabs(Object.entries(QUEUES).map(([key, q]) => [key, q.label, counts[key]]), active, 'designer-tab') +

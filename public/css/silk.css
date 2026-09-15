@@ -204,19 +204,15 @@ button,a,input,select,textarea{transition:color .2s ease,background-color .2s ea
 /* Staff/workplace routes: strip the marketing chrome so the portals read as
    an operational tool, not a page of the public site. */
 .workplace .main-nav,.workplace #cartBtn,.workplace #waFab{display:none;}
-.workplace .topbar{border-bottom:1px solid var(--line);}
 .workplace .topbar-actions{margin-left:auto;}
 .workplace .page{padding-top:8px;}
 .workplace .page-head{position:relative;padding-bottom:20px;border-bottom:1px solid var(--line);}
-.workplace .page-head h1{font-size:26px !important;font-family:var(--font-accent);font-weight:500;}
 .workplace .page-head .eyebrow-accent{color:var(--gold);}
 /* Sign-out sits quietly top-right of the header instead of floating under it. */
 .workplace .page-head [id$="LogoutBtn"]{position:absolute;top:0;right:0;margin:0 !important;}
-.workplace .card,.workplace .stat-card,.workplace .stat-tile,.workplace .table-wrap,.workplace .lane,.workplace .kcard,.workplace .review-panel{border-radius:6px;box-shadow:0 2px 8px #29163805;}
-.workplace .stat-card .n{color:var(--violet);}
+.workplace .stat-tile,.workplace .lane,.workplace .kcard{border-radius:6px;box-shadow:0 2px 8px #29163805;}
 .workplace .stat-tile .val{font-size:20px;white-space:nowrap;}
 .workplace .stat-tile .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.workplace input,.workplace select,.workplace textarea{border-radius:4px;}
 .workplace .dash-tab{border-radius:0;}
 .workplace .reveal{transition-duration:.3s;transition-delay:0s;transform:translateY(5px);}
 body[data-page="contact"] .grid-2{gap:64px;align-items:start;}
@@ -313,7 +309,6 @@ body[data-page="shop"] .product-card{background:#fff;border:1px solid var(--line
   .workplace .nav-toggle{display:none;}          /* main-nav is hidden here, so the hamburger is dead weight */
   .workplace .page{padding-top:4px;}
   .workplace .page-head{padding-top:6px;}
-  .workplace .page-head h1{font-size:22px !important;}
   .workplace .page-head [id$="LogoutBtn"]{position:static;margin-top:14px !important;width:100%;}
   .workplace .dash-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
   .workplace .dash-tabs .dash-tab{flex:0 0 auto;white-space:nowrap;}

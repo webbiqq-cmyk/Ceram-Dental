@@ -5,6 +5,7 @@ import { DATA, api, loadState } from '../../state.js';
 import { esc, fmtDateTime } from '../../utils/format.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
+import { confirmAction } from '../../components/confirm.js';
 
 const ROLE_LABEL = { admin: 'Admin', dentist: 'Dentist Portal', lab: 'Lab Studio', receptionist:'Reception', designer:'Designer', technician:'Technician', qc:'Quality Control' };
 
@@ -96,7 +97,11 @@ export function attachAccountsHandlers() {
   }));
 
   document.querySelectorAll('[data-delete-user]').forEach(b => b.addEventListener('click', async () => {
-    if (!window.confirm('Delete this account? They lose access immediately. Case and order history stays intact, and this can be undone from "Deleted accounts" below if needed.')) return;
+    if (!await confirmAction({
+      title: 'Delete this account?',
+      body: 'They lose access immediately. Their case and order history stays intact, and the account can be restored from "Deleted accounts" below.',
+      confirmLabel: 'Delete account', tone: 'danger'
+    })) return;
     try {
       await api('/api/admin/users/' + b.dataset.deleteUser + '/delete', { method: 'POST' });
       await loadState(); renderCurrent(); toast('Account deleted');

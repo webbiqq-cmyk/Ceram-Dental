@@ -272,10 +272,6 @@ a.pipe-stage:hover{border-color:#c9b5d5;transform:translateY(-1px)}
 
 /* -------------------------------------------------------- notifications */
 
-.notif-level{display:inline-block;margin-bottom:4px;padding:2px 7px;border-radius:5px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.notif-action .notif-level{background:var(--case-warning);color:var(--case-warning-ink)}
-.notif-urgent .notif-level{background:var(--case-danger);color:var(--case-danger-ink)}
-.notif-item[data-notif-case]{cursor:pointer}
 
 /* --------------------------------------------------------- chat & notes */
 

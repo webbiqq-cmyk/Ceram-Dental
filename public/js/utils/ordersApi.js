@@ -42,3 +42,15 @@ export function listMessages(role, id) { return api(withRole('/api/orders/' + id
 export function postMessage(role, id, body, internal) { return api(withRole('/api/orders/' + id + '/messages', role), { method: 'POST', body: JSON.stringify({ body, internal: internal === true }) }); }
 export function listFiles(role, id) { return api(withRole('/api/orders/' + id + '/files', role)); }
 export function recordFile(role, id, body) { return api(withRole('/api/orders/' + id + '/files', role), { method: 'POST', body: JSON.stringify(body) }); }
+
+// ---------------------------------------------------------------- drafts
+// A draft is a saved New Case form, not a job order. These endpoints are
+// dentist-only on the server, so there is no lab-side counterpart here by
+// design.
+export function listDrafts() { return api('/api/drafts'); }
+export function getDraft(id) { return api('/api/drafts/' + id); }
+export function createDraft(payload) { return api('/api/drafts', { method: 'POST', body: JSON.stringify({ payload }) }); }
+export function saveDraft(id, payload) { return api('/api/drafts/' + id, { method: 'PUT', body: JSON.stringify({ payload }) }); }
+export function deleteDraft(id) { return api('/api/drafts/' + id, { method: 'DELETE' }); }
+// Produces a new draft from a previous case — never a second case.
+export function duplicateCase(id) { return api('/api/orders/' + id + '/duplicate', { method: 'POST', body: '{}' }); }

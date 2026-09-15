@@ -471,11 +471,75 @@ async function markCompleted(orderId) {
 // where it can't be got wrong: a dentist can neither write one nor read
 // one, and the read side is a WHERE clause (see repo.listMessages), not a
 // filter applied to a payload that already left the database.
+// @mentions, in internal notes only.
+//
+// The whole feature is one thing: a note that names a colleague should
+// reach that colleague. It is not a social system — there is no mention
+// index, no following, no cross-case feed. A name is resolved against the
+// active lab roster and turned into one notification scoped to that
+// person, and nothing else changes.
+//
+// Two rules keep it safe. Mentions work only on internal notes, so a
+// mention can never be a route to messaging a clinic. And a mention
+// creates a notification, never access: the person still has to be
+// allowed to open the case, which the existing checks decide.
+const LAB_STATION_ROLES = ['receptionist', 'designer', 'technician', 'qc', 'lab', 'admin'];
+
+async function resolveMentions(body) {
+  const WORD = "[\\p{L}][\\p{L}\\p{M}'.-]*";
+  // Capture up to two words after the @, but treat the second as
+  // provisional. "@Sarah Ahmed, check the margin" and "@Rana please check"
+  // look identical to a regex; only the roster can say which one the
+  // second word belongs to, so both readings are offered below and the
+  // two-word form is tried first.
+  const matches = [...String(body).matchAll(new RegExp('@(' + WORD + ')(?:[ \\t]+(' + WORD + '))?', 'gu'))];
+  if (!matches.length) return [];
+  const staff = (await require('../models/user.model').list())
+    .filter(u => u.active && LAB_STATION_ROLES.includes(u.role) && u.name);
+
+  const matched = new Map();
+  for (const [, first, second] of matches) {
+    const candidates = second ? [(first + ' ' + second).toLowerCase(), first.toLowerCase()] : [first.toLowerCase()];
+    for (const candidate of candidates) {
+      // Every person the name could mean, not the first one found. Two
+      // Sarahs on a lab floor is ordinary, and silently picking one would
+      // send "check the margin on #11" to the wrong colleague while the
+      // right one is never told. Ambiguity reaches both; the author can
+      // be more specific next time.
+      const people = staff.filter(u => {
+        const full = u.name.toLowerCase();
+        return candidate === full || candidate === full.split(/\s+/)[0];
+      });
+      // First reading that resolves wins, so "@Sarah Ahmed" never also
+      // fires a second, looser match on "Sarah".
+      if (people.length) { people.forEach(person => matched.set(person.id, person)); break; }
+    }
+  }
+  return [...matched.values()];
+}
+
 async function postMessage(orderId, senderRole, body, internal = false) {
   if (!body || !body.trim()) throw new WorkflowError('Message cannot be empty.');
   if (internal && senderRole === 'dentist') throw new WorkflowError('Internal notes are for lab staff only.');
   const senderId = await resolveActorId(senderRole);
   const message = await repo.addMessage(orderId, senderId, body.trim(), internal);
+  if (internal) {
+    const mentioned = await resolveMentions(body);
+    if (mentioned.length) {
+      const order = await repo.getOrder(orderId);
+      const preview = body.trim().slice(0, 140);
+      for (const person of mentioned) {
+        // Skip self-mentions: nobody needs a bell for a note they just
+        // wrote. ownerId scopes the notification to this one person
+        // within their role (see notification.model.listFor).
+        if (person.id === senderId) continue;
+        await notifyRoles(person.role, {
+          type: 'note-mention', title: 'You were mentioned in a case note',
+          body: ref(order) + ' — ' + preview, relatedId: order.id, ownerId: person.id
+        });
+      }
+    }
+  }
   if (!internal) {
     const order = await repo.getOrder(orderId);
     if (order) {
@@ -512,6 +576,6 @@ module.exports = {
   assertFileAllowed, runAs, canAccess, requiresImplantFields, resolveActorId, getOrderDetail, listOrders, createOrder,
   receptionReview, assignDesigner, designDone, productionDone, qcDecision, doctorDecision,
   confirmCompletion, markDelivered, markCompleted, postMessage, recordFile,
-  setScheduling, blockCase, resumeCase, qcAttempts,
+  setScheduling, blockCase, resumeCase, qcAttempts, resolveMentions,
   RETURN_REASONS, BLOCK_REASONS, PRIORITIES
 };

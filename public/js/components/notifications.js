@@ -4,6 +4,7 @@
 // push) — see README for why, and what real push would need.
 import { DATA, UI, api, loadNotifications, currentPortalRole } from '../state.js';
 import { esc } from '../utils/format.js';
+import { icon } from './icons.js';
 import { toast } from '../toast.js';
 
 // The bell is not a permanent nav fixture. Like the cart button, it only
@@ -37,24 +38,61 @@ const CASE_TYPES = new Set([...URGENT, ...ACTION, 'qc-passed', 'case-ready', 'ca
 
 function level(type) { return URGENT.has(type) ? 'urgent' : ACTION.has(type) ? 'action' : 'info'; }
 
+// Icons carry the kind of event, so a glance down the panel separates
+// "someone is waiting on you" from "something finished".
+const TYPE_ICON = {
+  'order-new': 'inbox', 'case-returned': 'alert', 'design-ready': 'sliders', 'design-changes': 'alert',
+  'design-assigned': 'sliders', 'design-approved': 'check', 'production-assigned': 'box',
+  'production-blocked': 'alert', 'production-resumed': 'box', 'qc-pending': 'check', 'qc-rework': 'alert',
+  'qc-repeat-failure': 'alert', 'qc-passed': 'check', 'case-ready': 'box', 'case-completed': 'check',
+  'case-accepted': 'check', 'case-message': 'message', 'note-mention': 'message'
+};
+
+function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+
+// Three sections, in the order a person triages: what is waiting on them,
+// what happened today, then everything older. A flat reverse-chronological
+// list buries the one notification that needed acting on under six that
+// did not.
+function groupNotifications(list) {
+  const today = startOfToday();
+  const action = [], now = [], earlier = [];
+  for (const n of list) {
+    if (level(n.type) !== 'info' && !n.read) action.push(n);
+    else if (new Date(n.createdAt).getTime() >= today) now.push(n);
+    else earlier.push(n);
+  }
+  return [['Needs your attention', action], ['Today', now], ['Earlier', earlier]];
+}
+
+function notificationRow(n) {
+  const clickable = CASE_TYPES.has(n.type) && n.relatedId;
+  return '<' + (clickable ? 'button type="button"' : 'div') +
+      ' class="notif-item notif-' + level(n.type) + (n.read ? '' : ' unread') + '"' +
+      ' data-notif-id="' + esc(n.id) + '"' + (clickable ? ' data-notif-case="' + esc(n.relatedId) + '"' : '') + '>' +
+    '<span class="notif-mark">' + icon(TYPE_ICON[n.type] || 'history') + '</span>' +
+    '<span>' +
+      '<span class="notif-title">' + esc(n.title) + '</span>' +
+      (n.body ? '<span class="notif-body">' + esc(n.body) + '</span>' : '') +
+      '<span class="notif-time">' + timeAgo(n.createdAt) + '</span>' +
+    '</span>' +
+  '</' + (clickable ? 'button' : 'div') + '>';
+}
+
 function renderDropdown() {
-  const list = DATA.notifications.slice(0, 20);
-  const body = list.length
-    ? list.map(n =>
-        '<div class="notif-item notif-' + level(n.type) + (n.read ? '' : ' unread') + '" data-notif-id="' + n.id + '"' +
-          (CASE_TYPES.has(n.type) && n.relatedId ? ' data-notif-case="' + esc(n.relatedId) + '" role="button" tabindex="0"' : '') + '>' +
-          (level(n.type) !== 'info' ? '<span class="notif-level">' + (level(n.type) === 'urgent' ? 'Urgent' : 'Action required') + '</span>' : '') +
-          '<div class="notif-title">' + esc(n.title) + '</div>' +
-          (n.body ? '<div class="notif-body">' + esc(n.body) + '</div>' : '') +
-          '<div class="notif-time">' + timeAgo(n.createdAt) + '</div>' +
-        '</div>'
-      ).join('')
-    : '<div class="empty-note" style="padding:18px;">No notifications yet.</div>';
+  const list = DATA.notifications.slice(0, 30);
+  if (!list.length) {
+    return '<div class="notif-head"><span>Notifications</span></div>' +
+      '<p class="notif-empty">Nothing yet. Updates on your cases will appear here.</p>';
+  }
+  const body = groupNotifications(list)
+    .filter(([, rows]) => rows.length)
+    .map(([label, rows]) => '<p class="notif-group">' + label + '</p>' + rows.map(notificationRow).join(''))
+    .join('');
   return '<div class="notif-head"><span>Notifications</span>' +
     (DATA.unreadNotifications ? '<button class="btn btn-ghost btn-sm" id="notifMarkAll">Mark all read</button>' : '') +
     '</div>' + body;
 }
-
 
 export function updateNotifUI() {
   const wrap = document.getElementById('notifWrap');
@@ -88,8 +126,10 @@ export function updateNotifUI() {
         showCaseCenter(currentPortalRole() || 'lab', el.dataset.notifCase);
       }
     };
+    // Clickable rows are real <button>s, so Enter and Space are handled by
+    // the platform. An extra keydown listener here would fire the handler
+    // twice on Enter and open the case on top of itself.
     el.addEventListener('click', open);
-    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
 }
 

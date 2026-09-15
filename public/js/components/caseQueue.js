@@ -43,12 +43,13 @@ function cardHtml(order) {
   '</button>';
 }
 
-function rowHtml(order) {
+function rowHtml(order, showDoctor) {
   const v = order.view || {};
   return '<tr class="clickable' + (v.needs_attention ? ' is-attention' : '') + '" data-case-open="' + esc(order.id) + '" data-case-search="' + esc(searchKey(order)) + '">' +
     '<td class="cid-cell">' + esc(order.order_number) + priorityBadge(v) + '</td>' +
     '<td>' + esc(jobTypeLabel(order.job_type)) + '</td>' +
     '<td>' + esc(order.patient_ref || '—') + '</td>' +
+    (showDoctor ? '<td>' + esc(order.dentist_name || '—') + '</td>' : '') +
     '<td>' + statusChip(order) + '</td>' +
     '<td>' + esc(v.owner_name || v.owner_label || '—') + '</td>' +
     '<td>' + (v.due ? dueBadge(v) : '<span class="case-muted">—</span>') + '</td>' +
@@ -73,9 +74,13 @@ export function caseQueue(orders, { empty = {}, density = 'auto' } = {}) {
   }
   const useTable = density === 'table' || (density === 'auto' && orders.length > CARD_LIMIT);
   if (!useTable) return '<div class="case-list">' + orders.map(cardHtml).join('') + '</div>';
+  // The clinic column is only meaningful where a queue mixes clinics — a
+  // dentist's own list would repeat their name on every row.
+  const showDoctor = orders.some(o => o.dentist_name);
   return '<div class="table-wrap"><table class="cases-table queue-table">' +
-    '<thead><tr><th>Case</th><th>Treatment</th><th>Patient</th><th>Status</th><th>Owner</th><th>Due</th><th>In stage</th><th></th></tr></thead>' +
-    '<tbody>' + orders.map(rowHtml).join('') + '</tbody></table></div>';
+    '<thead><tr><th>Case</th><th>Treatment</th><th>Patient</th>' + (showDoctor ? '<th>Clinic</th>' : '') +
+    '<th>Status</th><th>Owner</th><th>Due</th><th>In stage</th><th></th></tr></thead>' +
+    '<tbody>' + orders.map(o => rowHtml(o, showDoctor)).join('') + '</tbody></table></div>';
 }
 
 /** Wires every row/card in the page to open the command center. */

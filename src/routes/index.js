@@ -24,5 +24,7 @@ router.use(require('./notifications.routes'));
 router.use(require('./export.routes'));
 router.use(require('./uploads.routes'));
 router.use(require('./orders.routes'));
+router.use(require('./drafts.routes'));
+router.use(require('./search.routes'));
 
 module.exports = router;

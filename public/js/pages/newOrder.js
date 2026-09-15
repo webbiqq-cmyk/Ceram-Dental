@@ -1,7 +1,8 @@
 import { UI } from '../state.js';
 import { esc } from '../utils/format.js';
 import { JOB_TYPES, jobTypeLabel } from '../utils/workflow.js';
-import { createOrder } from '../utils/ordersApi.js';
+import { createOrder, createDraft, saveDraft, deleteDraft } from '../utils/ordersApi.js';
+import { toast } from '../toast.js';
 import { uploadZoneHtml, attachUploadZone } from '../components/caseUpload.js';
 import { DentalChart, FDI_ARCHES } from '../components/dentalChart.js';
 import { DentalServiceToolbar } from '../components/dentalServiceToolbar.js';
@@ -31,7 +32,10 @@ function normalizeForm(form) {
   form.step=Number.isInteger(form.step)?Math.min(2,Math.max(0,form.step>2?1:form.step)):0;
   form.caseKind=form.caseKind||'New case'; form.deliveryMethod=form.deliveryMethod||'pickup'; form.targetDate=form.targetDate||''; form.configs=form.configs||{};
   for(const key of ['veneer','crown','bridge','implant']) form.configs[key]={...defaultConfig(key),...(form.configs[key]||{})};
-  form.createdOrders=form.createdOrders||[]; form.activeConfigIndex=form.activeConfigIndex||0; return form;
+  form.createdOrders=form.createdOrders||[]; form.activeConfigIndex=form.activeConfigIndex||0;
+  // Autosave is on for every wizard session; the draft id appears once
+  // the first save lands and then follows the form through re-renders.
+  form.autosave=form.autosave!==false; form.draftId=form.draftId||null; return form;
 }
 function stepHeader(step) {
   return '<ol class="workspace-steps new-order-steps" aria-label="New case progress">'+STEPS.map((label,i)=>'<li'+(i===step?' aria-current="step"':'')+'><span>'+(i<step?'✓':i+1)+'</span><em>'+label+'</em></li>').join('')+'</ol>';
@@ -61,8 +65,116 @@ export function renderNewOrder() {
   const body=[()=>caseDetails(form),()=>prescriptionWorkspace(form),()=>ReviewSummary(form)][form.step]();
   const groups=groupServices(form.teeth);
   const submitLabel=form.step===2?'Submit to Ceram Lab':'Continue';
-  return '<div class="page new-order-page"><div class="u"><div class="page-head new-order-page-head"><div><span class="eyebrow-accent">Dentist workspace</span><h1>Create a new case</h1><p class="lede">A precise digital prescription, built tooth by tooth.</p></div></div><form class="wizard new-order-wizard" id="newOrderForm"><div class="wiz-body">'+stepHeader(form.step)+body+'<p class="form-error" id="orderFormError" role="alert"></p></div><div class="wiz-foot">'+(form.step?'<button class="btn btn-ghost" type="button" id="orderBack">Back</button>':'<a class="btn btn-ghost" href="#/portal">Back to overview</a>')+'<button class="btn btn-primary" type="submit"'+(form.step===1&&!groups.length?' disabled':'')+'>'+submitLabel+'</button></div></form></div></div>';
+  const duplicated = form.duplicatedFrom
+    ? '<div class="case-alert case-alert-info"><strong>Copied from ' + esc(form.duplicatedFrom) + '</strong>' +
+      '<p>Treatment preferences were carried over. The patient reference, files and dates were not — review everything before submitting.</p>' +
+      (form.carriedInstructions ? '<p class="case-muted" style="margin-top:8px">Previous instructions, for reference: ' + esc(form.carriedInstructions) + '</p>' : '') +
+      '</div>'
+    : '';
+  return '<div class="page new-order-page"><div class="u"><div class="page-head new-order-page-head"><div><span class="eyebrow-accent">Dentist workspace</span><h1>' +
+    (form.draftId ? 'Continue your case' : 'Create a new case') + '</h1><p class="lede">A precise digital prescription, built tooth by tooth.</p></div></div>' +
+    '<form class="wizard new-order-wizard" id="newOrderForm"><div class="wiz-body">' + stepHeader(form.step) + duplicated + body +
+    '<p class="form-error" id="orderFormError" role="alert"></p></div>' +
+    '<div class="wiz-foot">' +
+      (form.step ? '<button class="btn btn-ghost" type="button" id="orderBack">Back</button>' : '<a class="btn btn-ghost" href="#/portal">Back to overview</a>') +
+      '<span class="autosave" id="draftState" role="status" aria-live="polite">' + (form.draftId ? 'Draft saved' : '') + '</span>' +
+      '<button class="btn btn-ghost" type="button" id="saveDraftBtn">Save draft</button>' +
+      '<button class="btn btn-primary" type="submit"' + (form.step === 1 && !groups.length ? ' disabled' : '') + '>' + submitLabel + '</button>' +
+    '</div></form></div></div>';
 }
+// ---------------------------------------------------------------- drafts
+//
+// A draft is the wizard form as it stands, stored server-side against the
+// dentist. Saving one puts nothing on the lab floor: the lab has no
+// endpoint that can read drafts, and only the Submit at the end of the
+// wizard creates job orders. That separation is the whole safety
+// argument, so nothing here ever calls createOrder.
+
+let autosaveTimer = null;
+let autosaveInFlight = false;
+let lastSavedSnapshot = '';
+
+// Only the parts a person actually filled in. Transient UI state (which
+// config panel is open, the step they are on, a half-finished submission)
+// is not worth a round trip and would make every draft look changed.
+function draftPayload(form) {
+  return {
+    patientRef: form.patientRef, caseKind: form.caseKind, deliveryMethod: form.deliveryMethod,
+    targetDate: form.targetDate || '', step: form.step,
+    teeth: form.teeth.filter(t => t.service && t.service !== 'none').map(t => ({ number: t.number, service: t.service })),
+    configs: form.configs,
+    duplicatedFrom: form.duplicatedFrom || '',
+    carriedInstructions: form.carriedInstructions || '', carriedJobType: form.carriedJobType || '',
+    carriedShadePreference: form.carriedShadePreference || ''
+  };
+}
+
+// Rebuilds a full wizard form from a stored payload. The tooth chart is
+// always regenerated from the canonical arch rather than trusted from the
+// draft, so a stale or hand-edited payload can never produce a chart with
+// missing or invented teeth.
+export function formFromDraft(draft) {
+  const payload = draft.payload || {};
+  const form = freshForm({ patientRef: payload.patientRef, deliveryMethod: payload.deliveryMethod });
+  form.caseKind = payload.caseKind || 'New case';
+  form.targetDate = payload.targetDate || '';
+  form.step = Number.isInteger(payload.step) ? Math.min(2, Math.max(0, payload.step)) : 0;
+  for (const saved of Array.isArray(payload.teeth) ? payload.teeth : []) {
+    const tooth = form.teeth.find(t => t.number === saved.number);
+    if (tooth && saved.service) tooth.service = saved.service;
+  }
+  for (const key of ['veneer', 'crown', 'bridge', 'implant']) {
+    form.configs[key] = { ...defaultConfig(key), ...((payload.configs || {})[key] || {}) };
+  }
+  form.draftId = draft.id;
+  form.duplicatedFrom = payload.duplicatedFrom || draft.originOrderNumber || '';
+  form.carriedInstructions = payload.carriedInstructions || '';
+  form.carriedJobType = payload.carriedJobType || '';
+  form.carriedShadePreference = payload.carriedShadePreference || '';
+  return normalizeForm(form);
+}
+
+function setAutosaveState(text, saved) {
+  const el = document.getElementById('draftState');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle('is-saved', !!saved);
+}
+
+// Persists the current form, creating the draft on first save. Returns the
+// draft id so an explicit "Save draft" can report success.
+async function persistDraft(form) {
+  const payload = draftPayload(form);
+  const snapshot = JSON.stringify(payload);
+  const draft = form.draftId
+    ? (await saveDraft(form.draftId, payload)).draft
+    : (await createDraft(payload)).draft;
+  form.draftId = draft.id;
+  lastSavedSnapshot = snapshot;
+  return draft;
+}
+
+// Autosave is debounced and change-gated: it fires a couple of seconds
+// after someone stops changing things, and only when the form actually
+// differs from what was last stored. A keystroke is never a request, and
+// an idle wizard never talks to the server at all.
+function scheduleAutosave(form) {
+  if (!form.autosave) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(async () => {
+    if (autosaveInFlight) return;
+    const payload = JSON.stringify(draftPayload(form));
+    if (payload === lastSavedSnapshot) return;
+    // Nothing to save until there is something worth saving.
+    if (!form.patientRef.trim() && !form.teeth.some(t => t.service !== 'none')) return;
+    autosaveInFlight = true;
+    setAutosaveState('Saving…', false);
+    try { await persistDraft(form); setAutosaveState('Draft saved', true); }
+    catch { setAutosaveState('Could not save — use Save draft to retry', false); }
+    finally { autosaveInFlight = false; }
+  }, 2200);
+}
+
 function readFields(form) {
   document.querySelectorAll('[data-order-field]').forEach(el=>{form[el.dataset.orderField]=el.value;});
   const active=groupServices(form.teeth)[form.activeConfigIndex]; if(active) document.querySelectorAll('[data-config-field]').forEach(el=>{form.configs[active.key][el.dataset.configField]=el.value;});
@@ -95,10 +207,25 @@ export function attachNewOrderHandlers() {
     form.createdOrders.forEach((row,index)=>{const o=row.order;attachUploadZone(document,'order-'+index+'-scan',{role:'dentist',orderId:o.id,stageType:o.stage_type,category:'scan'});attachUploadZone(document,'order-'+index+'-photo',{role:'dentist',orderId:o.id,stageType:o.stage_type,category:'photo'});});
     document.getElementById('newOrderAgain')?.addEventListener('click',()=>{UI.newOrderForm=freshForm();renderCurrent();}); document.getElementById('newOrderDone')?.addEventListener('click',()=>{UI.portalTab='orders';UI.portalFilter='all';UI.newOrderForm=null;}); return;
   }
-  document.querySelectorAll('[data-order-field],[data-config-field]').forEach(el=>el.addEventListener('input',()=>readFields(form)));
+  document.querySelectorAll('[data-order-field],[data-config-field]').forEach(el=>el.addEventListener('input',()=>{readFields(form);scheduleAutosave(form);}));
+  document.getElementById('saveDraftBtn')?.addEventListener('click', async event => {
+    readFields(form);
+    if (!form.patientRef.trim() && !form.teeth.some(t => t.service !== 'none')) {
+      toast('Add a patient reference or a treatment before saving a draft.');
+      return;
+    }
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await persistDraft(form);
+      setAutosaveState('Draft saved', true);
+      toast('Draft saved. Continue it any time from your overview.');
+    } catch (error) { toast(error.message); }
+    finally { button.disabled = false; }
+  });
   document.querySelectorAll('[data-case-kind]').forEach(button=>button.addEventListener('click',()=>{form.caseKind=button.dataset.caseKind;renderCurrent();}));
   document.querySelectorAll('[data-tooth]').forEach(button=>button.addEventListener('click',()=>{const tooth=form.teeth.find(t=>t.number===Number(button.dataset.tooth));tooth.selected=!tooth.selected;renderWithoutScrollJump();}));
-  document.querySelectorAll('[data-assign-service]').forEach(button=>button.addEventListener('click',()=>{const service=button.dataset.assignService;form.teeth.filter(t=>t.selected).forEach(t=>{t.service=service;t.selected=false;});const i=groupServices(form.teeth).findIndex(g=>g.key===service);if(i>=0)form.activeConfigIndex=i;renderWithoutScrollJump();}));
+  document.querySelectorAll('[data-assign-service]').forEach(button=>button.addEventListener('click',()=>{const service=button.dataset.assignService;form.teeth.filter(t=>t.selected).forEach(t=>{t.service=service;t.selected=false;});const i=groupServices(form.teeth).findIndex(g=>g.key===service);if(i>=0)form.activeConfigIndex=i;scheduleAutosave(form);renderWithoutScrollJump();}));
   document.querySelector('[data-remove-selected]')?.addEventListener('click',()=>{form.teeth.filter(t=>t.selected).forEach(t=>{t.service='none';});renderWithoutScrollJump();});
   document.querySelectorAll('[data-delete-prescription]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();form.teeth.forEach(t=>{if(t.service===button.dataset.deletePrescription){t.service='none';t.selected=false;}});form.activeConfigIndex=0;renderWithoutScrollJump();}));
   document.querySelectorAll('[data-configure-service],[data-service-summary]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();const service=button.dataset.configureService||button.dataset.serviceSummary;const index=groupServices(form.teeth).findIndex(g=>g.key===service);if(index>=0)form.activeConfigIndex=index;renderWithoutScrollJump();}));
@@ -112,7 +239,17 @@ export function attachNewOrderHandlers() {
     if(form.step<2){form.step++;renderCurrent();return;}
     for(const group of groups){const message=validateConfig(group.key,form.configs[group.key]);if(message){form.activeConfigIndex=groups.indexOf(group);form.step=1;renderCurrent();document.getElementById('orderFormError').textContent=message;return;}}
     const button=event.target.querySelector('[type=submit]');button.disabled=true;button.textContent='Creating orders…';form.createdOrders=[];form.submissionError='';
-    try {for(const group of groups){const {order}=await createOrder(orderBody(form,group));form.createdOrders.push({service:group.key,label:group.label,order});}form.submissionComplete=true;renderCurrent();}
+    // Stop any pending autosave from writing the form back after it has
+    // already been submitted.
+    form.autosave=false; clearTimeout(autosaveTimer);
+    try {
+      for(const group of groups){const {order}=await createOrder(orderBody(form,group));form.createdOrders.push({service:group.key,label:group.label,order});}
+      form.submissionComplete=true;
+      // The draft has become real cases; leaving it behind would invite
+      // someone to submit the same work twice.
+      if(form.draftId){try{await deleteDraft(form.draftId);}catch{/* the cases exist; a stale draft is the lesser problem */}form.draftId=null;}
+      renderCurrent();
+    }
     catch(err){form.submissionError='The remaining service orders could not be created: '+err.message;renderCurrent();}
   });
 }

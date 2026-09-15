@@ -15,7 +15,10 @@ import { recordFile } from '../utils/ordersApi.js';
 // re-render its file list.
 export function uploadZoneHtml(id, label, hint) {
   return '<div class="upload-zone" role="button" tabindex="0" aria-label="' + label + '" data-upload-zone="' + id + '">' +
-    '<input type="file" accept="image/*,application/pdf,.stl,.obj,.ply" data-upload-input="' + id + '" style="display:none;">' +
+    // The visible zone carries the accessible name, but the input itself
+    // is what assistive technology reaches when the file picker opens, so
+    // it needs its own label rather than announcing as "file, button".
+    '<input type="file" accept="image/*,application/pdf,.stl,.obj,.ply" aria-label="' + label + '" data-upload-input="' + id + '" style="display:none;">' +
     '<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14"/></svg></div>' +
     '<div class="t">' + label + '</div><div class="d" data-upload-status="' + id + '">' + (hint || 'Click to choose a file') + '</div>' +
   '</div>';

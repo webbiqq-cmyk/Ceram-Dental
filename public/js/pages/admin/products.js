@@ -5,6 +5,7 @@ import { PRODUCT_CATEGORIES } from '../../constants.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
 import { uploadWidgetHtml, attachUploadHandlers } from '../../components/cloudinaryUpload.js';
+import { confirmAction } from '../../components/confirm.js';
 
 function catOptions(selected) {
   return PRODUCT_CATEGORIES.map(c => '<option' + (c === selected ? ' selected' : '') + '>' + c + '</option>').join('');
@@ -111,7 +112,11 @@ export function attachProductsHandlers() {
   });
   document.querySelectorAll('[data-del-product]').forEach(b => {
     b.addEventListener('click', async () => {
-      if (!window.confirm('Delete this product? This can\'t be undone.')) return;
+      if (!await confirmAction({
+        title: 'Delete this product?',
+        body: 'It is removed from the shop and from the catalogue. This cannot be undone.',
+        confirmLabel: 'Delete product', tone: 'danger'
+      })) return;
       try {
         await api('/api/products/' + encodeURIComponent(b.dataset.delProduct) + '/delete', { method: 'POST' });
         await loadState(); renderCurrent(); toast('Product deleted');

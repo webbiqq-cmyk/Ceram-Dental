@@ -12,6 +12,7 @@ import { closeCart } from './components/cart.js';
 import { closeApplyModal } from './components/applyModal.js';
 import { closeDoctorModal } from './components/doctor.js';
 import { updateNotifUI } from './components/notifications.js';
+import { updateSearchTrigger } from './components/searchPalette.js';
 import { attachPageHandlers } from './handlers.js';
 import { applyDocumentDir } from './i18n.js';
 
@@ -75,6 +76,22 @@ export async function router() {
   document.getElementById('waFab').style.display = PUBLIC_ROUTES.hasOwnProperty(route) ? 'flex' : 'none';
   const app = document.getElementById('app');
   app.style.opacity = 0;
+  // A workspace route fetches its queue before it can paint anything. On a
+  // slow connection that used to be a blank panel for a second or two;
+  // now it is a skeleton shaped like the queue, so the layout is already
+  // there when the data lands and nothing jumps. Only shown when there is
+  // no usable previous paint to leave on screen.
+  let skeletonTimer = null;
+  if (!PUBLIC_ROUTES[route]) {
+    skeletonTimer = setTimeout(async () => {
+      if (myToken !== navToken || !app.firstChild) return;
+      const { skeletonQueue, skeletonMetrics, loadingRegion } = await import('./components/skeleton.js');
+      if (myToken !== navToken) return;
+      app.innerHTML = workspaceShell(route, '<div class="page"><div class="u">' +
+        loadingRegion('Loading', skeletonMetrics(4) + skeletonQueue(4)) + '</div></div>');
+      app.style.opacity = 1;
+    }, 250);
+  }
   try { await loadState(); } catch (e) { /* server briefly unavailable — keep last known state */ }
   // The lab manager doesn't need separate credentials per station — signed
   // in as 'lab' is already enough to open reception/design/production/QC
@@ -88,6 +105,7 @@ export async function router() {
     else { const mod = await loadRoute(route); html = await mod.render(); attach = mod.attach; }
   }
   catch(e){html='<div class="page"><p>'+esc(e.message || 'Unable to load this page.')+'</p><button class="btn" id="retryPage">Retry</button></div>';}
+  clearTimeout(skeletonTimer);
   if (myToken !== navToken) return; // a newer navigation has started since — don't paint over it
   document.getElementById('orderDetail')?.close();
   document.getElementById('orderDetail')?.remove();
@@ -116,6 +134,7 @@ export async function router() {
   if (!PUBLIC_ROUTES[route]) attachWorkspaceViewport(route + ':' + UI.adminTab + ':' + UI.portalTab + ':' + UI.dataPage);
   const hintOk = !PUBLIC_ROUTES[route] && !(role && !roleSatisfied) && !(route === 'studio' && UI.labRole !== 'manager');
   if (hintOk) showWorkflowHint(route); else removeWorkflowHint();
+  updateSearchTrigger();
   loadNotifications().then(updateNotifUI);
   requestAnimationFrame(() => { app.style.transition = 'opacity .2s ease'; app.style.opacity = 1; });
 }

@@ -2,6 +2,7 @@ import { DATA, api, loadState } from '../../state.js';
 import { esc } from '../../utils/format.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
+import { confirmAction } from '../../components/confirm.js';
 
 // Which member's editor is open. Module-level so it survives re-renders.
 let editingId = null;
@@ -123,7 +124,11 @@ export function attachTeamHandlers() {
   document.querySelector('[data-team-remove]')?.addEventListener('click', async e => {
     const id = e.target.dataset.teamRemove;
     const m = DATA.team.find(x => x.id === id);
-    if (!confirm('Remove ' + (m ? m.name : 'this member') + ' from the team?')) return;
+    if (!await confirmAction({
+      title: 'Remove ' + (m ? m.name : 'this member') + ' from the team?',
+      body: 'They stop appearing on the public team page. This does not touch their Ceram account or any case they worked on.',
+      confirmLabel: 'Remove from team', tone: 'danger'
+    })) return;
     try {
       await api('/api/team/' + id, { method: 'DELETE' });
       editingId = null; await loadState(); renderCurrent(); toast('Removed');

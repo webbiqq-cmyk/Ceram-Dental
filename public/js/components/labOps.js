@@ -12,7 +12,7 @@ import { emptyState } from './emptyState.js';
 export function todayStrip(today) {
   const tiles = [
     [today.active, 'Active cases', '', ''],
-    [today.need_action, 'Need action', today.need_action ? 'Blocked, overdue or stalled' : 'Nothing outstanding', today.need_action ? 'danger' : ''],
+    [today.need_action, 'Need action', today.need_action ? 'Blocked, overdue or waiting too long' : 'Nothing outstanding', today.need_action ? 'danger' : ''],
     [today.waiting_on_dentist, 'Waiting on doctors', '', ''],
     [today.due_today, 'Due today', '', today.due_today ? 'gold' : ''],
     [today.overdue, 'Overdue', '', today.overdue ? 'danger' : '']
@@ -121,4 +121,34 @@ export function analyticsHtml(turnaround, quality, treatments) {
   }
 
   return '<section class="card"><h3>Operations</h3><div class="analytic-grid">' + cards.join('') + '</div></section>';
+}
+
+// Station cards. Phase 1's were near-empty boxes; these answer the three
+// questions a floor manager opens the page to ask — how much is here,
+// what is wrong with it, and how long has the oldest thing been waiting.
+export function stationCardsHtml(stations) {
+  const ICONS = { reception: 'inbox', design: 'sliders', approval: 'clock', production: 'box', qc: 'check', collection: 'box' };
+  return '<div class="station-grid">' + stations.map(station => {
+    // Facts, and only the ones that are true right now. A station with
+    // nothing wrong shows nothing wrong rather than a row of zeroes.
+    const facts = [];
+    if (station.blocked) facts.push(['Blocked', station.blocked, true]);
+    if (station.overdue) facts.push(['Overdue', station.overdue, true]);
+    if (station.unassigned) facts.push(['Unassigned', station.unassigned, true]);
+    if (station.waiting_on_dentist) facts.push(['With doctors', station.waiting_on_dentist, false]);
+    const tag = station.route ? 'a' : 'div';
+    const href = station.route ? ' href="#/' + station.route + '"' : '';
+    return '<' + tag + ' class="station' + (station.attention ? ' has-attention' : '') + '"' + href + '>' +
+      '<div class="station-top"><span class="station-name">' + esc(station.label) + '</span>' +
+        '<span class="station-icon">' + icon(ICONS[station.key] || 'grid') + '</span></div>' +
+      '<div class="station-count"><b>' + station.total + '</b><span>' +
+        (station.key === 'approval' ? 'with doctors' : station.key === 'collection' ? 'ready' : 'in hand') + '</span></div>' +
+      (facts.length
+        ? '<div class="station-facts">' + facts.map(([label, value, flag]) =>
+            '<div><span>' + esc(label) + '</span><span' + (flag ? ' class="is-flag"' : '') + '>' + value + '</span></div>').join('') + '</div>'
+        : '<div class="station-facts"><div><span>Nothing needs chasing</span></div></div>') +
+      (station.oldest_ms ? '<span class="station-oldest">Oldest here ' + esc(durationShort(station.oldest_ms)) + '</span>' : '') +
+      (station.route ? '<span class="station-link">Open station →</span>' : '') +
+    '</' + tag + '>';
+  }).join('') + '</div>';
 }

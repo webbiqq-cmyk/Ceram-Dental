@@ -6,21 +6,32 @@ import { todayStrip, pipelineHtml, attentionHtml, workloadHtml, analyticsHtml } 
 import { showCaseCenter } from '../../components/caseCenter.js';
 import { attachCaseQueue } from '../../components/caseQueue.js';
 
+// The revenue chart, or an honest statement that there is nothing to
+// chart. A flat line across a zero axis is not a chart of no revenue —
+// it looks like a chart of steady revenue, and teaches people to
+// distrust the dashboard when they notice.
 function sparkline(trend) {
-  trend=Array.isArray(trend)&&trend.length?trend:[{label:'Today',total:0}];
+  const rows = Array.isArray(trend) ? trend : [];
+  const total = rows.reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+  if (!rows.length || total <= 0) {
+    return '<p class="chart-empty">No revenue recorded for this period. ' +
+      'The trend appears here once invoices are paid.</p>';
+  }
   const w = 280, h = 64, pad = 6;
-  const max = Math.max.apply(null, trend.map(t => t.total).concat([1]));
-  const stepX = trend.length > 1 ? (w - pad * 2) / (trend.length - 1) : 0;
-  const pts = trend.map((t, i) => [pad + i * stepX, h - pad - (t.total / max) * (h - pad * 2)]);
+  const max = Math.max.apply(null, rows.map(t => t.total).concat([1]));
+  const stepX = rows.length > 1 ? (w - pad * 2) / (rows.length - 1) : 0;
+  const pts = rows.map((t, i) => [pad + i * stepX, h - pad - (t.total / max) * (h - pad * 2)]);
   const lineD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   const areaD = lineD + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + (h - pad) + ' L' + pts[0][0].toFixed(1) + ' ' + (h - pad) + ' Z';
   const last = pts[pts.length - 1];
-  return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%; height:64px; display:block;">' +
+  // Described for screen readers rather than left as a decorative shape.
+  const summary = 'Revenue by day: ' + rows.map(t => t.label + ' ' + money(t.total)).join(', ');
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="' + esc(summary) + '" style="width:100%; height:64px; display:block;">' +
       '<path d="' + areaD + '" fill="var(--violet-soft)" stroke="none"></path>' +
       '<path d="' + lineD + '" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>' +
       '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3.5" fill="var(--violet)"></circle>' +
     '</svg>' +
-    '<div style="display:flex; justify-content:space-between; margin-top:6px;">' + trend.map(t => '<span class="mono" style="font-size:10px; color:var(--ink-soft);">' + t.label + '</span>').join('') + '</div>';
+    '<div style="display:flex; justify-content:space-between; margin-top:6px;">' + rows.map(t => '<span class="mono" style="font-size:10px; color:var(--ink-soft);">' + esc(t.label) + '</span>').join('') + '</div>';
 }
 
 function metric(count, label, iconName, meta, tone) {
@@ -49,11 +60,11 @@ export async function adminOverview() {
       '<button type="button" data-admin-tab="expenses">' + icon('wallet') + ' Add an expense <span aria-hidden="true">↗</span></button>' +
     '</div>' +
 
-    (lab ? '<div class="section-head reveal"><h2>The lab today</h2></div>' + todayStrip(lab.today) : '') +
+    (lab ? '<div class="sec-head reveal"><h2>The lab today</h2></div>' + todayStrip(lab.today) : '') +
     (lab ? '<div class="lab-ops-grid reveal">' + attentionHtml(lab.attention) + workloadHtml(lab.workload) + '</div>' : '') +
-    (lab ? '<div class="section-head reveal"><h2>Pipeline</h2><span class="workspace-context">Open a stage to work it</span></div>' + pipelineHtml(lab.stations) : '') +
+    (lab ? '<div class="sec-head reveal"><h2>Pipeline</h2><span class="sec-note">Open a stage to filter its cases</span></div>' + pipelineHtml(lab.stations) : '') +
 
-    '<div class="section-head reveal"><h2>Business</h2></div>' +
+    '<div class="sec-head reveal"><h2>Business</h2></div>' +
     '<div class="admin-hero reveal">' +
       '<div class="admin-hero-primary"><span class="eyebrow-accent">Revenue, last 7 days</span><div class="admin-hero-figure">' + money(s.revenue) + '</div>' +
         '<p class="lede">Net ' + money(s.net) + (s.net >= 0 ? ' after ' + money(s.totalExpenses) + ' in expenses this week.' : ' — expenses outpaced revenue this week.') + '</p>' +

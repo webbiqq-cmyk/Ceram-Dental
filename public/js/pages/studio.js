@@ -1,6 +1,6 @@
 import { listOrders, labOverview } from '../utils/ordersApi.js';
 import { showCaseCenter } from '../components/caseCenter.js';
-import { todayStrip, pipelineHtml, attentionHtml, workloadHtml } from '../components/labOps.js';
+import { todayStrip, attentionHtml, workloadHtml, stationCardsHtml } from '../components/labOps.js';
 import { caseQueue, attachCaseQueue } from '../components/caseQueue.js';
 import { DATA, UI, api, loadState } from '../state.js';
 import { esc, svcLabel } from '../utils/format.js';
@@ -168,21 +168,21 @@ async function managerOverview() {
 
     todayStrip(overview.today) +
 
-    '<div class="section-head"><h2>Pipeline</h2><span class="workspace-context">Open a stage to work it</span></div>' +
-    pipelineHtml(overview.stations) +
+    // One pipeline, not two. An earlier pass had a bar chart of the six
+    // stages directly above six station cards carrying the same six
+    // counts — the same information twice, costing a screenful. The
+    // station cards win because they also say what is wrong at each
+    // stage and open it.
+    '<div class="sec-head"><h2>Pipeline</h2><span class="sec-note">Open a station to work its queue</span></div>' +
+    stationCardsHtml(overview.stations) +
 
     '<div class="lab-ops-grid">' +
       attentionHtml(overview.attention) +
       workloadHtml(overview.workload) +
     '</div>' +
 
-    '<div class="section-head"><h2>Recently updated</h2></div>' +
+    '<div class="sec-head"><h2>Recently updated</h2><span class="sec-note">Across every station</span></div>' +
     caseQueue(recent, { density: 'table', empty: { title: 'No active cases', text: 'New job orders from clinics will appear here.', iconName: 'inbox' } }) +
-
-    '<div class="section-head"><h2>Stations</h2></div>' +
-    '<div class="workspace-role-grid">' + LAB_ROLES.filter(r => r[0] !== 'manager').map((r, i) =>
-      '<a class="workspace-role-card" href="#/' + r[1] + '"><div class="station-card-top"><span class="station-icon">' + icon(['inbox','sliders','box','check'][i]) + '</span><span>0' + (i+1) + ' / STATION</span></div>' +
-      '<h3>' + esc(r[2]) + '</h3><p>' + esc(r[3]) + '</p><span class="station-card-link">Open station &rarr;</span></a>').join('') + '</div>' +
 
     '<button class="btn btn-ghost" style="margin-top:24px" data-studio-view="legacy">Earlier case pipeline</button>' +
   '</div></div>';

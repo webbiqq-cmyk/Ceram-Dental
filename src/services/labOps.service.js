@@ -1,7 +1,7 @@
 // The lab-wide read: how much work exists, where it is, what has stopped
 // moving, and who is carrying it. Every figure here is counted from real
 // job_orders rows through the same caseView derivation the individual
-// screens use, so a case the Lab Overview calls "stalled in design" is the
+// screens use, so a case the Lab Overview flags as waiting too long is the
 // same case the designer's own queue flags — there is no second definition
 // of anything.
 //
@@ -47,11 +47,20 @@ async function overview(scope = 'lab') {
     return {
       key: station.key, label: station.label, route: station.route,
       total: here.length,
-      // Three numbers per station, because "8 cases in design" alone
-      // doesn't tell a manager whether to worry.
+      // Enough per station that "8 cases in design" becomes something a
+      // manager can act on: how many are stuck, how many are out at a
+      // clinic, how many nobody has picked up, and how long the oldest
+      // has been waiting.
       waiting_on_dentist: here.filter(o => o.view.waiting_on === 'dentist').length,
       blocked: here.filter(o => o.view.is_blocked).length,
-      attention: here.filter(o => o.view.needs_attention).length
+      attention: here.filter(o => o.view.needs_attention).length,
+      overdue: here.filter(o => o.view.due && o.view.due.state === 'overdue').length,
+      unassigned: here.filter(o => station.key === 'design' ? !o.assigned_designer_id
+        : station.key === 'production' ? !o.assigned_technician_id
+        : station.key === 'qc' ? !o.assigned_qc_id : false).length,
+      // Null when the station is empty, so the UI shows nothing rather
+      // than "0m" — an empty station has no oldest case.
+      oldest_ms: here.length ? Math.max(...here.map(o => o.view.time_in_stage_ms || 0)) : null
     };
   });
 
@@ -90,7 +99,7 @@ async function overview(scope = 'lab') {
   return result;
 }
 
-const SEVERITY = { blocked: 5, overdue: 4, rework: 3, returned: 2, stalled: 2, urgent: 1 };
+const SEVERITY = { blocked: 5, overdue: 4, rework: 3, returned: 2, slow: 2, urgent: 1 };
 function severity(row) { return Math.max(0, ...row.flags.map(f => SEVERITY[f.key] || 0)); }
 
 // Who is carrying what, for assignment decisions — not for grading people.

@@ -20,12 +20,13 @@ import { esc, fmtDateTime, fmtDate } from '../utils/format.js';
 import {
   getOrder, listFiles, listMessages, postMessage, doctorDecision, receptionReview,
   designDone, productionDone, qcDecision, confirmCompletion, markDelivered, markCompleted,
-  setScheduling, blockCase, resumeCase, listStaff, labOverview
+  setScheduling, blockCase, resumeCase, listStaff, labOverview, duplicateCase
 } from '../utils/ordersApi.js';
 import { jobTypeLabel, STATUS_META } from '../utils/workflow.js';
 import { journeyHtml, nextActionHtml, ownerHtml, priorityBadge, dueBadge, flagChips } from '../utils/caseView.js';
 import { uploadZoneHtml, attachUploadZone } from './caseUpload.js';
 import { emptyState } from './emptyState.js';
+import { confirmAction } from './confirm.js';
 import { toast } from '../toast.js';
 import { UI } from '../state.js';
 import { renderCurrent } from '../router.js';
@@ -259,10 +260,11 @@ function overviewSection(order, files, role, staff) {
     // The two dead ends a clinic can hit: a design that's now locked, and
     // a case reception sent back. Both need the same escape hatch — start
     // a fresh order pre-filled from this one, reviewed before it's sent.
-    (role === 'dentist' && (isLocked(order) || order.status === 'rejected_by_reception') ?
-      '<section class="case-sec"><h3>' + (isLocked(order) ? 'Need a different result?' : 'Correct and resubmit') + '</h3>' +
-        '<p class="case-muted">Start a new order from these details. Review and correct everything, then attach the files again.</p>' +
-        '<div class="case-actions"><button class="btn btn-ghost" data-cc-new-from-case>Create a new order from this case</button></div></section>' : '');
+    (role === 'dentist' ?
+      '<section class="case-sec"><h3>' +
+        (isLocked(order) ? 'Need a different result?' : order.status === 'rejected_by_reception' ? 'Correct and resubmit' : 'Order this again') + '</h3>' +
+        '<p class="case-muted">Starts a new draft with this case\'s treatment and preferences. The patient reference, files and dates are not copied — you review everything before it reaches the lab.</p>' +
+        '<div class="case-actions"><button class="btn btn-ghost" data-cc-duplicate>Duplicate into a new draft</button></div></section>' : '');
 }
 
 function schedulingSection(order) {
@@ -637,8 +639,17 @@ function attachHandlers(panel, role, order, data) {
   panel.querySelector('[data-cc-return]')?.addEventListener('click', e => {
     const note = panel.querySelector('#ccReturnNote').value.trim();
     if (!note) { toast('Tell the clinic what is needed.'); panel.querySelector('#ccReturnNote').focus(); return; }
-    if (!confirm('Return ' + order.order_number + ' to the clinic? They will need to correct it and submit a new order.')) return;
-    run([e.currentTarget], () => receptionReview(id, { decision: 'reject', reason: panel.querySelector('#ccReturnReason').value, note }), 'Returned to the clinic.', 'overview');
+    const reasonSelect = panel.querySelector('#ccReturnReason');
+    const reasonLabel = reasonSelect.options[reasonSelect.selectedIndex].text;
+    confirmAction({
+      title: 'Return ' + order.order_number + ' to the clinic?',
+      body: 'The case leaves the lab and goes back to ' + (order.dentist_name || 'the clinic') +
+            '. They will need to correct it and submit a new order — this one cannot be resumed.',
+      detail: reasonLabel + ': ' + note,
+      confirmLabel: 'Return to dentist', tone: 'danger'
+    }).then(confirmed => {
+      if (confirmed) run([e.currentTarget], () => receptionReview(id, { decision: 'reject', reason: reasonSelect.value, note }), 'Returned to the clinic.', 'overview');
+    });
   });
 
   panel.querySelectorAll('[data-cc-design-done]').forEach(button => button.addEventListener('click', () => {
@@ -667,8 +678,15 @@ function attachHandlers(panel, role, order, data) {
     const findings = (panel.querySelector('#ccFindings')?.value || '').trim();
     if (decision === 'reject') {
       if (!findings) { toast('Record what needs fixing before sending this back.'); panel.querySelector('#ccFindings')?.focus(); return; }
-      if (!confirm('Send ' + order.order_number + ' back to production? This is recorded as a failed inspection.')) return;
-      run(all('[data-cc-qc]'), () => qcDecision(id, { decision: 'reject', note: findings }), 'Sent back for rework.', 'qc');
+      confirmAction({
+        title: 'Send ' + order.order_number + ' back to production for rework?',
+        body: 'This is recorded permanently as a failed inspection and the case returns to ' +
+              (order.technician_name || 'the technician') + '. Previous inspections are kept.',
+        detail: findings,
+        confirmLabel: 'Send for rework', tone: 'danger'
+      }).then(confirmed => {
+        if (confirmed) run(all('[data-cc-qc]'), () => qcDecision(id, { decision: 'reject', note: findings }), 'Sent back for rework.', 'qc');
+      });
       return;
     }
     const state = draft('qc', id);
@@ -683,8 +701,11 @@ function attachHandlers(panel, role, order, data) {
   panel.querySelector('[data-cc-collected]')?.addEventListener('click', e =>
     run([e.currentTarget], () => markDelivered(id), 'Handover recorded.'));
   panel.querySelector('[data-cc-close]')?.addEventListener('click', e => {
-    if (!confirm('Close ' + order.order_number + ' out? The case record stays, but it leaves every active queue.')) return;
-    run([e.currentTarget], () => markCompleted(id), 'Case closed.');
+    confirmAction({
+      title: 'Close ' + order.order_number + ' out?',
+      body: 'The case record and its full history are kept, but it leaves every active queue and can no longer be worked on.',
+      confirmLabel: 'Close case out'
+    }).then(confirmed => { if (confirmed) run([e.currentTarget], () => markCompleted(id), 'Case closed.'); });
   });
 
   panel.querySelectorAll('[data-cc-decision]').forEach(button => button.addEventListener('click', () => {
@@ -698,19 +719,31 @@ function attachHandlers(panel, role, order, data) {
       error.textContent = 'Add a note explaining the changes needed.'; panel.querySelector('#ccReviewNote').focus(); return;
     }
     error.textContent = '';
-    run(all('[data-cc-decision]'), () => doctorDecision(id, { decision, note }),
+    const go = () => run(all('[data-cc-decision]'), () => doctorDecision(id, { decision, note }),
       decision === 'approve' ? 'Design approved. The lab can begin production.' : 'Your notes are with the design team.', 'overview');
+    if (decision !== 'approve') { go(); return; }
+    confirmAction({
+      title: 'Approve the design for ' + order.order_number + '?',
+      body: 'The lab will begin manufacturing to this design. It is locked from this point — any later change needs a new job order.',
+      confirmLabel: 'Approve design'
+    }).then(confirmed => { if (confirmed) go(); });
   }));
 
-  panel.querySelector('[data-cc-new-from-case]')?.addEventListener('click', () => {
-    UI.newOrderForm = {
-      patientRef: order.patient_ref, jobType: order.job_type, shade: order.shade || '',
-      instructions: order.instructions || '', scanBody: order.scan_body || '', implantSystem: order.implant_system || '',
-      abutmentSize: order.abutment_size || '', abutmentAvailability: order.abutment_availability || '',
-      deliveryMethod: order.delivery_method || 'pickup', step: 0, createdOrder: null
-    };
-    panel.close();
-    location.hash = '#/new-order';
+  // Duplication happens on the server, which decides what may be carried.
+  // The old client-side version copied the patient reference into the new
+  // form — convenient, and exactly how the wrong patient's name reaches a
+  // lab. The server copies preferences only and returns a draft.
+  panel.querySelector('[data-cc-duplicate]')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const { draft } = await duplicateCase(id);
+      const { formFromDraft } = await import('../pages/newOrder.js');
+      UI.newOrderForm = formFromDraft(draft);
+      panel.close();
+      toast('Case details copied. Review the patient information before submitting.');
+      location.hash = '#/new-order';
+    } catch (error) { toast(error.message); button.disabled = false; }
   });
 
   // Upload zones re-open the case when a file lands so the new file (and,

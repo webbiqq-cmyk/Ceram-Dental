@@ -30,7 +30,7 @@ const QUEUES = {
   attention: {
     label: 'Needs attention', icon: 'alert',
     match: o => (o.view || {}).needs_attention && !(o.view || {}).is_closed,
-    empty: { title: 'Nothing needs chasing', text: 'Blocked, overdue and stalled cases surface here first.' }
+    empty: { title: 'Nothing needs chasing', text: 'Blocked and overdue cases, and anything waiting longer than expected, surface here first.' }
   },
   lab: {
     label: 'In the lab', icon: 'sliders',

@@ -6,6 +6,7 @@ import { DATA, api } from '../../state.js';
 import { esc, fmtDate, fmtDateTime } from '../../utils/format.js';
 import { toast } from '../../toast.js';
 import { emptyState } from '../../components/emptyState.js';
+import { confirmAction } from '../../components/confirm.js';
 
 export function adminMessages() {
   if (!DATA.messages.length) return emptyState({ iconName: 'mail', title: 'No messages yet', text: 'Messages sent through the website contact form will appear here, newest first.' });
@@ -58,7 +59,11 @@ export function attachMessagesHandlers() {
   document.querySelectorAll('[data-del-message]').forEach(b => {
     b.addEventListener('click', async e => {
       e.preventDefault();
-      if (!window.confirm('Delete this message? This can\'t be undone.')) return;
+      if (!await confirmAction({
+        title: 'Delete this message?',
+        body: 'The enquiry and its contact details are removed permanently. This cannot be undone.',
+        confirmLabel: 'Delete message', tone: 'danger'
+      })) return;
       const id = b.dataset.delMessage;
       try {
         await api('/api/messages/' + encodeURIComponent(id) + '/delete', { method: 'POST' });

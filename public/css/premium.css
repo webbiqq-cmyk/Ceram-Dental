@@ -1,0 +1,342 @@
+/* Phase 2 — the premium layer.
+ *
+ * This file does three things and deliberately not a fourth: it defines
+ * the type scale and surface system the workspaces share, refines the app
+ * shell, and styles the Phase 2 components (search, notifications,
+ * drafts, confirmations, skeletons). It does NOT restate anything
+ * workspace.css or case-system.css already own — the point of loading
+ * last is to add, not to re-fight.
+ *
+ * The look is warm, quiet and mostly achieved with whitespace and
+ * typography. Where a surface is needed it is a plain one; a card is used
+ * when something genuinely is a discrete object, not as the default
+ * container for every paragraph.
+ */
+
+body.workplace{
+  /* One type scale, in real numbers. Phase 1 scattered 9.5px–11px
+     uppercase microlabels across six files; several were too small to
+     read comfortably, so the floor here is 11px and uppercase tracking is
+     reserved for eyebrows. */
+  --t-eyebrow:11px;
+  --t-caption:11.5px;
+  --t-meta:12px;
+  --t-body:13.5px;
+  --t-body-lg:14.5px;
+  --t-card-title:15px;
+  --t-section:19px;
+  --t-page:clamp(24px,2.4vw,31px);
+  --t-metric:30px;
+  --t-metric-lg:38px;
+
+  /* The layered environment. The canvas is warm ivory rather than a flat
+     grey; panels sit on it in plain white; a very slight champagne wash
+     lifts hero areas. Gradients are near-invisible on purpose — the
+     warmth should be felt, not seen, and never read as pink. */
+  --canvas:#f7f5f3;
+  --canvas-tint:linear-gradient(168deg,#fdfbf7 0%,#faf7f4 42%,#f7f5f3 100%);
+  --hero-wash:radial-gradient(120% 140% at 0% 0%,#fdf7ec 0%,rgba(253,247,236,0) 62%);
+  --panel:#fff;
+  --panel-soft:#fbfafc;
+  --rule:#ebe6ee;
+  --rule-strong:#ddd5e1;
+}
+
+body.workplace{background:var(--canvas)}
+.workspace-content{background:var(--canvas-tint)}
+
+/* ------------------------------------------------------------ app shell */
+
+/* The top bar carried a lot of dead width in the workspaces: a logo on the
+   left and a button on the right with nothing between. Search fills it
+   with the one thing that belongs there, and the bar stays quiet. */
+.workplace .topbar-inner{gap:18px}
+.workplace .topbar-actions{gap:10px;align-items:center}
+
+.ws-search-trigger{
+  display:flex;align-items:center;gap:10px;min-width:240px;max-width:380px;flex:1 1 260px;
+  min-height:38px;padding:0 12px;border:1px solid var(--rule);border-radius:10px;
+  background:var(--panel-soft);color:#7d7185;font:inherit;font-size:var(--t-meta);cursor:pointer;text-align:left;
+  transition:border-color 160ms ease,background 160ms ease
+}
+.ws-search-trigger:hover{border-color:var(--rule-strong);background:#fff}
+.ws-search-trigger .ws-search-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-search-kbd{
+  font-family:var(--font-mono);font-size:10.5px;color:#8a7c91;
+  border:1px solid var(--rule);border-radius:5px;padding:2px 6px;background:#fff;white-space:nowrap
+}
+@media(max-width:900px){.ws-search-trigger{min-width:0;flex:0 0 auto;padding:0 10px}
+  .ws-search-trigger .ws-search-label,.ws-search-kbd{display:none}}
+
+/* Sidebar: a touch more room to breathe, and a role line that reads as
+   context rather than as a heading. */
+.workspace-sidebar nav :is(a,button){font-size:13px}
+.ws-support-role{font-size:var(--t-meta)}
+.ws-support-role span{font-size:10.5px;letter-spacing:.1em}
+
+/* ------------------------------------------------- widths and hierarchy */
+
+/* Operational screens earn the width of the monitor; reading screens do
+   not. Rather than one arbitrary max-width everywhere, each surface
+   states what it is. */
+.workspace-content{--content-max:1180px}
+.workspace-studio .workspace-content,.workspace-admin .workspace-content{--content-max:1520px}
+.workspace-content>.page>.u{max-width:var(--content-max);margin-inline:auto}
+
+/* A section header that is typography, not another card. */
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:30px 0 14px}
+.sec-head:first-child{margin-top:0}
+.sec-head h2{font-family:var(--font-display);font-size:var(--t-section);font-weight:600;letter-spacing:-.01em;margin:0}
+.sec-head .sec-note{font-size:var(--t-meta);color:#7d7185}
+.sec-rule{border:0;border-top:1px solid var(--rule);margin:26px 0}
+
+/* --------------------------------------------------------- dentist hero */
+
+/* Compact on purpose. This is a greeting and one button, not a landing
+   page — it earns about 120px and the champagne wash does the rest. */
+.portal-hero{
+  position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:22px 26px;margin-bottom:22px;border:1px solid var(--rule);border-radius:16px;
+  background-color:var(--panel);background-image:var(--hero-wash);overflow:hidden
+}
+.portal-hero-text{min-width:0}
+.portal-hero .eyebrow-accent{font-size:var(--t-eyebrow);letter-spacing:.12em}
+.portal-hero h1{font-family:var(--font-accent);font-weight:500;font-size:var(--t-page);line-height:1.15;margin:6px 0 0;letter-spacing:-.02em}
+.portal-hero p{margin:7px 0 0;font-size:var(--t-body);color:#6e6377;max-width:52ch}
+.portal-hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ------------------------------------------------- metrics, refined */
+
+/* Same component as Phase 1, given a clearer internal hierarchy: the
+   number leads, the label names it, the supporting line is real data or
+   nothing at all. */
+.workplace .stat-card-v2{display:flex;gap:13px;align-items:flex-start;padding:16px 17px;border-radius:14px}
+.workplace .stat-card-v2 .n{font-size:var(--t-metric);letter-spacing:-.02em;margin-bottom:2px}
+.workplace .stat-card-v2 .l{font-size:var(--t-caption);color:#6e6377;font-weight:500}
+.workplace .stat-card-v2 .stat-card-meta{margin-top:6px;font-size:11px;color:#8a7c91;line-height:1.45}
+.workplace .stat-card-v2 .stat-card-meta.is-action{color:#922d45;font-weight:600}
+.workplace .stat-card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:#f6f2f8;color:#67447d;flex-shrink:0}
+.workplace .stat-card-v2.tone-gold .stat-card-icon{background:#faf3e6;color:#6c491d}
+.workplace .stat-card-v2.tone-danger .stat-card-icon{background:#fbecf0;color:#922d45}
+.workplace button.stat-card-v2{cursor:pointer;transition:border-color 160ms ease,transform 160ms ease}
+.workplace button.stat-card-v2:hover{border-color:#c9b5d5;transform:translateY(-1px)}
+
+/* ----------------------------------------------------------- compact feed */
+
+/* Recent activity as a timeline, not a stack of cards. Grouped by day so
+   "today" is legible at a glance. */
+.feed{display:flex;flex-direction:column;gap:2px}
+.feed-day{font-size:var(--t-eyebrow);font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#8a7c91;margin:16px 0 8px}
+.feed-day:first-child{margin-top:0}
+.feed-row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:baseline;width:100%;
+  padding:9px 8px;border:0;border-radius:9px;background:none;font:inherit;text-align:left;cursor:pointer;
+  transition:background 150ms ease}
+.feed-row:hover{background:var(--panel-soft)}
+.feed-time{font-family:var(--font-mono);font-size:11px;color:#8a7c91;font-variant-numeric:tabular-nums}
+.feed-what{font-size:var(--t-body);color:#2d1142;line-height:1.5;min-width:0}
+.feed-what b{font-family:var(--font-mono);font-size:12px;font-weight:600}
+.feed-go{font-size:11.5px;color:#6c491d;opacity:0;transition:opacity 150ms ease}
+.feed-row:hover .feed-go,.feed-row:focus-visible .feed-go{opacity:1}
+
+/* --------------------------------------------------------- station cards */
+
+/* Phase 1's station cards were mostly empty. A station card now answers
+   what is waiting, what is wrong with it, and how long the oldest thing
+   has been sitting there — the three questions a manager opens the page
+   to ask. */
+.station-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.station{display:flex;flex-direction:column;gap:12px;padding:18px;border:1px solid var(--rule);border-radius:14px;
+  background:var(--panel);color:inherit;text-decoration:none;transition:border-color 160ms ease,transform 160ms ease}
+a.station:hover{border-color:#c9b5d5;transform:translateY(-1px)}
+.station.has-attention{border-color:#e3cfa8}
+.station-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.station-name{font-size:var(--t-eyebrow);font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#7d7185}
+.station-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#f6f2f8;color:#67447d;flex-shrink:0}
+.station-count{display:flex;align-items:baseline;gap:8px}
+.station-count b{font-family:var(--font-display);font-size:var(--t-metric);font-weight:600;line-height:1;font-variant-numeric:tabular-nums;color:#2d1142}
+.station-count span{font-size:var(--t-caption);color:#7d7185}
+.station-facts{display:flex;flex-direction:column;gap:5px;font-size:var(--t-meta);color:#6e6377}
+.station-facts div{display:flex;justify-content:space-between;gap:10px}
+.station-facts .is-flag{color:#922d45;font-weight:600}
+.station-oldest{font-size:11.5px;color:#8a7c91;font-variant-numeric:tabular-nums}
+.station-link{margin-top:auto;font-size:var(--t-meta);font-weight:600;color:#6c491d}
+
+/* ------------------------------------------------------------- skeletons */
+
+/* Shown while a queue or dashboard is fetching, shaped like the thing it
+   is replacing so nothing jumps when the real content lands. */
+.skeleton{background:linear-gradient(90deg,#f1edf3 25%,#f7f4f9 37%,#f1edf3 63%);background-size:400% 100%;
+  border-radius:8px;animation:sk 1.4s ease infinite}
+@keyframes sk{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skeleton-row{display:flex;flex-direction:column;gap:9px;padding:17px;border:1px solid var(--rule);border-radius:14px;background:var(--panel)}
+.skeleton-line{height:11px}
+.skeleton-grid{display:grid;gap:14px}
+@media(prefers-reduced-motion:reduce){.skeleton{animation:none}}
+
+/* -------------------------------------------------------- empty states */
+
+/* Compact and positive. An empty queue is usually good news and should
+   not be a large dashed rectangle apologising for itself. */
+.workplace .empty-state{padding:26px 22px;border:1px solid var(--rule);border-radius:14px;background:var(--panel-soft);text-align:center}
+.workplace .empty-state-icon{width:36px;height:36px;border-radius:11px;background:#fff;border:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:#9a8ba5}
+.workplace .empty-state-title{font-size:var(--t-card-title);font-weight:600;color:#2d1142;margin:0}
+.workplace .empty-state-text{font-size:var(--t-meta);color:#7d7185;margin:5px auto 0;max-width:46ch;line-height:1.6}
+/* The inline variant, for a queue tab that is simply clear. */
+.empty-inline{display:flex;align-items:center;gap:10px;padding:14px 16px;border:1px solid var(--rule);border-radius:12px;
+  background:var(--panel-soft);font-size:var(--t-body);color:#6e6377}
+.empty-inline .ok{color:#2f6b45;font-weight:700}
+
+/* Replaces the dashed-box .empty-note wherever it still appears. */
+.workplace .empty-note{padding:14px 16px;border:1px solid var(--rule);border-style:solid;border-radius:12px;
+  background:var(--panel-soft);text-align:left;font-size:var(--t-body)}
+
+/* --------------------------------------------------------------- drafts */
+
+.draft-strip{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 16px;margin-bottom:18px;
+  border:1px solid #e6dcc6;border-radius:12px;background:linear-gradient(120deg,#fdfaf3,#fffdf9)}
+.draft-strip-mark{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:#fff;border:1px solid #e6dcc6;color:#6c491d;flex-shrink:0}
+.draft-strip-body{flex:1;min-width:180px}
+.draft-strip-body strong{display:block;font-size:var(--t-body-lg);color:#2d1142}
+.draft-strip-body span{font-size:var(--t-meta);color:#7d7185}
+.draft-list{display:flex;flex-direction:column;gap:9px}
+.draft-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 15px;border:1px solid var(--rule);
+  border-radius:12px;background:var(--panel)}
+.draft-row-main{flex:1;min-width:180px}
+.draft-row-main strong{display:block;font-size:var(--t-body-lg);color:#2d1142}
+.draft-row-main span{font-size:var(--t-meta);color:#7d7185}
+.draft-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* The autosave indicator: present, never attention-seeking. */
+.autosave{font-size:11.5px;color:#8a7c91;min-height:16px;display:inline-flex;align-items:center;gap:6px}
+.autosave.is-saved{color:#2f6b45}
+
+/* ------------------------------------------------------------- search */
+
+.search-overlay{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100%;height:100%}
+.search-overlay::backdrop{background:#1e133070;backdrop-filter:blur(3px)}
+.search-panel{width:min(620px,calc(100vw - 32px));margin:10vh auto 0;background:var(--panel);border:1px solid var(--rule-strong);
+  border-radius:16px;box-shadow:0 30px 70px -30px #1e133066;overflow:hidden}
+.search-input-row{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--rule)}
+.search-input-row svg{color:#9a8ba5;flex-shrink:0}
+.search-panel input{flex:1;border:0!important;outline:none;background:none;font:inherit;font-size:16px;color:#2d1142;min-height:auto!important;padding:0!important}
+.search-results{max-height:min(52vh,440px);overflow:auto;padding:8px}
+.search-group{font-size:var(--t-eyebrow);font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#8a7c91;padding:12px 12px 6px}
+.search-hit{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-radius:10px;
+  background:none;font:inherit;text-align:left;cursor:pointer}
+.search-hit:hover,.search-hit[aria-selected=true]{background:#f6f2f8}
+.search-hit[aria-selected=true]{outline:2px solid #cbb8d8;outline-offset:-2px}
+.search-hit-id{font-family:var(--font-mono);font-size:12.5px;font-weight:600;color:#2d1142;white-space:nowrap}
+.search-hit-main{flex:1;min-width:0}
+.search-hit-main .t{font-size:var(--t-body);color:#2d1142;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-hit-main .s{font-size:11.5px;color:#7d7185}
+.search-state{padding:26px 18px;text-align:center;font-size:var(--t-body);color:#7d7185}
+.search-foot{display:flex;gap:16px;padding:10px 18px;border-top:1px solid var(--rule);font-size:11px;color:#8a7c91}
+.search-foot kbd{font-family:var(--font-mono);border:1px solid var(--rule);border-radius:4px;padding:1px 5px;background:var(--panel-soft)}
+
+/* ------------------------------------------------------ notifications */
+
+.notif-menu{width:min(400px,calc(100vw - 24px));max-height:min(72vh,560px);overflow:auto;padding:0}
+.notif-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;
+  border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--panel);z-index:2}
+.notif-head span{font-size:var(--t-card-title);font-weight:600;color:#2d1142}
+.notif-group{font-size:var(--t-eyebrow);font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#8a7c91;
+  padding:14px 16px 6px;background:var(--panel)}
+.notif-item{display:grid;grid-template-columns:28px 1fr;gap:11px;padding:11px 16px;border:0;border-bottom:1px solid var(--rule);
+  width:100%;text-align:left;background:none;font:inherit;cursor:default}
+.notif-item[data-notif-case]{cursor:pointer}
+.notif-item:hover{background:var(--panel-soft)}
+.notif-mark{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:#f6f2f8;color:#67447d}
+.notif-action .notif-mark{background:#faf3e6;color:#6c491d}
+.notif-urgent .notif-mark{background:#fbecf0;color:#922d45}
+.notif-title{font-size:var(--t-body);font-weight:600;color:#2d1142;line-height:1.4}
+.notif-body{font-size:var(--t-meta);color:#6e6377;margin-top:2px;line-height:1.5}
+.notif-time{font-size:11px;color:#8a7c91;margin-top:4px}
+.notif-item.unread .notif-title::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:#6c491d;margin-left:7px;vertical-align:middle}
+.notif-empty{padding:32px 18px;text-align:center;font-size:var(--t-body);color:#7d7185}
+
+/* --------------------------------------------------------- confirmation */
+
+.confirm-dialog{width:min(460px,calc(100vw - 32px));border:1px solid var(--rule-strong);border-radius:16px;padding:24px;
+  background:var(--panel);color:#2d1142;box-shadow:0 30px 70px -30px #1e133066}
+.confirm-dialog::backdrop{background:#1e133070;backdrop-filter:blur(2px)}
+.confirm-dialog h2{font-size:18px;font-weight:600;margin:0 0 8px}
+.confirm-dialog p{font-size:var(--t-body);color:#6e6377;line-height:1.65;margin:0}
+.confirm-detail{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--panel-soft);border:1px solid var(--rule);
+  font-size:var(--t-meta);color:#6e6377}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap}
+
+/* ------------------------------------------------------------ responsive */
+
+@media(max-width:1100px){
+  .workspace-content{--content-max:100%}
+  .portal-hero{padding:18px 20px}
+}
+@media(max-width:720px){
+  .portal-hero{flex-direction:column;align-items:stretch}
+  .portal-hero-actions .btn{width:100%}
+  .feed-row{grid-template-columns:46px 1fr}
+  .feed-go{display:none}
+  .search-panel{margin-top:0;width:100vw;border-radius:0;min-height:100dvh}
+  .search-results{max-height:none}
+  .station-grid{grid-template-columns:1fr}
+  /* Comfortable tap targets everywhere a finger has to land. */
+  .notif-item,.search-hit,.feed-row,.draft-row{min-height:48px}
+}
+
+/* A long queue keeps its header while you scroll it. */
+.queue-table thead th{position:sticky;top:0;z-index:1;background:var(--panel);box-shadow:inset 0 -1px 0 var(--rule)}
+.workplace .table-wrap{max-height:none;overflow:auto}
+
+/* A case card is one large click target, so any secondary action lives
+   beside it rather than nested inside it — a button inside a button is
+   invalid markup and unreachable by keyboard. */
+.case-cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.case-cell .case-card{flex:1}
+.case-card-aside{display:flex;justify-content:flex-end;padding-right:4px}
+.case-card-aside .link-btn{font-size:var(--t-meta);color:#6c491d;font-weight:600;background:none;border:0;cursor:pointer;padding:2px 4px}
+.case-card-aside .link-btn:hover{text-decoration:underline}
+
+/* Six stations read as one rail on a wide monitor, and wrap sensibly
+   below — the pipeline is a sequence, so an even row says more than a
+   ragged grid. */
+@media(min-width:1280px){.station-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(min-width:900px) and (max-width:1279px){.station-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* The Dentist Portal link is a public-site entry point. Inside a staff
+   workspace it is a dead end that was wrapping onto two lines and
+   crowding the search box. */
+.workplace .topbar-actions .btn-primary,.workplace #langSwitch{display:none}
+
+/* Case cards size to their content. Stretching every card to match the
+   tallest one is tidy when they carry similar amounts — but a veneer
+   card shows two journey cycles and a crown shows one, so equal heights
+   just left large empty panels under the shorter cases. */
+.workplace .case-list,.workplace .case-grid{align-items:start}
+
+.chart-empty{margin-top:10px;padding:18px;border:1px dashed var(--rule-strong);border-radius:10px;
+  font-size:var(--t-meta);color:#7d7185;line-height:1.6;background:var(--panel-soft)}
+
+/* Every interactive target clears the 32px floor on touch. Small ghost
+   buttons and inline links were the exceptions. */
+@media(max-width:720px){
+  .workplace .btn-sm,.workplace .link-btn,.case-card-aside .link-btn{min-height:40px;padding-inline:12px}
+  .workplace .workspace-tabs button{min-height:42px}
+}
+
+/* The last four undersized targets on a phone: the sidebar's Website /
+   Sign out pills, the drawer close, and the workflow hint's dismiss. */
+@media(max-width:720px){
+  .ws-home-btn{min-height:40px;padding-inline:14px}
+  .drawer-close{min-width:40px;min-height:40px}
+  .wf-hint-x{min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center}
+}
+
+/* Station names vary in length ("Design" vs "Quality check"), and a
+   wrapped heading was pushing one card's numbers out of line with its
+   neighbours. Reserving two lines keeps the rail aligned. */
+.station-top{min-height:38px}
+.station-name{line-height:1.35}

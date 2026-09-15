@@ -7,6 +7,7 @@ import { openCart, closeCart, changeQty, checkout } from './components/cart.js';
 import { closeApplyModal } from './components/applyModal.js';
 import { closeDoctorModal } from './components/doctor.js';
 import { initNotifBell, updateNotifUI } from './components/notifications.js';
+import { initSearch } from './components/searchPalette.js';
 import { openDentistSignupModal, closeDentistSignupModal } from './components/dentistSignup.js';
 import { initI18n } from './i18n.js';
 
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeCart(); closeApplyModal(); closeDoctorModal(); closeDentistSignupModal(); } });
 
   initNotifBell();
+  initSearch();
   // Stop polling when the tab isn't visible — no point waking up a
   // backgrounded phone tab every 25s just to ask the server for nothing.
   let pollTimer = null;

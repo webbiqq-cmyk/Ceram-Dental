@@ -162,6 +162,35 @@ async function listApprovals(orderId) {
     .map(a => Object.assign({}, a, { decided_by_name: nameOf(a.decided_by) }));
 }
 
+// Same contract and the same scoping rule as the SQL backend, so a search
+// behaves identically whichever store is behind it.
+async function searchOrders(role, userId, term, limit = 8) {
+  const q = String(term || '').trim().toLowerCase();
+  if (q.length < 2) return [];
+  const scoped = role === 'dentist' ? jobOrders.filter(o => o.dentist_user_id === userId) : jobOrders;
+  return scoped
+    .map(decorate)
+    .filter(o =>
+      String(o.order_number || '').toLowerCase().startsWith(q) ||
+      String(o.patient_ref || '').toLowerCase().includes(q) ||
+      (role !== 'dentist' && String(o.dentist_name || '').toLowerCase().includes(q)))
+    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+    .slice(0, Math.min(20, Math.max(1, limit)));
+}
+
+async function searchDentists(term, limit = 5) {
+  const q = String(term || '').trim().toLowerCase();
+  if (q.length < 2) return [];
+  const users = await require('../models/user.model').list();
+  return users
+    .filter(u => u.active && u.role === 'dentist' && String(u.name || '').toLowerCase().includes(q))
+    .slice(0, Math.min(10, limit))
+    .map(u => ({
+      id: u.id, name: u.name, username: u.username,
+      active_cases: jobOrders.filter(o => o.dentist_user_id === u.id && o.status !== 'completed').length
+    }));
+}
+
 async function completionSamples(limit = 500) {
   return jobStageHistory
     .filter(h => h.status === 'completed')
@@ -192,5 +221,5 @@ module.exports = {
   transaction, createOrder, getOrder, listOrders, updateOrder,
   addStageHistory, listStageHistory, addAssignment, addApproval,
   addFile, listFiles, addMessage, listMessages, listApprovals, listStaff, getUserByRole,
-  completionSamples, qcSamples
+  completionSamples, qcSamples, searchOrders, searchDentists
 };
