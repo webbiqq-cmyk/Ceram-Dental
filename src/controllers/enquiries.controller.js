@@ -6,9 +6,9 @@ const { logAction } = require('../utils/audit');
 // into (an Instagram DM, a WhatsApp message, a walk-in phone call) —
 // admin-only, since it's a manual entry, not a public-facing form.
 async function create(req, res) {
-  const { name, handle, channel, service, message } = req.body || {};
+  const { name, handle, channel, service, message, source } = req.body || {};
   if (!name || !String(name).trim()) return bad(res, 'A name is required.');
-  const enquiry = await enquiryModel.addEnquiry({ name, handle, channel, service, message });
+  const enquiry = await enquiryModel.addEnquiry({ name, handle, channel, service, message, source: source || 'Manual entry' });
   if (!enquiry) return bad(res, 'Could not log that enquiry.');
   await logAction(req, 'enquiry:create', enquiry.name + (enquiry.channel ? ' (' + enquiry.channel + ')' : ''));
   ok(res, { enquiry });

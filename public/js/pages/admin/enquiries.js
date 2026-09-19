@@ -1,5 +1,5 @@
 import { DATA, api, loadState } from '../../state.js';
-import { esc, svcLabel, chanSlug, val } from '../../utils/format.js';
+import { esc, svcLabel, chanSlug, val, fmtDate } from '../../utils/format.js';
 import { ENQUIRY_STAGES, ENQUIRY_CHANNELS, SERVICES } from '../../constants.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
@@ -16,7 +16,7 @@ function serviceOptions() {
 // it enters the same new → contacted → booked → closed pipeline as
 // everything else.
 function addForm() {
-  return '<div class="card reveal" style="margin-bottom:20px;"><span class="eyebrow" style="margin-bottom:14px;">Log a new enquiry</span>' +
+  return '<details class="card reveal product-add-panel" style="margin-bottom:20px;"><summary><span><b>Log an off-site enquiry</b><small>Use this for calls, walk-ins, DMs and WhatsApp</small></span></summary>' +
     '<form id="enquiryAddForm" class="form-grid">' +
       '<div class="field"><label>Name</label><input id="nq-name" required></div>' +
       '<div class="field"><label>Contact / handle</label><input id="nq-handle" placeholder="@handle, phone, or email"></div>' +
@@ -24,16 +24,16 @@ function addForm() {
       '<div class="field"><label>Interested in</label><select id="nq-service">' + serviceOptions() + '</select></div>' +
       '<div class="field full"><label>What they asked</label><textarea id="nq-message" placeholder="Quick summary of the message"></textarea></div>' +
       '<div class="field full"><button class="btn btn-primary" type="submit">Log enquiry</button></div>' +
-    '</form></div>';
+    '</form></details>';
 }
 
 export function adminEnquiries() {
   const keys = ENQUIRY_STAGES.map(s => s.key);
   const byStage = {};
   ENQUIRY_STAGES.forEach(s => { byStage[s.key] = DATA.enquiries.filter(e => e.stage === s.key); });
-  const igCount = DATA.enquiries.filter(e => e.channel === 'Instagram DM').length;
+  const websiteCount = DATA.enquiries.filter(e => e.channel === 'Website form' || e.source === 'Website form').length;
 
-  const intro = '<p style="color:var(--ink-soft); font-size:13.5px; margin-bottom:16px;">New-patient enquiries from Instagram DMs, WhatsApp and the website — one acceptance flow from first message to booked consultation.</p>';
+  const intro = '<p style="color:var(--ink-soft); font-size:13.5px; margin-bottom:16px;">Website contact messages are picked up automatically; staff can still add calls, walk-ins, DMs and WhatsApp leads when they happen outside the site.</p>';
 
   if (!DATA.enquiries.length) return intro + addForm() + '<div class="empty-note">No enquiries yet — log the first one above.</div>';
 
@@ -41,7 +41,7 @@ export function adminEnquiries() {
     '<div class="chipstat"><b>' + byStage.new.length + '</b><span>New / unread</span></div>' +
     '<div class="chipstat"><b>' + byStage.contacted.length + '</b><span>In conversation</span></div>' +
     '<div class="chipstat"><b>' + byStage.booked.length + '</b><span>Consultations booked</span></div>' +
-    '<div class="chipstat"><b>' + igCount + '</b><span>From Instagram</span></div>' +
+    '<div class="chipstat"><b>' + websiteCount + '</b><span>From website</span></div>' +
   '</div>';
 
   const lanes = ENQUIRY_STAGES.map(s => {
@@ -51,7 +51,8 @@ export function adminEnquiries() {
       return '<div class="enq-card">' +
         '<div class="enq-top"><span class="enq-name">' + esc(e.name) + '</span>' +
           '<span class="enq-chan chan-' + chanSlug(e.channel) + '">' + esc(e.channel) + '</span></div>' +
-        '<div class="enq-handle">' + esc(e.handle) + (e.service ? ' &middot; ' + esc(svcLabel(e.service)) : '') + '</div>' +
+        '<div class="enq-handle">' + esc(e.handle || 'No contact') + (e.service ? ' &middot; ' + esc(svcLabel(e.service)) : '') + '</div>' +
+        '<div class="enq-history">' + esc(e.source || e.channel || 'Manual') + ' · ' + fmtDate(e.createdAt) + (Array.isArray(e.history) && e.history.length > 1 ? ' · ' + e.history.length + ' updates' : '') + '</div>' +
         '<p class="enq-msg">' + esc(e.message) + '</p>' +
         '<div class="enq-actions">' +
           (next ? '<button class="btn btn-primary btn-sm" data-enq-stage="' + next.key + '" data-enq-id="' + e.id + '">' + next.label + ' &rarr;</button>' : '') +

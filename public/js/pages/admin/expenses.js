@@ -4,9 +4,18 @@ import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
 
 export function adminExpenses() {
-  const rows = DATA.expenses.map(e =>
-    '<div class="list-row"><div><div class="t">' + esc(e.description) + '</div><div class="s">' + e.category + ' · ' + fmtDate(e.date) + '</div></div><div class="t">' + money(e.amount) + '</div></div>'
-  ).join('');
+  const groups = {};
+  DATA.expenses.forEach(e => {
+    const key = e.category || 'Other';
+    groups[key] = groups[key] || [];
+    groups[key].push(e);
+  });
+  const total = DATA.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const groupHtml = Object.entries(groups).sort((a, b) => b[1].reduce((s, e) => s + e.amount, 0) - a[1].reduce((s, e) => s + e.amount, 0)).map(([cat, list]) => {
+    const subtotal = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const rows = list.map(e => '<div class="expense-row"><div><b>' + esc(e.description || cat) + '</b><span>' + fmtDate(e.date) + '</span></div><strong>' + money(e.amount) + '</strong></div>').join('');
+    return '<details class="expense-group" open><summary><span>' + esc(cat) + '</span><b>' + money(subtotal) + '</b></summary>' + rows + '</details>';
+  }).join('');
   return '<div class="card reveal" style="margin-bottom:20px;"><span class="eyebrow" style="margin-bottom:12px;">Log an expense</span>' +
     '<form id="expenseForm" class="expense-form">' +
       '<select id="ex-category"><option>Materials</option><option>Equipment</option><option>Payroll</option><option>Facilities</option><option>Marketing</option><option>Other</option></select>' +
@@ -14,7 +23,8 @@ export function adminExpenses() {
       '<input id="ex-amount" type="number" min="0" step="0.001" placeholder="BD amount" required>' +
       '<button class="btn btn-primary" type="submit">Add</button>' +
     '</form></div>' +
-    '<div class="card reveal"><span class="eyebrow" style="margin-bottom:6px;">Recent expenses</span><div class="list-plain">' + rows + '</div></div>';
+    '<div class="stat-strip reveal" style="margin:0 0 20px;"><div class="chipstat"><b>' + money(total) + '</b><span>Total expenses</span></div><div class="chipstat"><b>' + Object.keys(groups).length + '</b><span>Categories</span></div><div class="chipstat"><b>' + DATA.expenses.length + '</b><span>Entries</span></div></div>' +
+    '<div class="card reveal"><span class="eyebrow" style="margin-bottom:12px;">Expenses by category</span>' + (groupHtml || '<p class="empty-note">No expenses logged yet.</p>') + '</div>';
 }
 
 export function attachExpensesHandlers() {

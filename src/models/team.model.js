@@ -113,7 +113,9 @@ async function addTeamMember(fields = {}) {
     id: nextId('team', 'STF-'), name,
     role: str(fields.role, 120), nameAr: str(fields.nameAr, 120), years: years(fields.years),
     initials: str(fields.initials, 3).toUpperCase() || initialsFrom(name),
-    credentials: creds(fields.credentials) || [], photo: p === undefined ? '' : p
+    credentials: creds(fields.credentials) || [], photo: p === undefined ? '' : p,
+    phone: str(fields.phone, 80), email: str(fields.email, 120), languages: str(fields.languages, 160),
+    room: str(fields.room, 80), availability: str(fields.availability, 160), bio: str(fields.bio, 500)
   };
   await records.insert('team', member);
   return member;
@@ -128,6 +130,7 @@ async function updateTeamMember(id, fields = {}) {
     if ('initials' in fields) m.initials = str(fields.initials, 3).toUpperCase() || initialsFrom(m.name);
     if ('credentials' in fields) { const c = creds(fields.credentials); if (c) m.credentials = c; }
     if ('photo' in fields) { const p = photo(fields.photo); if (p === undefined) return null; m.photo = p; }
+    for (const key of ['phone','email','languages','room','availability','bio']) if (key in fields) m[key] = str(fields[key], key === 'bio' ? 500 : 160);
   });
 }
 

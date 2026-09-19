@@ -47,6 +47,12 @@ function editor(m) {
       '<div class="field"><label>Name in Arabic <span>(optional)</span></label><input data-f="nameAr" dir="rtl" value="' + esc(m.nameAr || '') + '"></div>' +
       '<div class="field"><label>Role / specialty</label><input data-f="role" value="' + esc(m.role || '') + '"></div>' +
       '<div class="field"><label>Years of experience</label><input data-f="years" type="number" min="0" max="70" value="' + (m.years || 0) + '"></div>' +
+      '<div class="field"><label>Phone</label><input data-f="phone" value="' + esc(m.phone || '') + '"></div>' +
+      '<div class="field"><label>Email</label><input data-f="email" type="email" value="' + esc(m.email || '') + '"></div>' +
+      '<div class="field"><label>Languages</label><input data-f="languages" value="' + esc(m.languages || '') + '" placeholder="Arabic, English"></div>' +
+      '<div class="field"><label>Room / schedule note</label><input data-f="room" value="' + esc(m.room || '') + '"></div>' +
+      '<div class="field full"><label>Availability</label><input data-f="availability" value="' + esc(m.availability || '') + '" placeholder="Sun, Tue, Thu · 10 AM–6 PM"></div>' +
+      '<div class="field full"><label>Short bio</label><textarea data-f="bio" rows="3">' + esc(m.bio || '') + '</textarea></div>' +
       '<div class="field full"><label>Credentials <span>(one per line)</span></label><textarea data-f="credentials" rows="4">' + esc((m.credentials || []).join('\n')) + '</textarea></div>' +
     '</div>' +
     '<div class="team-editor-actions"><button type="submit" class="btn btn-primary btn-sm">Save changes</button>' +
@@ -57,7 +63,7 @@ function editor(m) {
 
 function row(m) {
   if (editingId === m.id) return '<div class="team-row is-editing">' + editor(m) + '</div>';
-  const meta = [m.role, m.years ? m.years + '+ yrs' : '', (m.credentials || []).length ? (m.credentials.length + ' credential' + (m.credentials.length === 1 ? '' : 's')) : '']
+  const meta = [m.role, m.years ? m.years + '+ yrs' : '', m.languages || '', m.availability || '', (m.credentials || []).length ? (m.credentials.length + ' credential' + (m.credentials.length === 1 ? '' : 's')) : '']
     .filter(Boolean).join('  ·  ');
   return '<div class="team-row">' + avatar(m) +
     '<div class="team-row-main"><b>' + esc(m.name) + '</b><span>' + esc(meta || '—') + '</span></div>' +

@@ -35,7 +35,13 @@ const users = db.pool ? [] : [
   { id: '00000000-0000-0000-0000-000000000030', username: 'malvin', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'technician', name: 'Malvin', active: true, createdAt: now() },
   { id: '00000000-0000-0000-0000-000000000031', username: 'layla', passwordHash: '$2a$12$MduyS1DG78OcHvfhntJH8O7MxBOnBINYk6EEvkCbkQxFaaFNe6ftu', role: 'technician', name: 'Layla', active: true, createdAt: now() }
 ];
-function publicView(u) { return u && { id:u.id, username:u.username, role:u.role, name:u.name, active:u.active, createdAt:u.createdAt }; }
+// Contact/clinic fields (email/phone/accountType/company) are safe to
+// include here: every publicView() call site either hands a user their
+// own record back (self-registration, profile update) or is reached only
+// through an admin-gated route (Accounts & Access, the Dentists
+// directory) — never a different non-admin user looking at someone
+// else's account.
+function publicView(u) { return u && { id:u.id, username:u.username, role:u.role, name:u.name, active:u.active, createdAt:u.createdAt, phone:u.phone||'', email:u.email||'', accountType:u.accountType||'', company:u.company||'' }; }
 function decode(u) { return u && { ...u, passwordHash:u.password_hash, createdAt:u.created_at, phone:u.phone, email:u.email, accountType:u.account_type, company:u.company }; }
 async function findById(id) {
   if (!db.pool) return users.find(u=>u.id===id) || null;
@@ -46,7 +52,7 @@ async function findByUsernameAndRole(username,role) {
   if (!db.pool) return users.find(u=>u.active && u.role===role && u.username.toLowerCase()===String(username).toLowerCase()) || null;
   return decode((await db.query('SELECT * FROM users WHERE lower(username)=lower($1) AND role=$2 AND active',[username,role])).rows[0]);
 }
-async function list() { return db.pool ? (await db.query('SELECT id,username,role,name,active,created_at FROM users ORDER BY name LIMIT 1000')).rows.map(decode).map(publicView) : users.map(publicView); }
+async function list() { return db.pool ? (await db.query('SELECT id,username,role,name,active,created_at,phone,email,account_type,company FROM users ORDER BY name LIMIT 1000')).rows.map(decode).map(publicView) : users.map(publicView); }
 async function createUser({username,passwordHash,role,name,phone,email,accountType,company}) {
   username=String(username || '').trim();
   email=String(email || '').trim();

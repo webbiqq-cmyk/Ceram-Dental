@@ -1,13 +1,17 @@
-// Central access control, as asked: every login account for every portal
-// (admin/dentist/lab) is created, deactivated, password-reset or deleted
-// from right here — nowhere else in the app can mint a new account.
+// Central access control for the admin and lab-side portals — every login
+// account for Administration and every Lab Studio station is created,
+// deactivated, password-reset or deleted from right here. Dentist Portal
+// accounts live on their own "Dentists" page instead (they self-register
+// from the public website far more often than they're created by an
+// admin, and get their own contact/clinic directory there) — this page
+// no longer lists or creates them at all.
 import { DATA, api, loadState } from '../../state.js';
 import { esc, fmtDateTime } from '../../utils/format.js';
 import { toast } from '../../toast.js';
 import { renderCurrent } from '../../router.js';
 import { confirmAction } from '../../components/confirm.js';
 
-const ROLE_LABEL = { admin: 'Admin', dentist: 'Dentist Portal', lab: 'Lab Studio', receptionist:'Reception', designer:'Designer', technician:'Technician', qc:'Quality Control' };
+const ROLE_LABEL = { admin: 'Admin', lab: 'Lab Studio', receptionist:'Reception', designer:'Designer', technician:'Technician', qc:'Quality Control' };
 
 function roleOptions() {
   return Object.keys(ROLE_LABEL).map(r => '<option value="' + r + '">' + ROLE_LABEL[r] + '</option>').join('');
@@ -52,13 +56,15 @@ export function adminAccounts() {
   // records still point to a real user, not a dangling id) but it needs to
   // actually disappear from the working list — otherwise every delete just
   // looks like it silently failed, since the row stayed right there.
-  const active = DATA.users.filter(u => u.active !== false);
-  const deleted = DATA.users.filter(u => u.active === false);
+  const scoped = DATA.users.filter(u => u.role !== 'dentist');
+  const active = scoped.filter(u => u.active !== false);
+  const deleted = scoped.filter(u => u.active === false);
   const deletedSection = deleted.length
     ? '<details style="margin-top:24px;"><summary class="eyebrow" style="cursor:pointer;">Deleted accounts (' + deleted.length + ')</summary><p class="lede" style="margin:10px 0 14px;">Kept, not erased — case and order history still refers to a real account. Restore one if it was deleted by mistake.</p>' + deleted.map(u => card(u, { deleted: true })).join('') + '</details>'
     : '';
 
-  return addForm + '<span class="eyebrow" style="margin-bottom:10px;">All accounts</span>' + active.map(u => card(u)).join('') + deletedSection;
+  return addForm + '<p class="lede" style="margin:-6px 0 16px;">Admin and Lab Studio accounts only — Dentist Portal accounts have their own <button type="button" class="link-btn" data-admin-tab="dentists">Dentists</button> directory.</p>' +
+    '<span class="eyebrow" style="margin-bottom:10px;">All accounts</span>' + active.map(u => card(u)).join('') + deletedSection;
 }
 
 export function attachAccountsHandlers() {
