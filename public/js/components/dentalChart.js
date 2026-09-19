@@ -1,5 +1,6 @@
 import { esc } from '../utils/format.js';
 import { toothMeta } from './toothMetadata.js';
+import { treatmentMeta } from './selectedServicesSummary.js';
 
 export const FDI_ARCHES = [
   { key:'upper', label:'Upper arch', teeth:[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28] },
@@ -20,19 +21,43 @@ function toothSvg(number, service) {
   return '<svg viewBox="0 0 48 58" aria-hidden="true" class="tooth-svg ' + (lower?'is-lower':'is-upper') + '">' + body + implant + '</svg>';
 }
 
-export function Tooth(tooth) {
+export function Tooth(tooth, treatments=treatmentMeta(null)) {
   const service=tooth.service || 'none';
   const meta=toothMeta(tooth.number);
-  const label=service==='none' ? 'No service' : service==='implant' ? 'Implant restoration' : service[0].toUpperCase()+service.slice(1);
+  const label=service==='none' ? 'No service' : (treatments[service] || {}).restoration || service;
   const status=service==='none'?'No treatment assigned':'Current treatment: '+label;
   return '<button type="button" class="dental-tooth" data-tooth="' + tooth.number + '" data-service="' + service + '" data-kind="' + meta.kind + '" data-selected="' + String(!!tooth.selected) + '" aria-pressed="' + String(!!tooth.selected) + '" aria-label="FDI ' + tooth.number + ' — ' + esc(meta.name) + ' — ' + esc(label) + '">' + toothSvg(tooth.number,service) + '<span class="tooth-number">' + tooth.number + '</span><span class="tooth-service-mark" aria-hidden="true">' + ({veneer:'V',crown:'C',bridge:'B',implant:'I'}[service] || '') + '</span><span class="tooth-tooltip" role="tooltip"><strong>FDI ' + tooth.number + '</strong><b>' + esc(meta.name) + '</b><span>' + esc(status) + '</span><small>' + (service==='none'?'Click to select':'Click to edit') + '</small></span></button>';
 }
 
-export function DentalArch(arch, teeth) {
-  const byNumber=new Map(teeth.map(t=>[t.number,t]));
-  return '<section class="dental-arch dental-arch-' + arch.key + '" aria-label="' + arch.label + '"><div class="dental-arch-label"><span>' + arch.label + '</span><small>FDI notation</small></div><div class="dental-arch-scroll"><div class="dental-teeth">' + arch.teeth.map((number,index)=>(index===8?'<span class="quadrant-divider" aria-hidden="true"></span>':'')+Tooth(byNumber.get(number) || {number,service:'none',selected:false})).join('') + '</div></div></section>';
+// The ranges a dentist actually asks for out loud — "three to three",
+// "six to six" — as one click each, instead of tapping six to twelve
+// teeth. The numbers are the FDI positions either side of the midline, so
+// 3-3 is canine to canine and 6-6 reaches the first molars.
+const QUICK_RANGES=[3,4,5,6];
+function quickSelect(arch) {
+  return '<div class="arch-quick-select" role="group" aria-label="Quick select ' + arch.label + '">' +
+    '<span>Quick select</span>' +
+    QUICK_RANGES.map(to=>'<button type="button" data-quick-range="' + arch.key + ':' + to + '">' + to + '–' + to + '</button>').join('') +
+    '<button type="button" data-quick-range="' + arch.key + ':all">Whole arch</button>' +
+    '<button type="button" class="text-button" data-quick-range="' + arch.key + ':none">Clear</button></div>';
 }
 
-export function DentalChart(teeth) {
-  return '<div class="dental-chart" aria-label="Full mouth dental chart">' + FDI_ARCHES.map(a=>DentalArch(a,teeth)).join('') + '</div>';
+/** The FDI numbers covered by a quick-select range on one arch. */
+export function quickRangeTeeth(archKey, range) {
+  const arch=FDI_ARCHES.find(a=>a.key===archKey);
+  if(!arch) return [];
+  if(range==='all') return arch.teeth.slice();
+  const to=Number(range);
+  if(!to) return [];
+  return arch.teeth.filter(n=>Number(String(n)[1])<=to);
+}
+
+export function DentalArch(arch, teeth, treatments=treatmentMeta(null)) {
+  const byNumber=new Map(teeth.map(t=>[t.number,t]));
+  return '<section class="dental-arch dental-arch-' + arch.key + '" aria-label="' + arch.label + '"><div class="dental-arch-label"><span>' + arch.label + '</span><small>FDI notation</small></div>' + quickSelect(arch) + '<div class="dental-arch-scroll"><div class="dental-teeth">' + arch.teeth.map((number,index)=>(index===8?'<span class="quadrant-divider" aria-hidden="true"></span>':'')+Tooth(byNumber.get(number) || {number,service:'none',selected:false}, treatments)).join('') + '</div></div></section>';
+}
+
+export function DentalChart(teeth, schema=null) {
+  const treatments=treatmentMeta(schema);
+  return '<div class="dental-chart" aria-label="Full mouth dental chart">' + FDI_ARCHES.map(a=>DentalArch(a,teeth,treatments)).join('') + '</div>';
 }

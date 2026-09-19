@@ -282,3 +282,102 @@ button.ws-home-btn{border:0;font:inherit;cursor:pointer}
 .admin-hero-side .stat-card{height:100%}
 @media(max-width:1100px){.admin-hero{grid-template-columns:1fr}.admin-hero-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.admin-hero-side{grid-template-columns:1fr}}
+
+/* ------------------------------------------------------------------
+   Clinic-approved prescription sheets
+   Schema-driven form (serviceConfigurationShell.js), its SVG option
+   diagrams (prescriptionArt.js) and the read-only lab view
+   (prescriptionDetails.js). No new colour tokens — everything below
+   uses the existing Ceram palette.
+   ------------------------------------------------------------------ */
+.dental-legend [data-legend=ortho] i,[data-service=ortho].service-card-mark{background:#e6eeea;border-color:#6f8c80;color:#39544a}
+
+/* Sections and fields */
+.rx-section{margin:26px 0;padding-top:20px;border-top:1px solid var(--line)}
+.rx-section:first-of-type{padding-top:0;border-top:0}
+.rx-section>h3{margin:0 0 4px;font-size:14px;color:var(--violet)}
+.rx-field{margin:16px 0 22px}
+.rx-field-head{margin:0 0 9px}
+.rx-field-head h4{margin:0;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--violet)}
+.rx-required{font-style:normal;font-size:10px;letter-spacing:.06em;color:#8d5a18}
+.rx-pending{font-style:normal;font-size:10px;letter-spacing:.04em;text-transform:none;color:var(--ink-soft)}
+.rx-field-hint{margin:3px 0 0;font-size:12px;color:var(--ink-soft)}
+.rx-field-inline{margin:14px 0}
+.rx-toggle{display:inline-flex;align-items:center;gap:9px;font-size:13px;color:var(--violet)}
+.rx-missing{margin:0 0 20px}
+.rx-missing p{margin:4px 0 0;font-size:13px}
+
+/* Option cards carrying a diagram */
+.rx-option.has-art{align-items:flex-start;min-height:96px}
+.rx-art{flex:0 0 42px;width:42px;height:42px;border-radius:8px;background:#faf6ef;border:1px solid #ece3d6;padding:2px}
+.rx-body{fill:#fffdf8;stroke:#b0a396;stroke-width:1.3}
+.rx-line{fill:none;stroke:#8d7f70;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.rx-heavy{stroke-width:2.1}
+.rx-dashed{stroke-dasharray:3 2.5}
+.rx-fill{fill:#e7dcee;stroke:none}
+.rx-soft{fill:#efe7f3}.rx-softer{fill:#f8f4fa}
+.rx-gum{fill:none;stroke:#cf9aa4;stroke-width:2.4;stroke-linecap:round}
+.rx-ridge{fill:none;stroke:#cf9aa4;stroke-width:2.8;stroke-linecap:round}
+.rx-pink{fill:#e9b3bc;stroke:none}
+.rx-shine{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;opacity:.95}
+.rx-glyph{font-size:13px;font-weight:800;fill:#6d5a70}
+.rx-swatch{stroke:#b49aa0;stroke-width:1.2}
+.rx-dot{fill:#9b7bad}
+.rx-arch{fill:none;stroke:#8d7f70;stroke-width:1.6}
+.rx-arch.rx-fill{fill:#e7dcee;stroke:#8d6ba0}
+.rx-arch.rx-ghost{stroke:#d8cec2;stroke-dasharray:3 3}
+.rx-lip{fill:none;stroke:#cf9aa4;stroke-width:2.2;stroke-linecap:round}
+.visual-option.selected .rx-art{background:#f4ecf7;border-color:#c3addc}
+
+/* Smile designs — two clearly separated character sets */
+.rx-smile-group+.rx-smile-group{margin-top:16px}
+.rx-smile-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.rx-smile{flex-direction:column;align-items:flex-start;gap:8px;min-height:auto;padding:10px}
+.rx-smile .rx-art{width:100%;height:auto;aspect-ratio:48/44;flex:none}
+.rx-smile strong{font-size:12px}
+.rx-smile small{font-size:10px;line-height:1.3}
+
+/* Shade picker — classic families and the ND range read as two ranges */
+.shade-picker{display:grid;gap:14px}
+.shade-group-label{display:block;margin-bottom:7px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft)}
+.shade-chip{display:inline-block;width:14px;height:19px;border:1px solid #c7bba7;border-radius:6px 6px 9px 9px;vertical-align:-4px;margin-right:6px}
+
+/* Quick-select ranges on each arch */
+.arch-quick-select{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 8px 10px}
+.arch-quick-select>span{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft);font-weight:800}
+.arch-quick-select button{padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--violet);font-size:11px;font-weight:700;transition:border-color .18s ease,background .18s ease}
+.arch-quick-select button:hover{border-color:#a28cac;background:#faf6fb}
+.arch-quick-select .text-button{border:0;background:none;color:var(--ink-soft);padding:5px 4px}
+
+/* Whole-arch appliances are added to the case, not to a tooth */
+.dental-toolbar-arch{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);grid-template-columns:repeat(2,minmax(150px,1fr))}
+.dental-toolbar-arch button.is-added{border-color:#6f8c80;background:#f1f7f4}
+
+/* The lab's read-only view of the prescription */
+.rx-read{border:1px solid var(--line);border-radius:12px;background:#fffdfa;padding:16px 18px}
+.rx-read-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.rx-read-head h3{margin:2px 0 0;font-size:15px;color:var(--violet)}
+.rx-read-units{margin-bottom:16px}
+.rx-read-units p{margin:5px 0 0;font-weight:700;color:var(--violet)}
+.rx-tooth-list{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 0;padding:0;list-style:none}
+.rx-tooth-list li{display:flex;align-items:baseline;gap:6px;padding:5px 10px;border:1px solid #e5d9e9;border-radius:999px;background:#fbf7fd;font-size:12px}
+.rx-tooth-list strong{color:var(--violet);font-weight:800}
+.rx-tooth-list span{color:var(--ink-soft)}
+.rx-read-section{margin-top:16px;padding-top:14px;border-top:1px solid #efe7dc}
+.rx-read-section>h4{margin:0 0 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+.rx-read-section dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:0}
+.rx-read-row{display:flex;align-items:center;gap:10px}
+.rx-read-row dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
+.rx-read-row dd{margin:2px 0 0;font-size:13px;font-weight:700;color:var(--violet)}
+.rx-read-art .rx-art{flex:0 0 36px;width:36px;height:36px}
+
+@media(max-width:900px){.rx-smile-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){
+  .rx-smile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rx-option.has-art{min-height:84px}
+  .arch-quick-select{margin-left:0;margin-right:0}
+  .dental-toolbar-arch{grid-template-columns:1fr}
+  .rx-read{padding:14px}
+  .rx-read-section dl{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.arch-quick-select button{transition:none}}

@@ -133,7 +133,7 @@ function requiresActionHtml(rows) {
 }
 let draftsCache = [];
 
-const SERVICE_LABEL = { veneer: 'Veneers', crown: 'Crowns', bridge: 'Bridges', implant: 'Implants' };
+const SERVICE_LABEL = { veneer: 'Veneers', crown: 'Crowns', bridge: 'Bridges', implant: 'Implants', ortho: 'Orthodontic/appliance' };
 function draftTitle(draft) {
   const services = (draft.summary.services || []).map(s => SERVICE_LABEL[s] || s);
   return draft.summary.patientRef || (services.length ? services.join(' + ') + ' case' : 'Untitled case');

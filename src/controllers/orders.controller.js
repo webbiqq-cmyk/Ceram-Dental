@@ -31,7 +31,7 @@ async function create(req, res) {
     clinicId: b.clinicId, patientRef: b.patientRef, jobType: b.jobType, shade: b.shade,
     instructions: b.instructions, scanBody: b.scanBody, implantSystem: b.implantSystem,
     abutmentSize: b.abutmentSize, abutmentAvailability: b.abutmentAvailability, deliveryMethod: b.deliveryMethod,
-    targetDate: b.targetDate
+    targetDate: b.targetDate, prescription: b.prescription
   });
   ok(res, { order });
 }

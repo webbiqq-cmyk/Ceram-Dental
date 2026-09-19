@@ -11,7 +11,8 @@ const ORDER_COLUMNS = `
   shade, instructions, scan_body, implant_system, abutment_size, abutment_availability,
   assigned_designer_id, assigned_technician_id, assigned_qc_id, rejection_note,
   delivery_method, delivered_at, created_at, updated_at,
-  priority, target_date, blocked_reason, blocked_at, blocked_by, blocked_from, stage_entered_at
+  priority, target_date, blocked_reason, blocked_at, blocked_by, blocked_from, stage_entered_at,
+  prescription
 `;
 
 // Same columns qualified to the `o` alias, plus the names behind the four
@@ -37,21 +38,21 @@ async function createOrder(fields) {
   const {
     clinicId, dentistUserId, patientRef, jobType, stageType, shade, instructions,
     scanBody, implantSystem, abutmentSize, abutmentAvailability, deliveryMethod,
-    targetDate, priority
+    targetDate, priority, prescription
   } = fields;
   const { rows } = await query(
     `INSERT INTO job_orders
       (clinic_id, dentist_user_id, patient_ref, job_type, stage_type, shade, instructions,
        scan_body, implant_system, abutment_size, abutment_availability, delivery_method,
-       target_date, priority)
+       target_date, priority, prescription)
      -- Both cast explicitly: Postgres cannot infer a bare parameter's type
      -- against an enum column or a DATE, and an untyped one fails at
      -- execution with a datatype mismatch rather than at parse time.
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::date,$14::job_priority)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::date,$14::job_priority,$15::jsonb)
      RETURNING ${ORDER_COLUMNS}`,
     [clinicId || null, dentistUserId, patientRef, jobType, stageType || 'final', shade || null, instructions || null,
      scanBody || null, implantSystem || null, abutmentSize || null, abutmentAvailability || null, deliveryMethod || null,
-     targetDate || null, priority || 'normal']
+     targetDate || null, priority || 'normal', prescription ? JSON.stringify(prescription) : null]
   );
   return rows[0];
 }

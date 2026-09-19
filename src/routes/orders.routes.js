@@ -17,6 +17,12 @@ const ALL_WORKFLOW_ROLES = ['dentist', 'receptionist', 'designer', 'technician',
 // shared routes use requireWorkflowRole, not requireAnyRole directly —
 // see src/middleware/workflowRole.js for why that distinction matters
 // while login stays disabled.
+// The prescription catalogue the New Case form renders from. Served
+// rather than duplicated in the client bundle, so the options a dentist
+// can pick and the options the server will accept cannot drift apart.
+router.get('/prescription-schema', requireWorkflowRole(ALL_WORKFLOW_ROLES), (req, res) =>
+  res.json(Object.assign({ ok: true }, require('../services/prescription').catalogue())));
+
 router.post('/orders', requireAnyRole(['dentist']), idempotent('orders:create'), orders.create);
 router.get('/orders', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.list);
 router.get('/orders/:id', requireWorkflowRole(ALL_WORKFLOW_ROLES), orders.detail);

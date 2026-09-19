@@ -17,6 +17,8 @@
 // layer. This file must never be the only thing standing between a clinic
 // and a lab-internal note.
 import { esc, fmtDateTime, fmtDate } from '../utils/format.js';
+import { PrescriptionDetails } from './prescriptionDetails.js';
+import { ensureSchema, loadedSchema } from '../utils/prescriptionSchema.js';
 import {
   getOrder, listFiles, listMessages, postMessage, doctorDecision, receptionReview,
   designDone, productionDone, qcDecision, confirmCompletion, markDelivered, markCompleted,
@@ -292,7 +294,11 @@ function dentistApprovalSection(order) {
     '<p class="case-error" data-cc-error role="alert"></p></section>';
 }
 
+// The structured prescription where the case has one, the written
+// instructions always. Cases created before the clinic sheets were
+// modelled carry only the prose, and render exactly as they always did.
 function prescriptionSection(order) {
+  const structured = PrescriptionDetails(order.prescription, loadedSchema());
   return '<dl class="workspace-facts">' +
       fact('Treatment', jobTypeLabel(order.job_type)) +
       fact('Patient reference', order.patient_ref) +
@@ -301,6 +307,7 @@ function prescriptionSection(order) {
       fact('Collection method', order.delivery_method === 'delivery' ? 'Delivery to clinic' : 'In-house pickup') +
       fact('Submitted', fmtDateTime(order.created_at)) +
     '</dl>' +
+    (structured ? '<section class="case-sec">' + structured + '</section>' : '') +
     '<section class="case-sec"><h3>Instructions from the clinic</h3>' +
     '<p class="case-prose">' + esc(order.instructions || 'No additional instructions were provided.') + '</p></section>';
 }
@@ -479,7 +486,10 @@ let detailRequest = 0;
 export async function showCaseCenter(role, id, { tab } = {}) {
   const request = ++detailRequest, route = location.hash, trigger = document.activeElement;
   try {
-    const detail = await getOrder(role, id);
+    // The catalogue is needed to render a structured prescription; it is
+    // fetched once per page load and never blocks a second case. A
+    // failure is not fatal — PrescriptionDetails falls back to the prose.
+    const [detail] = await Promise.all([getOrder(role, id), ensureSchema(role).catch(() => null)]);
     if (request !== detailRequest || route !== location.hash) return;
     const { order, files, history, messages } = detail;
     const approvals = detail.approvals || [];

@@ -35,7 +35,11 @@ function assertPayload(payload) {
 // itself honestly in a list.
 function summarise(payload) {
   const teeth = Array.isArray(payload.teeth) ? payload.teeth : [];
-  const services = [...new Set(teeth.filter(t => t && t.service && t.service !== 'none').map(t => t.service))];
+  // An arch-based treatment (an orthodontic appliance) carries no teeth at
+  // all — see extras in the New Case wizard — so it would otherwise
+  // vanish from a draft's own summary.
+  const extras = Array.isArray(payload.extras) ? payload.extras.filter(e => typeof e === 'string').slice(0, 10) : [];
+  const services = [...new Set(teeth.filter(t => t && t.service && t.service !== 'none').map(t => t.service).concat(extras))];
   return {
     patientRef: String(payload.patientRef || '').slice(0, 120),
     services,

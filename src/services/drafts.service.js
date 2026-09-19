@@ -43,6 +43,19 @@ async function remove(id, dentistId) {
 // history the moment it is submitted.
 const CARRIED = ['jobType', 'deliveryMethod'];
 
+// Prescription answers that describe this patient rather than the
+// clinic's preference, and so are never copied onto a new case.
+const PATIENT_SPECIFIC = ['teeth', 'shade', 'shadeOther', 'notes', 'temporaryTooth', 'temporaryToothCount', 'temporaryToothNumbers', 'temporaryToothShade'];
+
+function carriedPrescription(prescription) {
+  if (!prescription || !prescription.treatment) return null;
+  const out = {};
+  for (const [key, value] of Object.entries(prescription)) {
+    if (!PATIENT_SPECIFIC.includes(key)) out[key] = value;
+  }
+  return out;
+}
+
 async function duplicate(orderId, dentistId) {
   const order = await repo.getOrder(orderId);
   // Same rule as everywhere else: another clinic's case is not found,
@@ -69,6 +82,15 @@ async function duplicate(orderId, dentistId) {
     carriedJobType: order.job_type,
     carriedShadePreference: order.shade || ''
   };
+
+  // The structured prescription carries far better than the prose did:
+  // the wizard can reopen it as answered questions rather than as a
+  // paragraph to read and retype. What comes across is the standing
+  // preference — material, finish, pontic form. What does not is anything
+  // read off the patient in front of the dentist: the shade, the teeth
+  // and the case notes belong to that patient, not to the clinic's habit.
+  const carried = carriedPrescription(order.prescription);
+  if (carried) payload.configs = { [carried.treatment]: carried };
 
   return drafts.create(dentistId, payload, { origin: 'duplicate', originOrderNumber: order.order_number });
 }

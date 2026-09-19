@@ -148,12 +148,16 @@ async function getOrderDetail(orderId) {
 async function listOrders(role, userId, options) {
   const orders = await repo.listOrders(role, userId, options);
   const isDentist = role === 'dentist';
-  return caseView.withViews(orders.map(o => redactOrder(o, isDentist)), { audience: isDentist ? 'dentist' : 'lab' });
+  // A queue row never renders the prescription — the case screen does,
+  // from getOrderDetail. Dropping it here keeps a 200-case page from
+  // carrying 200 prescriptions nobody reads.
+  const trimmed = orders.map(o => { const row = redactOrder(o, isDentist); const { prescription, ...rest } = row; return Object.assign(rest, { has_prescription: !!prescription }); });
+  return caseView.withViews(trimmed, { audience: isDentist ? 'dentist' : 'lab' });
 }
 
 async function createOrder(input) {
   if (!input.patientRef || !String(input.patientRef).trim()) throw new WorkflowError('Patient reference is required.');
-  if (!['veneers','crowns','bridges','implant_crown','implant_bridge','ortho_work','trays','night_guard','bleaching_tray','essix_retainer','surgical_guide','functional_mockup','other'].includes(input.jobType)) throw new WorkflowError('Unknown job type.');
+  if (!['veneers','crowns','bridges','implant_crown','implant_bridge','implant_full_arch','ortho_work','trays','night_guard','bleaching_tray','essix_retainer','surgical_guide','functional_mockup','other'].includes(input.jobType)) throw new WorkflowError('Unknown job type.');
   if (input.deliveryMethod && !['pickup','delivery'].includes(input.deliveryMethod)) throw new WorkflowError('Unknown delivery method.');
   if (requiresImplantFields(input.jobType) && (!input.scanBody || !input.implantSystem || !input.abutmentSize)) {
     throw new WorkflowError('Scan body, implant system and abutment size are required for implant cases.');
@@ -164,8 +168,27 @@ async function createOrder(input) {
   // Veneers are the one job that starts life in the demo/mockup stage;
   // everything else only ever has a "final" stage_type (see doctorDecision
   // below for the one place a veneer flips from demo to final).
+  // The structured prescription is validated against the clinic
+  // catalogue before it is stored, so the JSONB column only ever holds
+  // keys and values this treatment actually defines. An unknown option is
+  // a rejected order, not a silently-saved one a technician later acts on.
+  let prescription = null;
+  if (input.prescription) {
+    const catalogue = require('./prescription');
+    try {
+      prescription = catalogue.normalise(input.prescription.treatment, input.prescription);
+    } catch (error) {
+      throw new WorkflowError(error.message);
+    }
+    // The job type is derived from the prescription, never taken from the
+    // client alongside it: a "full arch" prescription filed as a single
+    // crown would mislead every downstream station.
+    const derived = catalogue.jobTypeFor(prescription.treatment, prescription);
+    if (derived && derived !== input.jobType) throw new WorkflowError('This prescription does not match the selected treatment.');
+  }
+
   const stageType = input.jobType === 'veneers' ? 'demo' : 'final';
-  const order = await repo.createOrder(Object.assign({}, input, { dentistUserId, stageType, targetDate: parseTargetDate(input.targetDate) }));
+  const order = await repo.createOrder(Object.assign({}, input, { dentistUserId, stageType, targetDate: parseTargetDate(input.targetDate), prescription }));
   await repo.addStageHistory(order.id, { stageType: order.stage_type, status: 'submitted', actorId: dentistUserId, note: 'Order submitted' });
   await repo.updateOrder(order.id, { status: 'pending_reception_review' });
   await repo.addStageHistory(order.id, { stageType: order.stage_type, status: 'pending_reception_review', actorId: dentistUserId });

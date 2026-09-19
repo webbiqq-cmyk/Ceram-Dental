@@ -1,0 +1,11 @@
+-- The implant sheet distinguishes three restoration types: single crown,
+-- bridge, and full arch. The first two already had job types; a full arch
+-- was being filed as a bridge, which is not what it is — a full-arch
+-- prosthesis is a different piece of work to plan, mill and inspect, and
+-- a technician reading "implant bridge" on a twelve-unit case is being
+-- misinformed by the software.
+--
+-- Alone in its own file: ALTER TYPE ... ADD VALUE may run inside a
+-- transaction but the new label cannot be *used* until it commits, and
+-- migrate.js wraps each file in one.
+ALTER TYPE job_type ADD VALUE IF NOT EXISTS 'implant_full_arch';

@@ -1,6 +1,7 @@
 export const JOB_TYPES = [
   { key: 'veneers', label: 'Veneers' }, { key: 'crowns', label: 'Crowns' }, { key: 'bridges', label: 'Bridges' },
   { key: 'implant_crown', label: 'Implant Crown' }, { key: 'implant_bridge', label: 'Implant Bridge' },
+  { key: 'implant_full_arch', label: 'Implant Full Arch' },
   { key: 'ortho_work', label: 'Ortho Work' }, { key: 'night_guard', label: 'Night Guard' },
   { key: 'bleaching_tray', label: 'Bleaching Tray' }, { key: 'essix_retainer', label: 'Essix Retainer' },
   { key: 'surgical_guide', label: 'Surgical Guide' }, { key: 'functional_mockup', label: 'Functional Mockup' },

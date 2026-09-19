@@ -60,7 +60,10 @@ async function createOrder(fields) {
     created_at: now(), updated_at: now(),
     priority: fields.priority || 'normal', target_date: fields.targetDate || null,
     blocked_reason: null, blocked_at: null, blocked_by: null, blocked_from: null,
-    stage_entered_at: now()
+    stage_entered_at: now(),
+    // Stored as the plain object the SQL side keeps as JSONB. Cloned so a
+    // caller mutating its own input cannot reach back into the store.
+    prescription: fields.prescription ? structuredClone(fields.prescription) : null
   };
   if (fields.clinicId) row.clinic_id = fields.clinicId;
   jobOrders.unshift(row);
